@@ -36,7 +36,7 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
                         ui.heading("Product name");
                     });
                     header.col(|ui| {
-                        ui.heading("Second column");
+                        ui.heading("Description");
                     });
                 })
                 .body(|mut body| {
@@ -48,7 +48,9 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
                                 );
                             });
                             row.col(|ui| {
-                                let _ = ui.button("world!");
+                                ui.text_edit_singleline(
+                                    &mut app.product_page.products_state.products[i].description,
+                                );
                             });
                         });
                         /*
