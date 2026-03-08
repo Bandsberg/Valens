@@ -33,16 +33,13 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let prod_vec = &mut demo_app.product_page.products_state.products;
     // To be able to keep a bit of state chache from any products adding during demo,
     // While ensuring the first two products are always defined here.
-    if prod_vec.len() >= 1 {
-        prod_vec[0] = product_1;
-    } else {
-        prod_vec.push(product_1);
-    }
-
-    if prod_vec.len() >= 2 {
-        prod_vec[1] = product_2;
-    } else {
-        prod_vec.push(product_2);
+    let demo_products = [product_1, product_2];
+    for (i, product) in demo_products.into_iter().enumerate() {
+        if i < prod_vec.len() {
+            prod_vec[i] = product;
+        } else {
+            prod_vec.push(product);
+        }
     }
     demo_app
 }

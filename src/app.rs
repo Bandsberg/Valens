@@ -47,7 +47,7 @@ impl App {
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
         //
 
-        let app = match mode {
+        match mode {
             //Use demo data if the mode is demo
             Mode::Demo => load_demo_data(cc),
             Mode::Production => {
@@ -59,8 +59,7 @@ impl App {
                     Default::default()
                 }
             }
-        };
-        app
+        }
     }
 }
 
