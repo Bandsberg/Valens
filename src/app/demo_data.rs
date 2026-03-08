@@ -50,12 +50,22 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         description: "My feature description".to_owned(),
         id: Uuid::from_str("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
             .expect("hardcoded UUID is valid"),
+        status: "Draft".to_owned(),
+        notes: String::new(),
+        user_story: String::new(),
+        acceptance_criteria: String::new(),
+        expanded: false,
     };
     let feature_2 = Feature {
         name: "Feature 2".to_owned(),
         description: "My feature description".to_owned(),
         id: Uuid::from_str("b2c3d4e5-f6a7-8901-bcde-f12345678901")
             .expect("hardcoded UUID is valid"),
+        status: "Draft".to_owned(),
+        notes: String::new(),
+        user_story: String::new(),
+        acceptance_criteria: String::new(),
+        expanded: false,
     };
 
     let feat_vec = &mut demo_app.product_page.features_state.features;
