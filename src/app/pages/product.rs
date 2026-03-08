@@ -1,5 +1,6 @@
 use crate::app::App;
 use eframe::egui;
+use uuid::Uuid;
 mod side_panel;
 pub use side_panel::product_sidepanel;
 pub mod products_window;
@@ -20,6 +21,9 @@ pub struct ProductPage {
     product_windows: ProductWindows,
     pub products_state: ProductsState,
     pub features_state: FeaturesState,
+    /// Many-to-many links between products and features.
+    /// Each entry is (product_id, feature_id).
+    pub product_feature_links: Vec<(Uuid, Uuid)>,
 }
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]

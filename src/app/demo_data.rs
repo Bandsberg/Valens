@@ -20,19 +20,22 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         };
     }
 
+    let product_1_id =
+        Uuid::from_str("e3142c46-5ac5-4425-8080-a8faff6e3ae4").expect("hardcoded UUID is valid");
+    let product_2_id =
+        Uuid::from_str("93a7b2b5-ce26-4078-bce6-ca7d2d941b70").expect("hardcoded UUID is valid");
+
     let product_1 = Product {
         name: "Product 1".to_owned(),
         description: "My product description".to_owned(),
-        id: Uuid::from_str("e3142c46-5ac5-4425-8080-a8faff6e3ae4")
-            .expect("hardcoded UUID is valid"),
+        id: product_1_id,
         notes: String::new(),
         expanded: false,
     };
     let product_2 = Product {
         name: "Product 2".to_owned(),
         description: "My product description".to_owned(),
-        id: Uuid::from_str("93a7b2b5-ce26-4078-bce6-ca7d2d941b70")
-            .expect("hardcoded UUID is valid"),
+        id: product_2_id,
         notes: String::new(),
         expanded: false,
     };
@@ -49,11 +52,15 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         }
     }
 
+    let feature_1_id =
+        Uuid::from_str("a1b2c3d4-e5f6-7890-abcd-ef1234567890").expect("hardcoded UUID is valid");
+    let feature_2_id =
+        Uuid::from_str("b2c3d4e5-f6a7-8901-bcde-f12345678901").expect("hardcoded UUID is valid");
+
     let feature_1 = Feature {
         name: "Feature 1".to_owned(),
         description: "My feature description".to_owned(),
-        id: Uuid::from_str("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
-            .expect("hardcoded UUID is valid"),
+        id: feature_1_id,
         status: "Draft".to_owned(),
         notes: String::new(),
         user_story: String::new(),
@@ -63,8 +70,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let feature_2 = Feature {
         name: "Feature 2".to_owned(),
         description: "My feature description".to_owned(),
-        id: Uuid::from_str("b2c3d4e5-f6a7-8901-bcde-f12345678901")
-            .expect("hardcoded UUID is valid"),
+        id: feature_2_id,
         status: "Draft".to_owned(),
         notes: String::new(),
         user_story: String::new(),
@@ -81,6 +87,22 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
             *slot = feature;
         } else {
             feat_vec.push(feature);
+        }
+    }
+
+    // ── Demo links ────────────────────────────────────────────────────────────
+    // Product 1 uses both Feature 1 and Feature 2.
+    // Product 2 uses Feature 2 (shared feature).
+    // These are only inserted when no links exist yet, so user edits are kept.
+    let demo_links = [
+        (product_1_id, feature_1_id),
+        (product_1_id, feature_2_id),
+        (product_2_id, feature_2_id),
+    ];
+    let existing_links = &mut demo_app.product_page.product_feature_links;
+    for link in demo_links {
+        if !existing_links.contains(&link) {
+            existing_links.push(link);
         }
     }
 

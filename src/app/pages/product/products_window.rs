@@ -4,9 +4,13 @@ use egui_extras::{Column, TableBuilder};
 use serde;
 use uuid::Uuid;
 
+use super::features_window::Feature;
+
 const COLLAPSED_H: f32 = 30.0;
 const EXPANDED_H: f32 = 130.0;
 const MULTILINE_H: f32 = 60.0;
+/// Height of one linked-item row (name + ✕ button).
+const LINK_ROW_H: f32 = 22.0;
 
 // ── Expand mode ───────────────────────────────────────────────────────────────
 
@@ -90,6 +94,10 @@ fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
                         .fill(egui::Color32::from_rgb(180, 40, 40)),
                 );
                 if delete_btn.clicked() {
+                    // Remove all links associated with this product.
+                    app.product_page
+                        .product_feature_links
+                        .retain(|(pid, _)| *pid != id);
                     app.product_page
                         .products_state
                         .products
@@ -115,11 +123,44 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         return;
     };
 
+    // Snapshot linked / available features before entering the window closure
+    // so we can borrow `products_state.products` mutably inside without conflict.
+    let linked_fids: Vec<Uuid> = app
+        .product_page
+        .product_feature_links
+        .iter()
+        .filter(|(pid, _)| *pid == id)
+        .map(|(_, fid)| *fid)
+        .collect();
+
+    let linked_features: Vec<(Uuid, String)> = app
+        .product_page
+        .features_state
+        .features
+        .iter()
+        .filter(|f| linked_fids.contains(&f.id))
+        .map(|f| (f.id, f.name.clone()))
+        .collect();
+
+    let available_features: Vec<(Uuid, String)> = app
+        .product_page
+        .features_state
+        .features
+        .iter()
+        .filter(|f| !linked_fids.contains(&f.id))
+        .map(|f| (f.id, f.name.clone()))
+        .collect();
+
+    // Collect mutations during the window; apply them afterwards.
+    let mut link_to_add: Option<(Uuid, Uuid)> = None;
+    let mut link_to_remove: Option<(Uuid, Uuid)> = None;
+    let mut navigate_to_feat: Option<Uuid> = None;
+
     let mut keep_open = true;
     egui::Window::new("Product Details")
         .collapsible(false)
         .resizable(true)
-        .default_size([380.0, 260.0])
+        .default_size([420.0, 380.0])
         .open(&mut keep_open)
         .show(ctx, |ui| {
             let Some(product) = app
@@ -158,24 +199,143 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                             .desired_width(f32::INFINITY),
                     );
                     ui.end_row();
+
+                    // ── Linked Features ──────────────────────────────────────
+                    ui.label("Linked\nFeatures:");
+                    ui.vertical(|ui| {
+                        // List of linked features — name is a navigation link,
+                        // ✕ button removes the link.
+                        if linked_features.is_empty() {
+                            ui.label(
+                                egui::RichText::new("None")
+                                    .italics()
+                                    .color(ui.visuals().weak_text_color()),
+                            );
+                        } else {
+                            for (fid, fname) in &linked_features {
+                                ui.horizontal(|ui| {
+                                    if ui.link(fname).on_hover_text("Open in Features").clicked() {
+                                        navigate_to_feat = Some(*fid);
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Button::new(
+                                                egui::RichText::new("✕")
+                                                    .small()
+                                                    .color(egui::Color32::from_rgb(200, 60, 60)),
+                                            )
+                                            .fill(egui::Color32::TRANSPARENT),
+                                        )
+                                        .on_hover_text("Remove link")
+                                        .clicked()
+                                    {
+                                        link_to_remove = Some((id, *fid));
+                                    }
+                                });
+                            }
+                        }
+
+                        // Dropdown to add a new link.
+                        if !available_features.is_empty() {
+                            ui.add_space(4.0);
+
+                            // Use egui's per-id temp storage so the combo
+                            // selection survives across frames until we act on it.
+                            let combo_key = egui::Id::new("prod_detail_link_feat").with(id);
+                            let mut sel: Uuid =
+                                ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
+
+                            let avail_w = ui.available_width();
+                            egui::ComboBox::from_id_salt(combo_key)
+                                .selected_text("Add a feature…")
+                                .width(avail_w)
+                                .show_ui(ui, |ui| {
+                                    for (fid, fname) in &available_features {
+                                        ui.selectable_value(&mut sel, *fid, fname);
+                                    }
+                                });
+
+                            if sel != Uuid::nil() {
+                                // A feature was chosen — queue the link and reset.
+                                link_to_add = Some((id, sel));
+                                ui.data_mut(|d| d.remove::<Uuid>(combo_key));
+                            } else {
+                                ui.data_mut(|d| d.insert_temp(combo_key, sel));
+                            }
+                        }
+                    });
+                    ui.end_row();
                 });
         });
 
-    // User dismissed the detail window with ✕ → deselect.
+    // User dismissed with ✕ → deselect.
     if !keep_open {
         app.product_page.products_state.selected_product_id = None;
     }
+
+    // Apply mutations now that the closure has released all borrows.
+    if let Some(pair) = link_to_add {
+        if !app.product_page.product_feature_links.contains(&pair) {
+            app.product_page.product_feature_links.push(pair);
+        }
+    }
+    if let Some(pair) = link_to_remove {
+        app.product_page
+            .product_feature_links
+            .retain(|l| l != &pair);
+    }
+    if let Some(feat_id) = navigate_to_feat {
+        navigate_to_feature(app, ctx, feat_id);
+    }
+}
+
+// ── Navigation helper ─────────────────────────────────────────────────────────
+
+/// Opens the Features window and ensures `feat_id` is visible regardless of
+/// which expand mode is currently active:
+///   - Accordion → sets `expanded = true` on the target feature row.
+///   - Panel     → sets `selected_feature_id` so the detail window opens.
+/// Both are applied so switching modes also works correctly.
+fn navigate_to_feature(app: &mut App, ctx: &egui::Context, feat_id: Uuid) {
+    app.product_page.product_windows.features_open = true;
+    if let Some(feat) = app
+        .product_page
+        .features_state
+        .features
+        .iter_mut()
+        .find(|f| f.id == feat_id)
+    {
+        feat.expanded = true;
+    }
+    app.product_page.features_state.selected_feature_id = Some(feat_id);
+    // Bring the Features window in front of all other windows.
+    ctx.move_to_top(egui::LayerId::new(
+        egui::Order::Middle,
+        egui::Id::new("Features"),
+    ));
 }
 
 // ── Accordion table ───────────────────────────────────────────────────────────
 
-fn show_accordion(ui: &mut egui::Ui, state: &mut ProductsState) {
+fn show_accordion(
+    ui: &mut egui::Ui,
+    state: &mut ProductsState,
+    features: &[Feature],
+    links: &mut Vec<(Uuid, Uuid)>,
+    navigate_to: &mut Option<Uuid>,
+) {
     let mut to_delete: Option<Uuid> = None;
+    let mut link_to_add: Option<(Uuid, Uuid)> = None;
+    let mut link_to_remove: Option<(Uuid, Uuid)> = None;
+
+    // Snapshot links for reading inside row closures (avoids borrow conflict
+    // with the mutable `links` we need to update afterwards).
+    let links_snap = links.clone();
 
     TableBuilder::new(ui)
         .column(Column::exact(24.0)) // ▶ / ▼ toggle
         .column(Column::initial(170.0).resizable(true)) // Name
-        .column(Column::remainder()) // Description + Notes
+        .column(Column::remainder()) // Description + Notes + Linked Features
         .column(Column::exact(36.0)) // 🗑
         .header(20.0, |mut header| {
             header.col(|_ui| {});
@@ -190,10 +350,29 @@ fn show_accordion(ui: &mut egui::Ui, state: &mut ProductsState) {
         .body(|mut body| {
             for product in &mut state.products {
                 let id = product.id;
-                // Read `expanded` once as a Copy bool so later column
-                // closures don't need to re-borrow the same field.
                 let expanded = product.expanded;
-                let row_h = if expanded { EXPANDED_H } else { COLLAPSED_H };
+
+                // Pre-compute linked feature IDs so we can size the row and
+                // determine available features without borrowing `links` again.
+                let linked_fids: Vec<Uuid> = links_snap
+                    .iter()
+                    .filter(|(pid, _)| *pid == id)
+                    .map(|(_, fid)| *fid)
+                    .collect();
+
+                // Row height:
+                //   base      = EXPANDED_H (description + separator + notes)
+                //   separator = ~8 px
+                //   label     = ~20 px   "Linked Features:"
+                //   combo     = ~28 px   dropdown widget
+                //   rows      = LINK_ROW_H × max(n_linked, 1)  (items or "None")
+                //   padding   =  ~8 px
+                let num_linked = linked_fids.len();
+                let row_h = if expanded {
+                    EXPANDED_H + 8.0 + 20.0 + 28.0 + (num_linked.max(1) as f32 * LINK_ROW_H) + 8.0
+                } else {
+                    COLLAPSED_H
+                };
 
                 body.row(row_h, |mut row| {
                     // ── Col 0 : toggle arrow ─────────────────────────────────
@@ -217,7 +396,7 @@ fn show_accordion(ui: &mut egui::Ui, state: &mut ProductsState) {
                         );
                     });
 
-                    // ── Col 2 : description  +  (expanded) notes ─────────────
+                    // ── Col 2 : description + (expanded) notes + linked features
                     row.col(|ui| {
                         ui.vertical(|ui| {
                             ui.add(
@@ -233,6 +412,84 @@ fn show_accordion(ui: &mut egui::Ui, state: &mut ProductsState) {
                                         .desired_width(ui.available_width())
                                         .min_size(egui::vec2(0.0, MULTILINE_H)),
                                 );
+
+                                // ── Linked Features ──────────────────────────
+                                ui.separator();
+                                ui.label("Linked Features:");
+
+                                let available: Vec<&Feature> = features
+                                    .iter()
+                                    .filter(|f| !linked_fids.contains(&f.id))
+                                    .collect();
+
+                                if !available.is_empty() {
+                                    // Use egui's per-id temp storage so the
+                                    // selection survives across frames.
+                                    let combo_key = egui::Id::new("prod_acc_link_feat").with(id);
+                                    let mut sel: Uuid =
+                                        ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
+
+                                    let avail_w = ui.available_width();
+                                    egui::ComboBox::from_id_salt(combo_key)
+                                        .selected_text("Add a feature…")
+                                        .width(avail_w)
+                                        .show_ui(ui, |ui| {
+                                            for feat in &available {
+                                                ui.selectable_value(&mut sel, feat.id, &feat.name);
+                                            }
+                                        });
+
+                                    if sel != Uuid::nil() {
+                                        link_to_add = Some((id, sel));
+                                        ui.data_mut(|d| d.remove::<Uuid>(combo_key));
+                                    } else {
+                                        ui.data_mut(|d| d.insert_temp(combo_key, sel));
+                                    }
+                                } else {
+                                    // All features are already linked — show a
+                                    // disabled placeholder so the layout is stable.
+                                    ui.add_enabled(false, egui::Button::new("All features linked"));
+                                }
+
+                                // Linked features — name is a navigation link,
+                                // ✕ button removes the link.
+                                if !linked_fids.is_empty() {
+                                    for fid in &linked_fids {
+                                        if let Some(feat) = features.iter().find(|f| f.id == *fid) {
+                                            ui.horizontal(|ui| {
+                                                if ui
+                                                    .link(&feat.name)
+                                                    .on_hover_text("Open in Features")
+                                                    .clicked()
+                                                {
+                                                    *navigate_to = Some(*fid);
+                                                }
+                                                if ui
+                                                    .add(
+                                                        egui::Button::new(
+                                                            egui::RichText::new("✕").small().color(
+                                                                egui::Color32::from_rgb(
+                                                                    200, 60, 60,
+                                                                ),
+                                                            ),
+                                                        )
+                                                        .fill(egui::Color32::TRANSPARENT),
+                                                    )
+                                                    .on_hover_text("Remove link")
+                                                    .clicked()
+                                                {
+                                                    link_to_remove = Some((id, *fid));
+                                                }
+                                            });
+                                        }
+                                    }
+                                } else {
+                                    ui.label(
+                                        egui::RichText::new("None")
+                                            .italics()
+                                            .color(ui.visuals().weak_text_color()),
+                                    );
+                                }
                             }
                         });
                     });
@@ -251,8 +508,17 @@ fn show_accordion(ui: &mut egui::Ui, state: &mut ProductsState) {
             }
         });
 
+    // Apply deferred mutations.
     if let Some(id) = to_delete {
         state.pending_delete = Some(id);
+    }
+    if let Some(pair) = link_to_add {
+        if !links.contains(&pair) {
+            links.push(pair);
+        }
+    }
+    if let Some(pair) = link_to_remove {
+        links.retain(|l| l != &pair);
     }
 }
 
@@ -357,6 +623,9 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
     show_delete_confirmation(app, ctx);
     show_detail_panel(app, ctx);
 
+    // Collected inside the window closure; applied after it releases borrows.
+    let mut nav_to_feat: Option<Uuid> = None;
+
     egui::Window::new("Products")
         .open(&mut app.product_page.product_windows.products_open)
         .default_size([720.0, 380.0])
@@ -391,11 +660,25 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
 
             match app.product_page.products_state.expand_mode {
                 ExpandMode::Accordion => {
-                    show_accordion(ui, &mut app.product_page.products_state);
+                    // Split borrows across different ProductPage fields.
+                    let features = &app.product_page.features_state.features;
+                    let links = &mut app.product_page.product_feature_links;
+                    show_accordion(
+                        ui,
+                        &mut app.product_page.products_state,
+                        features,
+                        links,
+                        &mut nav_to_feat,
+                    );
                 }
                 ExpandMode::Panel => {
                     show_panel_table(ui, &mut app.product_page.products_state);
                 }
             }
         });
+
+    // Apply navigation now that the window closure has released all borrows.
+    if let Some(feat_id) = nav_to_feat {
+        navigate_to_feature(app, ctx, feat_id);
+    }
 }
