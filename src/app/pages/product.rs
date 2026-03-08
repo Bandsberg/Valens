@@ -4,8 +4,9 @@ mod side_panel;
 pub use side_panel::product_sidepanel;
 pub mod products_window;
 use products_window::{ProductsState, show_products_window};
-mod features_window;
+pub mod features_window;
 use features_window::show_features_window;
+pub use features_window::{Feature, FeaturesState};
 mod thoughtfull_execution_window;
 use thoughtfull_execution_window::show_thoughtfull_execution_window;
 
@@ -18,6 +19,7 @@ use thoughtfull_execution_window::show_thoughtfull_execution_window;
 pub struct ProductPage {
     product_windows: ProductWindows,
     pub products_state: ProductsState,
+    pub features_state: FeaturesState,
 }
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]

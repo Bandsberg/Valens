@@ -3,6 +3,7 @@ use std::str::FromStr as _;
 use crate::App;
 use crate::app::ProductPage;
 use crate::app::Tab;
+use crate::app::pages::product::Feature;
 use crate::app::pages::product::products_window::Product;
 use uuid::Uuid;
 
@@ -43,5 +44,31 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
             prod_vec.push(product);
         }
     }
+
+    let feature_1 = Feature {
+        name: "Feature 1".to_owned(),
+        description: "My feature description".to_owned(),
+        id: Uuid::from_str("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+            .expect("hardcoded UUID is valid"),
+    };
+    let feature_2 = Feature {
+        name: "Feature 2".to_owned(),
+        description: "My feature description".to_owned(),
+        id: Uuid::from_str("b2c3d4e5-f6a7-8901-bcde-f12345678901")
+            .expect("hardcoded UUID is valid"),
+    };
+
+    let feat_vec = &mut demo_app.product_page.features_state.features;
+    // Same pattern as products: keep any user-added features beyond the demo slots,
+    // while ensuring the first two features are always defined here.
+    let demo_features = [feature_1, feature_2];
+    for (i, feature) in demo_features.into_iter().enumerate() {
+        if let Some(slot) = feat_vec.get_mut(i) {
+            *slot = feature;
+        } else {
+            feat_vec.push(feature);
+        }
+    }
+
     demo_app
 }
