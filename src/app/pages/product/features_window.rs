@@ -27,6 +27,9 @@ pub struct FeaturesState {
     pub selected_feature_id: Option<Uuid>,
     /// Which expand mode is currently active.
     pub expand_mode: ExpandMode,
+    /// ID of the feature the table should scroll to on the next frame.
+    #[serde(skip)]
+    pub scroll_to_id: Option<Uuid>,
 }
 
 /// A single feature entry.
@@ -322,6 +325,7 @@ fn navigate_to_product(app: &mut App, ctx: &egui::Context, prod_id: Uuid) {
         prod.expanded = true;
     }
     app.product_page.products_state.selected_product_id = Some(prod_id);
+    app.product_page.products_state.scroll_to_id = Some(prod_id);
     // Bring the Products window in front of all other windows.
     ctx.move_to_top(egui::LayerId::new(
         egui::Order::Middle,
@@ -341,10 +345,12 @@ fn show_accordion(
     let mut to_delete: Option<Uuid> = None;
     let mut link_to_add: Option<(Uuid, Uuid)> = None;
     let mut link_to_remove: Option<(Uuid, Uuid)> = None;
+    let mut did_scroll = false;
 
     // Snapshot links for reading inside row closures (avoids borrow conflict
     // with the mutable `links` we need to update afterwards).
     let links_snap = links.clone();
+    let scroll_to = state.scroll_to_id;
 
     TableBuilder::new(ui)
         .column(Column::exact(24.0)) // ▶ / ▼ toggle
@@ -391,6 +397,10 @@ fn show_accordion(
                 body.row(row_h, |mut row| {
                     // ── Col 0 : toggle arrow ─────────────────────────────────
                     row.col(|ui| {
+                        if scroll_to == Some(id) {
+                            ui.scroll_to_cursor(Some(egui::Align::Center));
+                            did_scroll = true;
+                        }
                         let arrow = if feature.expanded { "▼" } else { "▶" };
                         let hover = if expanded { "Collapse" } else { "Expand" };
                         if ui
@@ -549,6 +559,9 @@ fn show_accordion(
         });
 
     // Apply deferred mutations.
+    if did_scroll {
+        state.scroll_to_id = None;
+    }
     if let Some(id) = to_delete {
         state.pending_delete = Some(id);
     }
@@ -569,9 +582,11 @@ fn show_panel_table(ui: &mut egui::Ui, state: &mut FeaturesState) {
     // Use two separate variables to avoid Option<Option<_>>.
     let mut do_select: Option<Uuid> = None;
     let mut do_deselect = false;
+    let mut did_scroll = false;
 
     // Snapshot before the closure so we can read it without re-borrowing state.
     let selected_id = state.selected_feature_id;
+    let scroll_to = state.scroll_to_id;
 
     TableBuilder::new(ui)
         .column(Column::exact(24.0)) // ▶ / ▼ toggle
@@ -596,6 +611,10 @@ fn show_panel_table(ui: &mut egui::Ui, state: &mut FeaturesState) {
                 body.row(COLLAPSED_H, |mut row| {
                     // ── Col 0 : toggle arrow ─────────────────────────────────
                     row.col(|ui| {
+                        if scroll_to == Some(id) {
+                            ui.scroll_to_cursor(Some(egui::Align::Center));
+                            did_scroll = true;
+                        }
                         let arrow = if is_selected { "▼" } else { "▶" };
                         let hover = if is_selected {
                             "Close details"
@@ -645,6 +664,9 @@ fn show_panel_table(ui: &mut egui::Ui, state: &mut FeaturesState) {
             }
         });
 
+    if did_scroll {
+        state.scroll_to_id = None;
+    }
     if let Some(id) = to_delete {
         state.pending_delete = Some(id);
     }
