@@ -3,7 +3,7 @@ use pages::{ProductPage, product_sidepanel, show_customer, show_product};
 mod demo_data;
 use demo_data::load_demo_data;
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
 pub enum Mode {
     Demo,
     Production,
@@ -48,16 +48,14 @@ impl App {
         //
 
         match mode {
-            //Use demo data if the mode is demo
+            // Use demo data if the mode is demo
             Mode::Demo => load_demo_data(cc),
             Mode::Production => {
                 // Load previous app state (if any).
                 // Note that you must enable the `persistence` feature for this to work.
-                if let Some(storage) = cc.storage {
-                    eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
-                } else {
-                    Default::default()
-                }
+                cc.storage
+                    .and_then(|storage| eframe::get_value(storage, eframe::APP_KEY))
+                    .unwrap_or_default()
             }
         }
     }
