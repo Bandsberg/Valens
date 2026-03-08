@@ -48,7 +48,7 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
                                 );
                             });
                             row.col(|ui| {
-                                ui.button("world!");
+                                let _ = ui.button("world!");
                             });
                         });
                         /*
