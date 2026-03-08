@@ -26,6 +26,12 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
         .show(ctx, |ui| {
             ui.heading("Products");
             ui.label("Your products content here…");
+            if ui.button("➕ Add Product").clicked() {
+                app.product_page.products_state.products.push(Product {
+                    id: Uuid::new_v4(),
+                    ..Default::default()
+                });
+            }
             ui.separator();
             // Create a simple table
             TableBuilder::new(ui)
