@@ -1,5 +1,5 @@
-mod product;
-pub use product::show_product;
+mod customer;
+pub use customer::show_customer;
 
-mod demo;
-pub use demo::show_demo;
+pub mod product;
+pub use product::{ProductPage, product_sidepanel, show_product};

@@ -1,11 +1,11 @@
-use crate::app::TemplateApp;
+use crate::app::App;
 use eframe::egui;
 
-pub fn show_demo(template_app: &mut TemplateApp, ui: &mut egui::Ui) {
-    ui.heading("eframe template");
+pub fn show_customer(template_app: &mut App, ui: &mut egui::Ui) {
+    ui.heading("Customer segment");
 
     ui.horizontal(|ui| {
-        ui.label("Write something ");
+        ui.label("Here will be the customer segment");
         ui.text_edit_singleline(&mut template_app.label);
     });
 
