@@ -1,9 +1,9 @@
 use crate::app::App;
 use eframe::egui;
 use egui_extras::{Column, TableBuilder};
-use serde;
 use uuid::Uuid;
 
+use super::ExpandMode;
 use super::features_window::Feature;
 
 const COLLAPSED_H: f32 = 30.0;
@@ -11,18 +11,6 @@ const EXPANDED_H: f32 = 130.0;
 const MULTILINE_H: f32 = 60.0;
 /// Height of one linked-item row (name + ✕ button).
 const LINK_ROW_H: f32 = 22.0;
-
-// ── Expand mode ───────────────────────────────────────────────────────────────
-
-/// Controls how the per-row detail section is revealed.
-#[derive(Debug, Clone, serde::Deserialize, serde::Serialize, PartialEq, Eq, Default)]
-pub enum ExpandMode {
-    /// Notes expand inline, making the row taller.
-    #[default]
-    Accordion,
-    /// Notes open in a separate floating detail window.
-    Panel,
-}
 
 // ── State structs ─────────────────────────────────────────────────────────────
 

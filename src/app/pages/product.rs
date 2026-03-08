@@ -11,6 +11,21 @@ pub use features_window::{Feature, FeaturesState};
 mod thoughtfull_execution_window;
 use thoughtfull_execution_window::show_thoughtfull_execution_window;
 
+// ── Shared expand mode ────────────────────────────────────────────────────────
+
+/// Controls how the per-row detail section is revealed.
+/// Shared by both the Products and Features windows.
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize, PartialEq, Eq, Default)]
+pub enum ExpandMode {
+    /// Extra fields expand inline, making the row taller.
+    #[default]
+    Accordion,
+    /// Extra fields open in a separate floating detail window.
+    Panel,
+}
+
+// ── Page structs ──────────────────────────────────────────────────────────────
+
 /// This is a good sentence to remember about products
 /// Products deliver value by enabling capabilities,
 /// which users experience through journeys, which are realised via features,
