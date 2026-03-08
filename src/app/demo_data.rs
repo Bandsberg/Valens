@@ -25,12 +25,16 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         description: "My product description".to_owned(),
         id: Uuid::from_str("e3142c46-5ac5-4425-8080-a8faff6e3ae4")
             .expect("hardcoded UUID is valid"),
+        notes: String::new(),
+        expanded: false,
     };
     let product_2 = Product {
         name: "Product 2".to_owned(),
         description: "My product description".to_owned(),
         id: Uuid::from_str("93a7b2b5-ce26-4078-bce6-ca7d2d941b70")
             .expect("hardcoded UUID is valid"),
+        notes: String::new(),
+        expanded: false,
     };
 
     let prod_vec = &mut demo_app.product_page.products_state.products;
