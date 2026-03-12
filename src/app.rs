@@ -1,5 +1,7 @@
 mod pages;
-use pages::{ProductPage, product_sidepanel, show_customer, show_product};
+use pages::{
+    CustomerPage, ProductPage, customer_sidepanel, product_sidepanel, show_customer, show_product,
+};
 mod demo_data;
 use demo_data::load_demo_data;
 
@@ -26,6 +28,7 @@ pub struct App {
     value: f32,
     tab: Tab,
     product_page: ProductPage,
+    customer_page: CustomerPage,
 }
 
 impl Default for App {
@@ -36,6 +39,7 @@ impl Default for App {
             value: 2.7,
             tab: Tab::Product,
             product_page: ProductPage::default(),
+            customer_page: CustomerPage::default(),
         }
     }
 }
@@ -97,6 +101,9 @@ impl eframe::App for App {
         if self.tab == Tab::Product {
             product_sidepanel(self, ctx);
         }
+        if self.tab == Tab::Customer {
+            customer_sidepanel(self, ctx);
+        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
@@ -106,7 +113,7 @@ impl eframe::App for App {
                     show_product(self, ctx, ui);
                 }
                 Tab::Customer => {
-                    show_customer(self, ui);
+                    show_customer(self, ctx, ui);
                 }
             }
         });

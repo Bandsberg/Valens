@@ -3,6 +3,7 @@ use std::str::FromStr as _;
 use crate::App;
 use crate::app::ProductPage;
 use crate::app::Tab;
+use crate::app::pages::CustomerSegment;
 use crate::app::pages::product::Feature;
 use crate::app::pages::product::products_window::Product;
 use uuid::Uuid;
@@ -17,6 +18,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
             value: 0.0,
             tab: Tab::Product,
             product_page: ProductPage::default(),
+            customer_page: Default::default(),
         };
     }
 
@@ -103,6 +105,40 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     for link in demo_links {
         if !existing_links.contains(&link) {
             existing_links.push(link);
+        }
+    }
+
+    // ── Demo customer segments ────────────────────────────────────────────────
+    let segment_1_id =
+        Uuid::from_str("c1d2e3f4-a5b6-7890-cdef-012345678901").expect("hardcoded UUID is valid");
+    let segment_2_id =
+        Uuid::from_str("d2e3f4a5-b6c7-8901-defa-123456789012").expect("hardcoded UUID is valid");
+
+    let segment_1 = CustomerSegment {
+        id: segment_1_id,
+        name: "Enterprise".to_owned(),
+        description: "Large organisations with complex needs".to_owned(),
+        notes: String::new(),
+        characteristics: "500+ employees, multi-department procurement, long sales cycles"
+            .to_owned(),
+        expanded: false,
+    };
+    let segment_2 = CustomerSegment {
+        id: segment_2_id,
+        name: "SMB".to_owned(),
+        description: "Small and medium-sized businesses".to_owned(),
+        notes: String::new(),
+        characteristics: "10–500 employees, faster decisions, price-sensitive".to_owned(),
+        expanded: false,
+    };
+
+    let seg_vec = &mut demo_app.customer_page.segments_state.segments;
+    let demo_segments = [segment_1, segment_2];
+    for (i, segment) in demo_segments.into_iter().enumerate() {
+        if let Some(slot) = seg_vec.get_mut(i) {
+            *slot = segment;
+        } else {
+            seg_vec.push(segment);
         }
     }
 
