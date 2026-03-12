@@ -26,17 +26,21 @@ pub fn show_accordion(
     let mut link_to_add: Option<(Uuid, Uuid)> = None;
     let mut link_to_remove: Option<(Uuid, Uuid)> = None;
     let mut did_scroll = false;
+    let mut do_panel_select: Option<Uuid> = None;
+    let mut do_panel_deselect = false;
 
     // Snapshot links for reading inside row closures (avoids borrow conflict
     // with the mutable `links` we need to update afterwards).
     let links_snap = links.clone();
     let scroll_to = state.scroll_to_id;
+    let selected_id = state.selected_product_id;
 
     TableBuilder::new(ui)
-        .column(Column::exact(24.0)) // ▶ / ▼ toggle
+        .column(Column::exact(24.0)) // ▶ accordion toggle
         .column(Column::initial(170.0).resizable(true)) // Name
         .column(Column::remainder()) // Description + Notes + Linked Features
-        .column(Column::exact(36.0)) // 🗑
+        .column(Column::exact(36.0)) // ⊞ detail panel
+        .column(Column::exact(36.0)) // 🗑 delete
         .header(20.0, |mut header| {
             header.col(|_ui| {});
             header.col(|ui| {
@@ -46,11 +50,13 @@ pub fn show_accordion(
                 ui.heading("Description");
             });
             header.col(|_ui| {});
+            header.col(|_ui| {});
         })
         .body(|mut body| {
             for product in &mut state.products {
                 let id = product.id;
                 let expanded = product.expanded;
+                let is_panel_open = selected_id == Some(id);
 
                 // Pre-compute linked feature IDs so we can size the row and
                 // determine available features without borrowing `links` again.
@@ -75,13 +81,13 @@ pub fn show_accordion(
                 };
 
                 body.row(row_h, |mut row| {
-                    // ── Col 0 : toggle arrow ─────────────────────────────────
+                    // ── Col 0 : accordion toggle ─────────────────────────────
                     row.col(|ui| {
                         if scroll_to == Some(id) {
                             ui.scroll_to_cursor(Some(egui::Align::Center));
                             did_scroll = true;
                         }
-                        let arrow = if product.expanded { "▼" } else { "▶" };
+                        let arrow = if product.expanded { "----" } else { "▶" };
                         let hover = if expanded { "Collapse" } else { "Expand" };
                         if ui
                             .add(egui::Button::new(arrow).fill(egui::Color32::TRANSPARENT))
@@ -198,7 +204,28 @@ pub fn show_accordion(
                         });
                     });
 
-                    // ── Col 3 : delete ───────────────────────────────────────
+                    // ── Col 3 : detail panel button ──────────────────────────
+                    row.col(|ui| {
+                        let icon = if is_panel_open { "⊟" } else { "⊞" };
+                        let hover = if is_panel_open {
+                            "Close detail panel"
+                        } else {
+                            "Open detail panel"
+                        };
+                        if ui
+                            .add(egui::Button::new(icon).fill(egui::Color32::TRANSPARENT))
+                            .on_hover_text(hover)
+                            .clicked()
+                        {
+                            if is_panel_open {
+                                do_panel_deselect = true;
+                            } else {
+                                do_panel_select = Some(id);
+                            }
+                        }
+                    });
+
+                    // ── Col 4 : delete ───────────────────────────────────────
                     row.col(|ui| {
                         if ui
                             .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
@@ -226,5 +253,10 @@ pub fn show_accordion(
     }
     if let Some(pair) = link_to_remove {
         links.retain(|l| l != &pair);
+    }
+    if do_panel_deselect {
+        state.selected_product_id = None;
+    } else if let Some(id) = do_panel_select {
+        state.selected_product_id = Some(id);
     }
 }

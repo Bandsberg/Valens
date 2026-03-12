@@ -1,7 +1,5 @@
 use uuid::Uuid;
 
-use super::super::ExpandMode;
-
 // ── State structs ─────────────────────────────────────────────────────────────
 
 /// Persistent and transient state for the Products table.
@@ -12,11 +10,9 @@ pub struct ProductsState {
     /// ID of the product awaiting delete confirmation.
     #[serde(skip)]
     pub pending_delete: Option<Uuid>,
-    /// ID of the product whose detail window is open (Panel mode only, not persisted).
+    /// ID of the product whose detail window is open (not persisted).
     #[serde(skip)]
     pub selected_product_id: Option<Uuid>,
-    /// Which expand mode is currently active.
-    pub expand_mode: ExpandMode,
     /// ID of the product the table should scroll to on the next frame.
     #[serde(skip)]
     pub scroll_to_id: Option<Uuid>,

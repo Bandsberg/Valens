@@ -3,7 +3,6 @@ use eframe::egui;
 use egui_extras::{Column, TableBuilder};
 use uuid::Uuid;
 
-use super::ExpandMode;
 use super::products_window::Product;
 
 const COLLAPSED_H: f32 = 30.0;
@@ -22,11 +21,9 @@ pub struct FeaturesState {
     /// ID of the feature awaiting delete confirmation.
     #[serde(skip)]
     pub pending_delete: Option<Uuid>,
-    /// ID of the feature whose detail window is open (Panel mode only, not persisted).
+    /// ID of the feature whose detail window is open (not persisted).
     #[serde(skip)]
     pub selected_feature_id: Option<Uuid>,
-    /// Which expand mode is currently active.
-    pub expand_mode: ExpandMode,
     /// ID of the feature the table should scroll to on the next frame.
     #[serde(skip)]
     pub scroll_to_id: Option<Uuid>,
@@ -346,17 +343,21 @@ fn show_accordion(
     let mut link_to_add: Option<(Uuid, Uuid)> = None;
     let mut link_to_remove: Option<(Uuid, Uuid)> = None;
     let mut did_scroll = false;
+    let mut do_panel_select: Option<Uuid> = None;
+    let mut do_panel_deselect = false;
 
     // Snapshot links for reading inside row closures (avoids borrow conflict
     // with the mutable `links` we need to update afterwards).
     let links_snap = links.clone();
     let scroll_to = state.scroll_to_id;
+    let selected_id = state.selected_feature_id;
 
     TableBuilder::new(ui)
-        .column(Column::exact(24.0)) // ▶ / ▼ toggle
+        .column(Column::exact(24.0)) // ▶ accordion toggle
         .column(Column::initial(170.0).resizable(true)) // Name + left details
         .column(Column::remainder()) // Description + right details + linked products
-        .column(Column::exact(36.0)) // 🗑
+        .column(Column::exact(36.0)) // ⊞ detail panel
+        .column(Column::exact(36.0)) // 🗑 delete
         .header(20.0, |mut header| {
             header.col(|_ui| {});
             header.col(|ui| {
@@ -366,11 +367,13 @@ fn show_accordion(
                 ui.heading("Description");
             });
             header.col(|_ui| {});
+            header.col(|_ui| {});
         })
         .body(|mut body| {
             for feature in &mut state.features {
                 let id = feature.id;
                 let expanded = feature.expanded;
+                let is_panel_open = selected_id == Some(id);
 
                 // Pre-compute linked product IDs so we can size the row and
                 // determine available products without borrowing `links` again.
@@ -544,7 +547,28 @@ fn show_accordion(
                         });
                     });
 
-                    // ── Col 3 : delete ───────────────────────────────────────
+                    // ── Col 3 : detail panel button ──────────────────────────
+                    row.col(|ui| {
+                        let icon = if is_panel_open { "⊟" } else { "⊞" };
+                        let hover = if is_panel_open {
+                            "Close detail panel"
+                        } else {
+                            "Open detail panel"
+                        };
+                        if ui
+                            .add(egui::Button::new(icon).fill(egui::Color32::TRANSPARENT))
+                            .on_hover_text(hover)
+                            .clicked()
+                        {
+                            if is_panel_open {
+                                do_panel_deselect = true;
+                            } else {
+                                do_panel_select = Some(id);
+                            }
+                        }
+                    });
+
+                    // ── Col 4 : delete ───────────────────────────────────────
                     row.col(|ui| {
                         if ui
                             .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
@@ -573,106 +597,9 @@ fn show_accordion(
     if let Some(pair) = link_to_remove {
         links.retain(|l| l != &pair);
     }
-}
-
-// ── Panel-mode table ──────────────────────────────────────────────────────────
-
-fn show_panel_table(ui: &mut egui::Ui, state: &mut FeaturesState) {
-    let mut to_delete: Option<Uuid> = None;
-    // Use two separate variables to avoid Option<Option<_>>.
-    let mut do_select: Option<Uuid> = None;
-    let mut do_deselect = false;
-    let mut did_scroll = false;
-
-    // Snapshot before the closure so we can read it without re-borrowing state.
-    let selected_id = state.selected_feature_id;
-    let scroll_to = state.scroll_to_id;
-
-    TableBuilder::new(ui)
-        .column(Column::exact(24.0)) // ▶ / ▼ toggle
-        .column(Column::initial(170.0).resizable(true)) // Name
-        .column(Column::remainder()) // Description
-        .column(Column::exact(36.0)) // 🗑
-        .header(20.0, |mut header| {
-            header.col(|_ui| {});
-            header.col(|ui| {
-                ui.heading("Feature name");
-            });
-            header.col(|ui| {
-                ui.heading("Description");
-            });
-            header.col(|_ui| {});
-        })
-        .body(|mut body| {
-            for feature in &mut state.features {
-                let id = feature.id;
-                let is_selected = selected_id == Some(id);
-
-                body.row(COLLAPSED_H, |mut row| {
-                    // ── Col 0 : toggle arrow ─────────────────────────────────
-                    row.col(|ui| {
-                        if scroll_to == Some(id) {
-                            ui.scroll_to_cursor(Some(egui::Align::Center));
-                            did_scroll = true;
-                        }
-                        let arrow = if is_selected { "▼" } else { "▶" };
-                        let hover = if is_selected {
-                            "Close details"
-                        } else {
-                            "Open details"
-                        };
-                        if ui
-                            .add(egui::Button::new(arrow).fill(egui::Color32::TRANSPARENT))
-                            .on_hover_text(hover)
-                            .clicked()
-                        {
-                            if is_selected {
-                                do_deselect = true;
-                            } else {
-                                do_select = Some(id);
-                            }
-                        }
-                    });
-
-                    // ── Col 1 : name ─────────────────────────────────────────
-                    row.col(|ui| {
-                        ui.add(
-                            egui::TextEdit::singleline(&mut feature.name)
-                                .hint_text("Feature name…"),
-                        );
-                    });
-
-                    // ── Col 2 : description ──────────────────────────────────
-                    row.col(|ui| {
-                        ui.add(
-                            egui::TextEdit::singleline(&mut feature.description)
-                                .hint_text("Short description…"),
-                        );
-                    });
-
-                    // ── Col 3 : delete ───────────────────────────────────────
-                    row.col(|ui| {
-                        if ui
-                            .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
-                            .on_hover_text("Delete feature")
-                            .clicked()
-                        {
-                            to_delete = Some(id);
-                        }
-                    });
-                });
-            }
-        });
-
-    if did_scroll {
-        state.scroll_to_id = None;
-    }
-    if let Some(id) = to_delete {
-        state.pending_delete = Some(id);
-    }
-    if do_deselect {
+    if do_panel_deselect {
         state.selected_feature_id = None;
-    } else if let Some(id) = do_select {
+    } else if let Some(id) = do_panel_select {
         state.selected_feature_id = Some(id);
     }
 }
@@ -694,21 +621,6 @@ pub fn show_features_window(app: &mut App, ctx: &egui::Context) {
         .show(ctx, |ui| {
             ui.heading("Features");
 
-            // ── Mode toggle ───────────────────────────────────────────────────
-            ui.horizontal(|ui| {
-                ui.label("Expand style:");
-                ui.selectable_value(
-                    &mut app.product_page.features_state.expand_mode,
-                    ExpandMode::Accordion,
-                    "▶  Accordion",
-                );
-                ui.selectable_value(
-                    &mut app.product_page.features_state.expand_mode,
-                    ExpandMode::Panel,
-                    "▶  Detail Panel",
-                );
-            });
-
             ui.add_space(4.0);
 
             if ui.button("➕ Add Feature").clicked() {
@@ -720,23 +632,16 @@ pub fn show_features_window(app: &mut App, ctx: &egui::Context) {
 
             ui.separator();
 
-            match app.product_page.features_state.expand_mode {
-                ExpandMode::Accordion => {
-                    // Split borrows across different ProductPage fields.
-                    let products = &app.product_page.products_state.products;
-                    let links = &mut app.product_page.product_feature_links;
-                    show_accordion(
-                        ui,
-                        &mut app.product_page.features_state,
-                        products,
-                        links,
-                        &mut nav_to_prod,
-                    );
-                }
-                ExpandMode::Panel => {
-                    show_panel_table(ui, &mut app.product_page.features_state);
-                }
-            }
+            // Split borrows across different ProductPage fields.
+            let products = &app.product_page.products_state.products;
+            let links = &mut app.product_page.product_feature_links;
+            show_accordion(
+                ui,
+                &mut app.product_page.features_state,
+                products,
+                links,
+                &mut nav_to_prod,
+            );
         });
 
     // Apply navigation now that the window closure has released all borrows.

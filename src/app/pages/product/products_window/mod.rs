@@ -2,18 +2,14 @@ use crate::app::App;
 use eframe::egui;
 use uuid::Uuid;
 
-use super::ExpandMode;
-
 mod accordion;
 mod delete_dialog;
 mod detail_panel;
 mod model;
-mod panel_table;
 
 use accordion::show_accordion;
 use delete_dialog::show_delete_confirmation;
 use detail_panel::{navigate_to_feature, show_detail_panel};
-use panel_table::show_panel_table;
 
 pub use model::{Product, ProductsState};
 
@@ -34,21 +30,6 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
         .show(ctx, |ui| {
             ui.heading("Products");
 
-            // ── Mode toggle ───────────────────────────────────────────────────
-            ui.horizontal(|ui| {
-                ui.label("Expand style:");
-                ui.selectable_value(
-                    &mut app.product_page.products_state.expand_mode,
-                    ExpandMode::Accordion,
-                    "▶  Accordion",
-                );
-                ui.selectable_value(
-                    &mut app.product_page.products_state.expand_mode,
-                    ExpandMode::Panel,
-                    "▶  Detail Panel",
-                );
-            });
-
             ui.add_space(4.0);
 
             if ui.button("➕ Add Product").clicked() {
@@ -60,23 +41,16 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
 
             ui.separator();
 
-            match app.product_page.products_state.expand_mode {
-                ExpandMode::Accordion => {
-                    // Split borrows across different ProductPage fields.
-                    let features = &app.product_page.features_state.features;
-                    let links = &mut app.product_page.product_feature_links;
-                    show_accordion(
-                        ui,
-                        &mut app.product_page.products_state,
-                        features,
-                        links,
-                        &mut nav_to_feat,
-                    );
-                }
-                ExpandMode::Panel => {
-                    show_panel_table(ui, &mut app.product_page.products_state);
-                }
-            }
+            // Split borrows across different ProductPage fields.
+            let features = &app.product_page.features_state.features;
+            let links = &mut app.product_page.product_feature_links;
+            show_accordion(
+                ui,
+                &mut app.product_page.products_state,
+                features,
+                links,
+                &mut nav_to_feat,
+            );
         });
 
     // Apply navigation now that the window closure has released all borrows.
