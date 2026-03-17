@@ -6,6 +6,17 @@ use super::model::JobsState;
 
 const MULTILINE_H: f32 = 60.0;
 
+/// Returns `(name_width, description_width)` for a collapsed accordion row,
+/// reserving space for two 36 px action buttons on the right.
+fn row_field_widths(ui: &egui::Ui) -> (f32, f32) {
+    let spacing = ui.spacing().item_spacing.x;
+    let btn_space = 36.0 * 2.0 + spacing * 2.0;
+    let avail = ui.available_width() - btn_space;
+    let name_w = 162.0_f32.min(avail * 0.35);
+    let desc_w = (avail - name_w - spacing).max(0.0);
+    (name_w, desc_w)
+}
+
 // ── Accordion table ───────────────────────────────────────────────────────────
 
 pub fn show_accordion(
@@ -69,11 +80,7 @@ pub fn show_accordion(
                     job.expanded = !job.expanded;
                 }
 
-                let spacing = ui.spacing().item_spacing.x;
-                let btn_space = 36.0 * 2.0 + spacing * 2.0;
-                let avail = ui.available_width() - btn_space;
-                let name_w = 162.0_f32.min(avail * 0.35);
-                let desc_w = (avail - name_w - spacing).max(0.0);
+                let (name_w, desc_w) = row_field_widths(ui);
 
                 ui.add_sized(
                     [name_w, 20.0],
