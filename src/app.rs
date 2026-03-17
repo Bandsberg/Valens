@@ -93,7 +93,7 @@ impl eframe::App for App {
 
                 egui::widgets::global_theme_preference_buttons(ui);
                 ui.separator();
-                ui.selectable_value(&mut self.tab, Tab::Product, "Product");
+                ui.selectable_value(&mut self.tab, Tab::Product, "Products & Services");
                 ui.selectable_value(&mut self.tab, Tab::Customer, "Customer segment");
             });
         });

@@ -11,7 +11,7 @@ pub fn product_sidepanel(app: &mut App, ctx: &egui::Context) {
             // toggles / list / etc
             ui.checkbox(
                 &mut app.product_page.product_windows.products_open,
-                "Products",
+                "Products & Services",
             );
             ui.checkbox(
                 &mut app.product_page.product_windows.features_open,

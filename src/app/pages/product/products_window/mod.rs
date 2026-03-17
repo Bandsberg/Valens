@@ -24,11 +24,11 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
     // Collected inside the window closure; applied after it releases borrows.
     let mut nav_to_feat: Option<Uuid> = None;
 
-    egui::Window::new("Products")
+    egui::Window::new("Products & Services")
         .open(&mut app.product_page.product_windows.products_open)
         .default_size([720.0, 380.0])
         .show(ctx, |ui| {
-            ui.heading("Products");
+            ui.heading("Products & Services");
 
             ui.add_space(4.0);
 

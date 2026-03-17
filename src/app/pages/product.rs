@@ -36,7 +36,7 @@ struct ProductWindows {
 }
 
 pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
-    ui.heading("Products");
+    ui.heading("Products & Services");
     ui.label("This page has no local state (yet).");
     if app.product_page.product_windows.products_open {
         show_products_window(app, ctx);

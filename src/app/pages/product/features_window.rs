@@ -212,7 +212,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                     ui.end_row();
 
                     // ── Used by Products ─────────────────────────────────────
-                    ui.label("Used by\nProducts:");
+                    ui.label("Used by\nProducts &\nServices:");
                     ui.vertical(|ui| {
                         // List of linked products — name is a navigation link,
                         // ✕ button removes the link.
@@ -225,7 +225,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         } else {
                             for (pid, pname) in &linked_products {
                                 ui.horizontal(|ui| {
-                                    if ui.link(pname).on_hover_text("Open in Products").clicked() {
+                                    if ui.link(pname).on_hover_text("Open in Products & Services").clicked() {
                                         navigate_to_prod = Some(*pid);
                                     }
                                     if ui
@@ -323,7 +323,7 @@ fn navigate_to_product(app: &mut App, ctx: &egui::Context, prod_id: Uuid) {
     // Bring the Products window in front of all other windows.
     ctx.move_to_top(egui::LayerId::new(
         egui::Order::Middle,
-        egui::Id::new("Products"),
+        egui::Id::new("Products & Services"),
     ));
 }
 
@@ -455,7 +455,7 @@ fn show_accordion(
 
                     // ── Used by Products ──────────────────────────────────────
                     ui.separator();
-                    ui.label("Used by Products:");
+                    ui.label("Used by Products & Services:");
 
                     let available: Vec<&Product> = products
                         .iter()
@@ -484,7 +484,7 @@ fn show_accordion(
                             ui.data_mut(|d| d.insert_temp(combo_key, sel));
                         }
                     } else {
-                        ui.add_enabled(false, egui::Button::new("All products linked"));
+                        ui.add_enabled(false, egui::Button::new("All products and services linked"));
                     }
 
                     if !linked_pids.is_empty() {
@@ -493,7 +493,7 @@ fn show_accordion(
                                 ui.horizontal(|ui| {
                                     if ui
                                         .link(&prod.name)
-                                        .on_hover_text("Open in Products")
+                                        .on_hover_text("Open in Products & Services")
                                         .clicked()
                                     {
                                         *navigate_to = Some(*pid);
