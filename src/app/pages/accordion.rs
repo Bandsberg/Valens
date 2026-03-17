@@ -98,6 +98,24 @@ pub fn display_name<'a>(name: &'a str, fallback: &'a str) -> &'a str {
     if name.is_empty() { fallback } else { name }
 }
 
+/// Expand/collapse arrow button for accordion rows. Returns `true` if clicked.
+pub fn expand_button(ui: &mut egui::Ui, expanded: bool) -> bool {
+    let arrow = if expanded { "▼" } else { "▶" };
+    let hover = if expanded { "Collapse" } else { "Expand" };
+    ui.add(egui::Button::new(arrow).fill(egui::Color32::TRANSPARENT))
+        .on_hover_text(hover)
+        .clicked()
+}
+
+/// Detail-panel toggle button (⊞/⊟). Returns `true` if clicked.
+pub fn panel_toggle_button(ui: &mut egui::Ui, is_open: bool) -> bool {
+    let icon = if is_open { "⊟" } else { "⊞" };
+    let hover = if is_open { "Close detail panel" } else { "Open detail panel" };
+    ui.add(egui::Button::new(icon).fill(egui::Color32::TRANSPARENT))
+        .on_hover_text(hover)
+        .clicked()
+}
+
 /// Small red ✕ button used to remove a link between two entities.
 pub fn unlink_button(ui: &mut egui::Ui) -> egui::Response {
     ui.add(

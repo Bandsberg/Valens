@@ -52,13 +52,7 @@ pub fn show_accordion(
 
             // ── Collapsed / header row ────────────────────────────────────────
             ui.horizontal(|ui| {
-                let arrow = if expanded { "▼" } else { "▶" };
-                let hover = if expanded { "Collapse" } else { "Expand" };
-                if ui
-                    .add(egui::Button::new(arrow).fill(egui::Color32::TRANSPARENT))
-                    .on_hover_text(hover)
-                    .clicked()
-                {
+                if accordion::expand_button(ui, expanded) {
                     job.expanded = !job.expanded;
                 }
 
@@ -74,17 +68,7 @@ pub fn show_accordion(
                         .hint_text("Short description…"),
                 );
 
-                let icon = if is_panel_open { "⊟" } else { "⊞" };
-                let panel_hover = if is_panel_open {
-                    "Close detail panel"
-                } else {
-                    "Open detail panel"
-                };
-                if ui
-                    .add(egui::Button::new(icon).fill(egui::Color32::TRANSPARENT))
-                    .on_hover_text(panel_hover)
-                    .clicked()
-                {
+                if accordion::panel_toggle_button(ui, is_panel_open) {
                     if is_panel_open {
                         do_panel_deselect = true;
                     } else {
