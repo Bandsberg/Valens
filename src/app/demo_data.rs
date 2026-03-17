@@ -8,6 +8,8 @@ use crate::app::pages::Gain;
 use crate::app::pages::Job;
 use crate::app::pages::Pain;
 use crate::app::pages::product::Feature;
+use crate::app::pages::product::GainCreator;
+use crate::app::pages::product::PainRelief;
 use crate::app::pages::product::products_window::Product;
 use uuid::Uuid;
 
@@ -25,29 +27,28 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         };
     }
 
+    // ── Demo products ─────────────────────────────────────────────────────────
     let product_1_id =
         Uuid::from_str("e3142c46-5ac5-4425-8080-a8faff6e3ae4").expect("hardcoded UUID is valid");
     let product_2_id =
         Uuid::from_str("93a7b2b5-ce26-4078-bce6-ca7d2d941b70").expect("hardcoded UUID is valid");
 
     let product_1 = Product {
-        name: "Product 1".to_owned(),
-        description: "My product description".to_owned(),
         id: product_1_id,
-        notes: String::new(),
+        name: "Payment Rails API".to_owned(),
+        description: "Embedded payment processing covering card, ACH, and SWIFT via a single integration".to_owned(),
+        notes: "Primary revenue product; pricing is per-transaction with a monthly platform fee".to_owned(),
         expanded: false,
     };
     let product_2 = Product {
-        name: "Product 2".to_owned(),
-        description: "My product description".to_owned(),
         id: product_2_id,
-        notes: String::new(),
+        name: "KYC & Compliance Suite".to_owned(),
+        description: "Automated identity verification and AML screening with regulator-ready audit trails".to_owned(),
+        notes: "Sold standalone or bundled with Payment Rails API; banks require on-prem option".to_owned(),
         expanded: false,
     };
 
     let prod_vec = &mut demo_app.product_page.products_state.products;
-    // To be able to keep a bit of state cache from any products added during demo,
-    // while ensuring the first two products are always defined here.
     let demo_products = [product_1, product_2];
     for (i, product) in demo_products.into_iter().enumerate() {
         if let Some(slot) = prod_vec.get_mut(i) {
@@ -57,36 +58,47 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         }
     }
 
+    // ── Demo features ─────────────────────────────────────────────────────────
     let feature_1_id =
         Uuid::from_str("a1b2c3d4-e5f6-7890-abcd-ef1234567890").expect("hardcoded UUID is valid");
     let feature_2_id =
         Uuid::from_str("b2c3d4e5-f6a7-8901-bcde-f12345678901").expect("hardcoded UUID is valid");
+    let feature_3_id =
+        Uuid::from_str("c3d4e5f6-a7b8-9012-cdef-012345678902").expect("hardcoded UUID is valid");
 
     let feature_1 = Feature {
-        name: "Feature 1".to_owned(),
-        description: "My feature description".to_owned(),
         id: feature_1_id,
-        status: "Draft".to_owned(),
-        notes: String::new(),
-        user_story: String::new(),
-        acceptance_criteria: String::new(),
+        name: "Unified payment API".to_owned(),
+        description: "Single REST endpoint routing transactions across card, ACH, and SWIFT".to_owned(),
+        status: "In Progress".to_owned(),
+        notes: "ISO 20022 message format required for SWIFT; versioned endpoints for backwards compatibility".to_owned(),
+        user_story: "As a fintech developer, I want one API to initiate any payment type so that I don't have to integrate multiple schemes separately.".to_owned(),
+        acceptance_criteria: "- Supports card authorisation, ACH credit/debit, and SWIFT MT103\n- Response time < 200 ms at p99\n- Returns a unified transaction ID regardless of scheme".to_owned(),
         expanded: false,
     };
     let feature_2 = Feature {
-        name: "Feature 2".to_owned(),
-        description: "My feature description".to_owned(),
         id: feature_2_id,
+        name: "Automated KYC decisioning".to_owned(),
+        description: "ML-driven identity checks that approve clean applicants in seconds".to_owned(),
+        status: "In Progress".to_owned(),
+        notes: "Manual review queue for edge cases; all decisions stored with reasoning for audit".to_owned(),
+        user_story: "As a compliance officer, I want automated KYC decisions so that most applicants are approved instantly while edge cases are flagged for human review.".to_owned(),
+        acceptance_criteria: "- Auto-approve rate > 85 % for standard applicants\n- Full decision audit trail exportable as PDF\n- Manual review SLA < 4 hours".to_owned(),
+        expanded: false,
+    };
+    let feature_3 = Feature {
+        id: feature_3_id,
+        name: "Real-time fraud scoring".to_owned(),
+        description: "Risk engine scoring every transaction in under 50 ms with tunable thresholds".to_owned(),
         status: "Draft".to_owned(),
-        notes: String::new(),
-        user_story: String::new(),
-        acceptance_criteria: String::new(),
+        notes: "Per-merchant risk profiles allow threshold tuning without touching global model".to_owned(),
+        user_story: "As a risk manager, I want to tune fraud thresholds per merchant so that I can reduce false positives without accepting more fraud losses.".to_owned(),
+        acceptance_criteria: "- Score latency < 50 ms at p99\n- Merchant-level threshold configuration via dashboard\n- False-positive rate < 0.5 % at default settings".to_owned(),
         expanded: false,
     };
 
     let feat_vec = &mut demo_app.product_page.features_state.features;
-    // Same pattern as products: keep any user-added features beyond the demo slots,
-    // while ensuring the first two features are always defined here.
-    let demo_features = [feature_1, feature_2];
+    let demo_features = [feature_1, feature_2, feature_3];
     for (i, feature) in demo_features.into_iter().enumerate() {
         if let Some(slot) = feat_vec.get_mut(i) {
             *slot = feature;
@@ -95,21 +107,83 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         }
     }
 
-    // ── Demo links ────────────────────────────────────────────────────────────
-    // Product 1 uses both Feature 1 and Feature 2.
-    // Product 2 uses Feature 2 (shared feature).
-    // These are only inserted when no links exist yet, so user edits are kept.
-    let demo_links = [
+    // ── Demo product-feature links ────────────────────────────────────────────
+    // Payment Rails API   → Unified payment API, Real-time fraud scoring
+    // KYC & Compliance    → Automated KYC decisioning, Real-time fraud scoring
+    let demo_prod_feat_links = [
         (product_1_id, feature_1_id),
-        (product_1_id, feature_2_id),
+        (product_1_id, feature_3_id),
         (product_2_id, feature_2_id),
+        (product_2_id, feature_3_id),
     ];
     let existing_links = &mut demo_app.product_page.product_feature_links;
-    for link in demo_links {
+    for link in demo_prod_feat_links {
         if !existing_links.contains(&link) {
             existing_links.push(link);
         }
     }
+
+    // ── Demo pain relief items ────────────────────────────────────────────────
+    let pr_1_id =
+        Uuid::from_str("1a2b3c4d-5e6f-7890-1a2b-3c4d5e6f7890").expect("hardcoded UUID is valid");
+    let pr_2_id =
+        Uuid::from_str("2b3c4d5e-6f7a-8901-2b3c-4d5e6f7a8901").expect("hardcoded UUID is valid");
+    let pr_3_id =
+        Uuid::from_str("3c4d5e6f-7a8b-9012-3c4d-5e6f7a8b9012").expect("hardcoded UUID is valid");
+
+    let pr_1 = PainRelief {
+        id: pr_1_id,
+        name: "Pre-built SDK & sandbox".to_owned(),
+        description: "Language SDKs and a realistic sandbox environment cut integration from weeks to hours".to_owned(),
+        notes: "SDKs available for Node, Python, Java, and Go; sandbox mirrors production data shapes".to_owned(),
+        expanded: false,
+    };
+    let pr_2 = PainRelief {
+        id: pr_2_id,
+        name: "Instant KYC auto-approval".to_owned(),
+        description: "Clean applicants are approved in seconds; only genuine edge cases reach manual review".to_owned(),
+        notes: "Reduces perceived friction; banks appreciate the audit trail that accompanies each decision".to_owned(),
+        expanded: false,
+    };
+    let pr_3 = PainRelief {
+        id: pr_3_id,
+        name: "Tunable risk thresholds".to_owned(),
+        description: "Per-merchant fraud profiles reduce false positives without relaxing overall fraud controls".to_owned(),
+        notes: "Threshold changes take effect without redeployment; A/B testing supported".to_owned(),
+        expanded: false,
+    };
+
+    let pr_vec = &mut demo_app.product_page.pain_relief_state.pain_reliefs;
+    let demo_prs = [pr_1, pr_2, pr_3];
+    for (i, pr) in demo_prs.into_iter().enumerate() {
+        if let Some(slot) = pr_vec.get_mut(i) {
+            *slot = pr;
+        } else {
+            pr_vec.push(pr);
+        }
+    }
+
+    // ── Demo feature-pain-relief links ────────────────────────────────────────
+    // Pre-built SDK         → Unified payment API
+    // Instant KYC approval  → Automated KYC decisioning
+    // Tunable thresholds    → Real-time fraud scoring
+    let demo_feat_pr_links = [
+        (feature_1_id, pr_1_id),
+        (feature_2_id, pr_2_id),
+        (feature_3_id, pr_3_id),
+    ];
+    let existing_feat_pr = &mut demo_app.product_page.feature_pain_relief_links;
+    for link in demo_feat_pr_links {
+        if !existing_feat_pr.contains(&link) {
+            existing_feat_pr.push(link);
+        }
+    }
+
+    // ── Demo pain-pain-relief links ───────────────────────────────────────────
+    // (pain_id, pain_relief_id) — matched by theme
+    // Pain 1 (complex API)       → PR 1 (SDK & sandbox)
+    // Pain 2 (KYC drop-off)      → PR 2 (instant KYC approval)
+    // Pain 3 (false positives)   → PR 3 (tunable thresholds)
 
     // ── Demo customer segments ────────────────────────────────────────────────
     let segment_1_id =
@@ -187,7 +261,8 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     }
 
     // ── Demo segment-job links ────────────────────────────────────────────────
-    // Fintechs focus on payment rails and KYC; regional banks do all three.
+    // Fintechs: payment rails + KYC + fraud
+    // Regional banks: KYC + fraud (payment rails handled by legacy core)
     let demo_seg_job_links = [
         (job_1_id, segment_1_id),
         (job_2_id, segment_1_id),
@@ -243,9 +318,6 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     }
 
     // ── Demo pain-job links ───────────────────────────────────────────────────
-    // Pain 1 (complex API)       → job 1 (payment rails)
-    // Pain 2 (KYC drop-off)      → job 2 (KYC & onboarding)
-    // Pain 3 (false positives)   → job 3 (fraud monitoring)
     let demo_pain_job_links = [
         (pain_1_id, job_1_id),
         (pain_2_id, job_2_id),
@@ -255,6 +327,19 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     for link in demo_pain_job_links {
         if !existing_pain_job_links.contains(&link) {
             existing_pain_job_links.push(link);
+        }
+    }
+
+    // ── Demo pain-pain-relief links (deferred until pains are loaded) ─────────
+    let demo_pain_pr_links = [
+        (pain_1_id, pr_1_id),
+        (pain_2_id, pr_2_id),
+        (pain_3_id, pr_3_id),
+    ];
+    let existing_pain_pr = &mut demo_app.product_page.pain_pain_relief_links;
+    for link in demo_pain_pr_links {
+        if !existing_pain_pr.contains(&link) {
+            existing_pain_pr.push(link);
         }
     }
 
@@ -299,9 +384,6 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     }
 
     // ── Demo gain-job links ───────────────────────────────────────────────────
-    // Gain 1 (fast API go-live)       → job 1 (payment rails)
-    // Gain 2 (high KYC pass rates)    → job 2 (KYC & onboarding)
-    // Gain 3 (accurate fraud detect.) → job 3 (fraud monitoring)
     let demo_gain_job_links = [
         (gain_1_id, job_1_id),
         (gain_2_id, job_2_id),
@@ -311,6 +393,78 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     for link in demo_gain_job_links {
         if !existing_gain_job_links.contains(&link) {
             existing_gain_job_links.push(link);
+        }
+    }
+
+    // ── Demo gain creators ────────────────────────────────────────────────────
+    let gc_1_id =
+        Uuid::from_str("4d5e6f7a-8b9c-0123-4d5e-6f7a8b9c0123").expect("hardcoded UUID is valid");
+    let gc_2_id =
+        Uuid::from_str("5e6f7a8b-9c0d-1234-5e6f-7a8b9c0d1234").expect("hardcoded UUID is valid");
+    let gc_3_id =
+        Uuid::from_str("6f7a8b9c-0d1e-2345-6f7a-8b9c0d1e2345").expect("hardcoded UUID is valid");
+
+    let gc_1 = GainCreator {
+        id: gc_1_id,
+        name: "One-day API go-live".to_owned(),
+        description: "Comprehensive docs, runbooks, and a sandbox let devs reach production in a single sprint".to_owned(),
+        notes: "Interactive API explorer in the developer portal accelerates discovery".to_owned(),
+        expanded: false,
+    };
+    let gc_2 = GainCreator {
+        id: gc_2_id,
+        name: "Frictionless onboarding flow".to_owned(),
+        description: "Pre-filled forms, progressive KYC steps, and instant auto-approval maximise conversion".to_owned(),
+        notes: "Mobile-optimised flow reduces drop-off on smaller screens".to_owned(),
+        expanded: false,
+    };
+    let gc_3 = GainCreator {
+        id: gc_3_id,
+        name: "Transparent fraud analytics".to_owned(),
+        description: "Real-time dashboard with explainable scores builds confidence for customers and regulators".to_owned(),
+        notes: "Exportable reports satisfy auditor requests without engineering involvement".to_owned(),
+        expanded: false,
+    };
+
+    let gc_vec = &mut demo_app.product_page.gain_creator_state.gain_creators;
+    let demo_gcs = [gc_1, gc_2, gc_3];
+    for (i, gc) in demo_gcs.into_iter().enumerate() {
+        if let Some(slot) = gc_vec.get_mut(i) {
+            *slot = gc;
+        } else {
+            gc_vec.push(gc);
+        }
+    }
+
+    // ── Demo feature-gain-creator links ───────────────────────────────────────
+    // One-day API go-live       → Unified payment API
+    // Frictionless onboarding   → Automated KYC decisioning
+    // Transparent analytics     → Real-time fraud scoring
+    let demo_feat_gc_links = [
+        (feature_1_id, gc_1_id),
+        (feature_2_id, gc_2_id),
+        (feature_3_id, gc_3_id),
+    ];
+    let existing_feat_gc = &mut demo_app.product_page.feature_gain_creator_links;
+    for link in demo_feat_gc_links {
+        if !existing_feat_gc.contains(&link) {
+            existing_feat_gc.push(link);
+        }
+    }
+
+    // ── Demo gain-gain-creator links ──────────────────────────────────────────
+    // Gain 1 (fast API go-live)       → GC 1 (one-day API go-live)
+    // Gain 2 (high KYC pass rates)    → GC 2 (frictionless onboarding)
+    // Gain 3 (accurate fraud detect.) → GC 3 (transparent analytics)
+    let demo_gain_gc_links = [
+        (gain_1_id, gc_1_id),
+        (gain_2_id, gc_2_id),
+        (gain_3_id, gc_3_id),
+    ];
+    let existing_gain_gc = &mut demo_app.product_page.gain_gain_creator_links;
+    for link in demo_gain_gc_links {
+        if !existing_gain_gc.contains(&link) {
+            existing_gain_gc.push(link);
         }
     }
 

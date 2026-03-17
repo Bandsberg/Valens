@@ -10,10 +10,10 @@ use features_window::show_features_window;
 pub use features_window::{Feature, FeaturesState};
 mod pain_relief_window;
 use pain_relief_window::show_pain_relief_window;
-pub use pain_relief_window::PainReliefState;
+pub use pain_relief_window::{PainRelief, PainReliefState};
 mod gain_creators_window;
 use gain_creators_window::show_gain_creators_window;
-pub use gain_creators_window::GainCreatorState;
+pub use gain_creators_window::{GainCreator, GainCreatorState};
 mod thoughtfull_execution_window;
 use thoughtfull_execution_window::show_thoughtfull_execution_window;
 
