@@ -92,6 +92,12 @@ pub fn none_label(ui: &mut egui::Ui) {
     );
 }
 
+/// Returns `name` if non-empty, otherwise `fallback`.
+/// Used by delete dialogs to display a human-readable item name.
+pub fn display_name<'a>(name: &'a str, fallback: &'a str) -> &'a str {
+    if name.is_empty() { fallback } else { name }
+}
+
 /// Small red ✕ button used to remove a link between two entities.
 pub fn unlink_button(ui: &mut egui::Ui) -> egui::Response {
     ui.add(

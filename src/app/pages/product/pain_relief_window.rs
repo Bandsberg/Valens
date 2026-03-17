@@ -46,13 +46,7 @@ fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         .pain_reliefs
         .iter()
         .find(|r| r.id == id)
-        .map(|r| {
-            if r.name.is_empty() {
-                "Unnamed pain relief".to_owned()
-            } else {
-                r.name.clone()
-            }
-        })
+        .map(|r| accordion::display_name(&r.name, "Unnamed pain relief").to_owned())
         .unwrap_or_default();
 
     let mut keep_open = true;

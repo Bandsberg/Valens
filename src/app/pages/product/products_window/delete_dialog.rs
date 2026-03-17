@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::app::pages::accordion;
 use eframe::egui;
 
 // ── Delete confirmation dialog ────────────────────────────────────────────────
@@ -14,13 +15,7 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         .products
         .iter()
         .find(|p| p.id == id)
-        .map(|p| {
-            if p.name.is_empty() {
-                "Unnamed product".to_owned()
-            } else {
-                p.name.clone()
-            }
-        })
+        .map(|p| accordion::display_name(&p.name, "Unnamed product").to_owned())
         .unwrap_or_default();
 
     let mut keep_open = true;

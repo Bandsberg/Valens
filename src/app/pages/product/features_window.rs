@@ -55,13 +55,7 @@ fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         .features
         .iter()
         .find(|f| f.id == id)
-        .map(|f| {
-            if f.name.is_empty() {
-                "Unnamed feature".to_owned()
-            } else {
-                f.name.clone()
-            }
-        })
+        .map(|f| accordion::display_name(&f.name, "Unnamed feature").to_owned())
         .unwrap_or_default();
 
     let mut keep_open = true;
