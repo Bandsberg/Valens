@@ -380,7 +380,7 @@ fn show_accordion(
                     feature.expanded = !feature.expanded;
                 }
 
-                let (name_w, desc_w) = accordion::row_field_widths(ui);
+                let (name_w, desc_w) = accordion::row_field_widths(ui, "Feature name");
 
                 ui.add_sized(
                     [name_w, 20.0],

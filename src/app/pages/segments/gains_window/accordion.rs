@@ -57,7 +57,7 @@ pub fn show_accordion(
                     gain.expanded = !gain.expanded;
                 }
 
-                let (name_w, desc_w) = accordion::row_field_widths(ui);
+                let (name_w, desc_w) = accordion::row_field_widths(ui, "Gain name");
 
                 ui.add_sized(
                     [name_w, 20.0],

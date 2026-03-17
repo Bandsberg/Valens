@@ -62,7 +62,7 @@ pub fn show_accordion(
                     segment.expanded = !segment.expanded;
                 }
 
-                let (name_w, desc_w) = accordion::row_field_widths(ui);
+                let (name_w, desc_w) = accordion::row_field_widths(ui, "Segment name");
 
                 ui.add_sized(
                     [name_w, 20.0],
