@@ -119,19 +119,20 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
 
     let segment_1 = CustomerSegment {
         id: segment_1_id,
-        name: "Enterprise".to_owned(),
-        description: "Large organisations with complex needs".to_owned(),
+        name: "Fintech Startups".to_owned(),
+        description: "Early-stage fintechs embedding financial services into their product".to_owned(),
         notes: String::new(),
-        characteristics: "500+ employees, multi-department procurement, long sales cycles"
+        characteristics: "Small dev teams, need fast API integration, cost-sensitive, move quickly"
             .to_owned(),
         expanded: false,
     };
     let segment_2 = CustomerSegment {
         id: segment_2_id,
-        name: "SMB".to_owned(),
-        description: "Small and medium-sized businesses".to_owned(),
+        name: "Regional Banks".to_owned(),
+        description: "Mid-sized banks modernising their infrastructure via BaaS".to_owned(),
         notes: String::new(),
-        characteristics: "10–500 employees, faster decisions, price-sensitive".to_owned(),
+        characteristics: "Strong compliance requirements, legacy system integration, risk-averse procurement"
+            .to_owned(),
         expanded: false,
     };
 
@@ -155,23 +156,23 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
 
     let job_1 = Job {
         id: job_1_id,
-        name: "Evaluate vendors".to_owned(),
-        description: "Compare and shortlist software vendors against requirements".to_owned(),
-        notes: "Key decision makers are procurement and IT leads".to_owned(),
+        name: "Integrate payment rails".to_owned(),
+        description: "Connect to card schemes, ACH, or SWIFT via a BaaS provider API".to_owned(),
+        notes: "Critical path for fintechs launching; compliance sign-off required for banks".to_owned(),
         expanded: false,
     };
     let job_2 = Job {
         id: job_2_id,
-        name: "Onboard new team members".to_owned(),
-        description: "Get new hires productive as quickly as possible".to_owned(),
-        notes: "Pain point: scattered documentation across multiple tools".to_owned(),
+        name: "Manage KYC & onboarding".to_owned(),
+        description: "Verify customer identities and satisfy AML obligations at account opening".to_owned(),
+        notes: "Fintechs want automated flows; banks need audit trails for regulators".to_owned(),
         expanded: false,
     };
     let job_3 = Job {
         id: job_3_id,
-        name: "Report progress to stakeholders".to_owned(),
-        description: "Compile and present project status to leadership".to_owned(),
-        notes: "Frequency varies: weekly for SMB, monthly for Enterprise".to_owned(),
+        name: "Monitor transactions for fraud".to_owned(),
+        description: "Detect and act on suspicious activity in real time".to_owned(),
+        notes: "False-positive rate is a key concern for both segments".to_owned(),
         expanded: false,
     };
 
@@ -186,7 +187,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     }
 
     // ── Demo segment-job links ────────────────────────────────────────────────
-    // Enterprise does all three jobs; SMB does job 2 and 3.
+    // Fintechs focus on payment rails and KYC; regional banks do all three.
     let demo_seg_job_links = [
         (job_1_id, segment_1_id),
         (job_2_id, segment_1_id),
@@ -211,23 +212,23 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
 
     let pain_1 = Pain {
         id: pain_1_id,
-        name: "Too many tools".to_owned(),
-        description: "Context-switching between disconnected systems wastes time".to_owned(),
-        notes: "Mentioned by 8 of 10 Enterprise interviewees".to_owned(),
+        name: "Complex API integration".to_owned(),
+        description: "BaaS APIs are inconsistent across providers, slowing time-to-market".to_owned(),
+        notes: "Fintechs cite this as the top bottleneck before launch".to_owned(),
         expanded: false,
     };
     let pain_2 = Pain {
         id: pain_2_id,
-        name: "Stale documentation".to_owned(),
-        description: "Docs go out of date quickly and cannot be trusted".to_owned(),
-        notes: "Especially acute during onboarding".to_owned(),
+        name: "KYC drop-off rates".to_owned(),
+        description: "Lengthy identity checks cause customers to abandon onboarding".to_owned(),
+        notes: "Manual review steps are the main culprit for regional banks".to_owned(),
         expanded: false,
     };
     let pain_3 = Pain {
         id: pain_3_id,
-        name: "Manual reporting overhead".to_owned(),
-        description: "Generating status reports takes hours of manual data gathering".to_owned(),
-        notes: "SMB teams often skip reporting altogether due to effort".to_owned(),
+        name: "High false-positive fraud alerts".to_owned(),
+        description: "Legitimate transactions blocked, damaging customer trust".to_owned(),
+        notes: "Both segments lose revenue and incur support costs from false positives".to_owned(),
         expanded: false,
     };
 
@@ -242,12 +243,11 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     }
 
     // ── Demo pain-job links ───────────────────────────────────────────────────
-    // Pain 1 (too many tools) → job 1 (evaluate vendors), job 2 (onboard)
-    // Pain 2 (stale docs)     → job 2 (onboard)
-    // Pain 3 (manual reports) → job 3 (report to stakeholders)
+    // Pain 1 (complex API)       → job 1 (payment rails)
+    // Pain 2 (KYC drop-off)      → job 2 (KYC & onboarding)
+    // Pain 3 (false positives)   → job 3 (fraud monitoring)
     let demo_pain_job_links = [
         (pain_1_id, job_1_id),
-        (pain_1_id, job_2_id),
         (pain_2_id, job_2_id),
         (pain_3_id, job_3_id),
     ];
@@ -268,23 +268,23 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
 
     let gain_1 = Gain {
         id: gain_1_id,
-        name: "Single source of truth".to_owned(),
-        description: "All relevant information in one place, always up to date".to_owned(),
-        notes: "Highest-ranked desired outcome across both segments".to_owned(),
+        name: "Fast API go-live".to_owned(),
+        description: "Launch payment capabilities in days with well-documented, consistent APIs".to_owned(),
+        notes: "Top priority for fintechs racing to market".to_owned(),
         expanded: false,
     };
     let gain_2 = Gain {
         id: gain_2_id,
-        name: "Faster onboarding".to_owned(),
-        description: "New hires become productive within days, not weeks".to_owned(),
-        notes: "SMB values speed; Enterprise values consistency".to_owned(),
+        name: "High KYC pass rates".to_owned(),
+        description: "More customers complete onboarding with minimal friction".to_owned(),
+        notes: "Automated decisioning with clear audit trail satisfies both segments".to_owned(),
         expanded: false,
     };
     let gain_3 = Gain {
         id: gain_3_id,
-        name: "Automated reporting".to_owned(),
-        description: "Status reports generated automatically from live data".to_owned(),
-        notes: "Saves 2–4 hours per reporting cycle per team".to_owned(),
+        name: "Accurate fraud detection".to_owned(),
+        description: "Catch real fraud while keeping false-positive rates low".to_owned(),
+        notes: "Tunable risk thresholds are valued by regional banks".to_owned(),
         expanded: false,
     };
 
@@ -299,12 +299,11 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     }
 
     // ── Demo gain-job links ───────────────────────────────────────────────────
-    // Gain 1 (single source of truth) → job 1 (evaluate vendors), job 2 (onboard)
-    // Gain 2 (faster onboarding)      → job 2 (onboard)
-    // Gain 3 (automated reporting)    → job 3 (report to stakeholders)
+    // Gain 1 (fast API go-live)       → job 1 (payment rails)
+    // Gain 2 (high KYC pass rates)    → job 2 (KYC & onboarding)
+    // Gain 3 (accurate fraud detect.) → job 3 (fraud monitoring)
     let demo_gain_job_links = [
         (gain_1_id, job_1_id),
-        (gain_1_id, job_2_id),
         (gain_2_id, job_2_id),
         (gain_3_id, job_3_id),
     ];
