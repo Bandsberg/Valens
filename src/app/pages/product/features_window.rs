@@ -6,7 +6,7 @@ use uuid::Uuid;
 use super::products_window::Product;
 
 const COLLAPSED_H: f32 = 30.0;
-const EXPANDED_H: f32 = 240.0;
+const EXPANDED_H: f32 = 340.0;
 const MULTILINE_H: f32 = 58.0;
 /// Height of one linked-item row (name + ✕ button).
 const LINK_ROW_H: f32 = 22.0;
@@ -354,8 +354,8 @@ fn show_accordion(
 
     TableBuilder::new(ui)
         .column(Column::exact(24.0)) // ▶ accordion toggle
-        .column(Column::initial(170.0).resizable(true)) // Name + left details
-        .column(Column::remainder()) // Description + right details + linked products
+        .column(Column::initial(170.0).resizable(true)) // Name
+        .column(Column::remainder()) // Description + expanded details + linked products
         .column(Column::exact(36.0)) // ⊞ detail panel
         .column(Column::exact(36.0)) // 🗑 delete
         .header(20.0, |mut header| {
@@ -384,7 +384,7 @@ fn show_accordion(
                     .collect();
 
                 // Row height:
-                //   base      = EXPANDED_H (description + separator + user story + AC)
+                //   base      = EXPANDED_H (description + separator + status + notes + user story + AC)
                 //   separator = ~8 px
                 //   label     = ~20 px   "Used by Products:"
                 //   combo     = ~28 px   dropdown widget
@@ -415,12 +415,22 @@ fn show_accordion(
                         }
                     });
 
-                    // ── Col 1 : name  +  (expanded) status & notes ───────────
+                    // ── Col 1 : name ─────────────────────────────────────────
                     row.col(|ui| {
                         ui.vertical(|ui| {
                             ui.add(
                                 egui::TextEdit::singleline(&mut feature.name)
                                     .hint_text("Feature name…"),
+                            );
+                        });
+                    });
+
+                    // ── Col 2 : description + (expanded) status, notes, user story, AC + linked products
+                    row.col(|ui| {
+                        ui.vertical(|ui| {
+                            ui.add(
+                                egui::TextEdit::singleline(&mut feature.description)
+                                    .hint_text("Short description…"),
                             );
                             if expanded {
                                 ui.separator();
@@ -437,19 +447,7 @@ fn show_accordion(
                                         .desired_width(ui.available_width())
                                         .min_size(egui::vec2(0.0, MULTILINE_H)),
                                 );
-                            }
-                        });
-                    });
-
-                    // ── Col 2 : description + (expanded) user story & AC + linked products
-                    row.col(|ui| {
-                        ui.vertical(|ui| {
-                            ui.add(
-                                egui::TextEdit::singleline(&mut feature.description)
-                                    .hint_text("Short description…"),
-                            );
-                            if expanded {
-                                ui.separator();
+                                ui.add_space(4.0);
                                 ui.label("User Story:");
                                 ui.add(
                                     egui::TextEdit::multiline(&mut feature.user_story)
