@@ -217,11 +217,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         // List of linked products — name is a navigation link,
                         // ✕ button removes the link.
                         if linked_products.is_empty() {
-                            ui.label(
-                                egui::RichText::new("None")
-                                    .italics()
-                                    .color(ui.visuals().weak_text_color()),
-                            );
+                            accordion::none_label(ui);
                         } else {
                             for (pid, pname) in &linked_products {
                                 ui.horizontal(|ui| {

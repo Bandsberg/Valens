@@ -94,11 +94,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         // List of linked features — name is a navigation link,
                         // ✕ button removes the link.
                         if linked_features.is_empty() {
-                            ui.label(
-                                egui::RichText::new("None")
-                                    .italics()
-                                    .color(ui.visuals().weak_text_color()),
-                            );
+                            accordion::none_label(ui);
                         } else {
                             for (fid, fname) in &linked_features {
                                 ui.horizontal(|ui| {

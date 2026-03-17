@@ -103,11 +103,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         // List of linked jobs — name is a navigation link,
                         // ✕ button removes the link.
                         if linked_jobs.is_empty() {
-                            ui.label(
-                                egui::RichText::new("None")
-                                    .italics()
-                                    .color(ui.visuals().weak_text_color()),
-                            );
+                            accordion::none_label(ui);
                         } else {
                             for (jid, jname) in &linked_jobs {
                                 ui.horizontal(|ui| {

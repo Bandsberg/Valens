@@ -61,6 +61,16 @@ pub fn header(ui: &mut egui::Ui, name_label: &str) {
     ui.separator();
 }
 
+/// Displays an italic "None" label in the weak text colour — used when a
+/// linked-items list is empty.
+pub fn none_label(ui: &mut egui::Ui) {
+    ui.label(
+        egui::RichText::new("None")
+            .italics()
+            .color(ui.visuals().weak_text_color()),
+    );
+}
+
 /// Small red ✕ button used to remove a link between two entities.
 pub fn unlink_button(ui: &mut egui::Ui) -> egui::Response {
     ui.add(

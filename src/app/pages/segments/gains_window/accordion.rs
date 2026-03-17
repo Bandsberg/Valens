@@ -159,11 +159,7 @@ pub fn show_accordion(
                             }
                         }
                     } else {
-                        ui.label(
-                            egui::RichText::new("None")
-                                .italics()
-                                .color(ui.visuals().weak_text_color()),
-                        );
+                        accordion::none_label(ui);
                     }
                     ui.add_space(4.0);
                 });
