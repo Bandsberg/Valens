@@ -18,6 +18,10 @@ pub fn product_sidepanel(app: &mut App, ctx: &egui::Context) {
                 "Features",
             );
             ui.checkbox(
+                &mut app.product_page.product_windows.pain_relief_open,
+                "Pain Relief",
+            );
+            ui.checkbox(
                 &mut app.product_page.product_windows.thoughtfull_execution_open,
                 "Thoughtfull Execution",
             );

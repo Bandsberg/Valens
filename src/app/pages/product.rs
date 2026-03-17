@@ -8,6 +8,9 @@ use products_window::{ProductsState, show_products_window};
 pub mod features_window;
 use features_window::show_features_window;
 pub use features_window::{Feature, FeaturesState};
+mod pain_relief_window;
+use pain_relief_window::show_pain_relief_window;
+pub use pain_relief_window::PainReliefState;
 mod thoughtfull_execution_window;
 use thoughtfull_execution_window::show_thoughtfull_execution_window;
 
@@ -23,15 +26,23 @@ pub struct ProductPage {
     product_windows: ProductWindows,
     pub products_state: ProductsState,
     pub features_state: FeaturesState,
+    pub pain_relief_state: PainReliefState,
     /// Many-to-many links between products and features.
     /// Each entry is (product_id, feature_id).
     pub product_feature_links: Vec<(Uuid, Uuid)>,
+    /// Many-to-many links between features and pain relief items.
+    /// Each entry is (feature_id, pain_relief_id).
+    pub feature_pain_relief_links: Vec<(Uuid, Uuid)>,
+    /// Many-to-many links between pains and pain relief items.
+    /// Each entry is (pain_id, pain_relief_id).
+    pub pain_pain_relief_links: Vec<(Uuid, Uuid)>,
 }
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]
 struct ProductWindows {
     products_open: bool,
     features_open: bool,
+    pain_relief_open: bool,
     thoughtfull_execution_open: bool,
 }
 
@@ -43,6 +54,9 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     }
     if app.product_page.product_windows.features_open {
         show_features_window(app, ctx);
+    }
+    if app.product_page.product_windows.pain_relief_open {
+        show_pain_relief_window(app, ctx);
     }
     if app.product_page.product_windows.thoughtfull_execution_open {
         show_thoughtfull_execution_window(app, ctx);
