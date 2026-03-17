@@ -30,7 +30,7 @@ pub fn show_accordion(
     let scroll_to = state.scroll_to_id;
     let selected_id = state.selected_product_id;
 
-    accordion::header(ui, "Product name");
+    accordion::header(ui, "Product / Service name");
 
     egui::ScrollArea::vertical().show(ui, |ui| {
         for product in &mut state.products {

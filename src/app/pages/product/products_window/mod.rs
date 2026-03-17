@@ -32,7 +32,7 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
 
             ui.add_space(4.0);
 
-            if ui.button("➕ Add Product").clicked() {
+            if ui.button("➕ Add Product/Service").clicked() {
                 app.product_page.products_state.products.push(Product {
                     id: Uuid::new_v4(),
                     ..Default::default()

@@ -43,7 +43,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let mut navigate_to_feat: Option<Uuid> = None;
 
     let mut keep_open = true;
-    egui::Window::new("Product Details")
+    egui::Window::new("Product/Service Details")
         .collapsible(false)
         .resizable(true)
         .default_size([420.0, 380.0])
