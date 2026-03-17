@@ -12,11 +12,12 @@ fn heading_text_width(ui: &egui::Ui, text: &str) -> f32 {
     galley.size().x
 }
 
-/// Current name-column width: stored drag value, or the heading text width as minimum.
-fn current_name_w(ui: &egui::Ui, name_label: &str) -> f32 {
+/// Returns `(current_width, min_width)` for the name column.
+/// `current_width` is the stored drag value clamped to at least the heading text width.
+fn current_name_w(ui: &egui::Ui, name_label: &str) -> (f32, f32) {
     let min_w = heading_text_width(ui, name_label);
     let stored = ui.data(|d| d.get_temp::<f32>(col_id(name_label)));
-    stored.unwrap_or(min_w).max(min_w)
+    (stored.unwrap_or(min_w).max(min_w), min_w)
 }
 
 /// Renders the two-column heading row (name label + drag handle + "Description")
@@ -26,8 +27,7 @@ pub fn header(ui: &mut egui::Ui, name_label: &str) {
         ui.add_space(28.0); // arrow button column
 
         let id = col_id(name_label);
-        let min_w = heading_text_width(ui, name_label);
-        let name_w = ui.data(|d| d.get_temp::<f32>(id)).unwrap_or(min_w).max(min_w);
+        let (name_w, min_w) = current_name_w(ui, name_label);
 
         ui.add_sized(
             [name_w, 20.0],
@@ -69,8 +69,8 @@ pub fn row_field_widths(ui: &egui::Ui, name_label: &str) -> (f32, f32) {
     // Account for the drag handle allocated in the header so description columns align.
     let btn_space = 36.0 * 2.0 + spacing * 2.0;
     let avail = ui.available_width() - btn_space;
-    let name_w = current_name_w(ui, name_label)
-        .min(avail - DRAG_HANDLE_W - spacing * 2.0);
+    let (name_w, _) = current_name_w(ui, name_label);
+    let name_w = name_w.min(avail - DRAG_HANDLE_W - spacing * 2.0);
     let desc_w = (avail - name_w - DRAG_HANDLE_W - spacing * 2.0).max(0.0);
     (name_w, desc_w)
 }
