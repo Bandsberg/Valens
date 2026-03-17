@@ -2,6 +2,8 @@ use crate::app::App;
 use eframe::egui;
 use uuid::Uuid;
 
+use super::super::super::accordion;
+
 // ── Detail panel window ───────────────────────────────────────────────────────
 
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
@@ -102,17 +104,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                                     if ui.link(sname).on_hover_text("Open in Segments").clicked() {
                                         navigate_to_seg = Some(*sid);
                                     }
-                                    if ui
-                                        .add(
-                                            egui::Button::new(
-                                                egui::RichText::new("✕")
-                                                    .small()
-                                                    .color(egui::Color32::from_rgb(200, 60, 60)),
-                                            )
-                                            .fill(egui::Color32::TRANSPARENT),
-                                        )
-                                        .on_hover_text("Remove link")
-                                        .clicked()
+                                    if accordion::unlink_button(ui).clicked()
                                     {
                                         link_to_remove = Some((id, *sid));
                                     }

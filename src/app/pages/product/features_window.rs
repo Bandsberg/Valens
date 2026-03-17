@@ -228,17 +228,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                                     if ui.link(pname).on_hover_text("Open in Products & Services").clicked() {
                                         navigate_to_prod = Some(*pid);
                                     }
-                                    if ui
-                                        .add(
-                                            egui::Button::new(
-                                                egui::RichText::new("✕")
-                                                    .small()
-                                                    .color(egui::Color32::from_rgb(200, 60, 60)),
-                                            )
-                                            .fill(egui::Color32::TRANSPARENT),
-                                        )
-                                        .on_hover_text("Remove link")
-                                        .clicked()
+                                    if accordion::unlink_button(ui).clicked()
                                     {
                                         link_to_remove = Some((*pid, id));
                                     }
@@ -498,17 +488,7 @@ fn show_accordion(
                                     {
                                         *navigate_to = Some(*pid);
                                     }
-                                    if ui
-                                        .add(
-                                            egui::Button::new(
-                                                egui::RichText::new("✕")
-                                                    .small()
-                                                    .color(egui::Color32::from_rgb(200, 60, 60)),
-                                            )
-                                            .fill(egui::Color32::TRANSPARENT),
-                                        )
-                                        .on_hover_text("Remove link")
-                                        .clicked()
+                                    if accordion::unlink_button(ui).clicked()
                                     {
                                         link_to_remove = Some((*pid, id));
                                     }

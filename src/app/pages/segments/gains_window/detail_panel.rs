@@ -2,6 +2,8 @@ use crate::app::App;
 use eframe::egui;
 use uuid::Uuid;
 
+use super::super::super::accordion;
+
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_page.gains_state.selected_gain_id else {
         return;
@@ -97,17 +99,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                                     if ui.link(jname).on_hover_text("Open in Jobs").clicked() {
                                         navigate_to_job_id = Some(*jid);
                                     }
-                                    if ui
-                                        .add(
-                                            egui::Button::new(
-                                                egui::RichText::new("✕")
-                                                    .small()
-                                                    .color(egui::Color32::from_rgb(200, 60, 60)),
-                                            )
-                                            .fill(egui::Color32::TRANSPARENT),
-                                        )
-                                        .on_hover_text("Remove link")
-                                        .clicked()
+                                    if accordion::unlink_button(ui).clicked()
                                     {
                                         link_to_remove = Some((id, *jid));
                                     }

@@ -61,6 +61,19 @@ pub fn header(ui: &mut egui::Ui, name_label: &str) {
     ui.separator();
 }
 
+/// Small red ✕ button used to remove a link between two entities.
+pub fn unlink_button(ui: &mut egui::Ui) -> egui::Response {
+    ui.add(
+        egui::Button::new(
+            egui::RichText::new("✕")
+                .small()
+                .color(egui::Color32::from_rgb(200, 60, 60)),
+        )
+        .fill(egui::Color32::TRANSPARENT),
+    )
+    .on_hover_text("Remove link")
+}
+
 /// Returns `(name_width, description_width)` for a collapsed accordion row,
 /// reserving space for two 36 px action buttons on the right.
 /// `name_label` must match the label passed to [`header`].

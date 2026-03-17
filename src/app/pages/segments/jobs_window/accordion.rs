@@ -157,17 +157,7 @@ pub fn show_accordion(
                                     {
                                         *navigate_to = Some(*sid);
                                     }
-                                    if ui
-                                        .add(
-                                            egui::Button::new(
-                                                egui::RichText::new("✕")
-                                                    .small()
-                                                    .color(egui::Color32::from_rgb(200, 60, 60)),
-                                            )
-                                            .fill(egui::Color32::TRANSPARENT),
-                                        )
-                                        .on_hover_text("Remove link")
-                                        .clicked()
+                                    if accordion::unlink_button(ui).clicked()
                                     {
                                         link_to_remove = Some((id, *sid));
                                     }
