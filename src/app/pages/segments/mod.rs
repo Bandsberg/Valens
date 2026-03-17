@@ -5,16 +5,22 @@ use uuid::Uuid;
 mod accordion;
 mod delete_dialog;
 mod detail_panel;
+mod gains_window;
 mod jobs_window;
 mod model;
+mod pains_window;
 
 use accordion::show_accordion;
 use delete_dialog::show_delete_confirmation;
 use detail_panel::{navigate_to_job_fn, show_detail_panel};
+use gains_window::show_gains_window;
 use jobs_window::show_jobs_window;
+use pains_window::show_pains_window;
 
+pub use gains_window::GainsState;
 pub use jobs_window::JobsState;
 pub use model::{CustomerSegment, SegmentsState};
+pub use pains_window::PainsState;
 
 // ── Page structs ──────────────────────────────────────────────────────────────
 
@@ -23,15 +29,22 @@ pub struct CustomerPage {
     customer_windows: CustomerWindows,
     pub segments_state: SegmentsState,
     pub jobs_state: JobsState,
-    /// Many-to-many links between jobs and segments.
-    /// Each entry is (job_id, segment_id).
+    pub pains_state: PainsState,
+    pub gains_state: GainsState,
+    /// Many-to-many links between jobs and segments. Each entry is (job_id, segment_id).
     pub segment_job_links: Vec<(Uuid, Uuid)>,
+    /// Many-to-many links between pains and segments. Each entry is (pain_id, segment_id).
+    pub segment_pain_links: Vec<(Uuid, Uuid)>,
+    /// Many-to-many links between gains and segments. Each entry is (gain_id, segment_id).
+    pub segment_gain_links: Vec<(Uuid, Uuid)>,
 }
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]
 struct CustomerWindows {
     segments_open: bool,
     jobs_open: bool,
+    pains_open: bool,
+    gains_open: bool,
 }
 
 // ── Side panel ────────────────────────────────────────────────────────────────
@@ -49,6 +62,8 @@ pub fn customer_sidepanel(app: &mut App, ctx: &egui::Context) {
                 "Customer Segments",
             );
             ui.checkbox(&mut app.customer_page.customer_windows.jobs_open, "Jobs");
+            ui.checkbox(&mut app.customer_page.customer_windows.pains_open, "Pains");
+            ui.checkbox(&mut app.customer_page.customer_windows.gains_open, "Gains");
         });
 }
 
@@ -63,6 +78,12 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     }
     if app.customer_page.customer_windows.jobs_open {
         show_jobs_window(app, ctx);
+    }
+    if app.customer_page.customer_windows.pains_open {
+        show_pains_window(app, ctx);
+    }
+    if app.customer_page.customer_windows.gains_open {
+        show_gains_window(app, ctx);
     }
 }
 
