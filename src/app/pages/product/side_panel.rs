@@ -22,6 +22,10 @@ pub fn product_sidepanel(app: &mut App, ctx: &egui::Context) {
                 "Pain Relief",
             );
             ui.checkbox(
+                &mut app.product_page.product_windows.gain_creators_open,
+                "Gain Creators",
+            );
+            ui.checkbox(
                 &mut app.product_page.product_windows.thoughtfull_execution_open,
                 "Thoughtfull Execution",
             );

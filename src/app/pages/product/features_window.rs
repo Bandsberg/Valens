@@ -90,6 +90,9 @@ fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
                         .feature_pain_relief_links
                         .retain(|(fid, _)| *fid != id);
                     app.product_page
+                        .feature_gain_creator_links
+                        .retain(|(fid, _)| *fid != id);
+                    app.product_page
                         .features_state
                         .features
                         .retain(|f| f.id != id);
