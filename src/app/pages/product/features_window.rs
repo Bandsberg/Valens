@@ -4,18 +4,9 @@ use uuid::Uuid;
 
 use super::products_window::Product;
 
-const MULTILINE_H: f32 = 58.0;
+use super::super::accordion;
 
-/// Returns `(name_width, description_width)` for a collapsed accordion row,
-/// reserving space for two 36 px action buttons on the right.
-fn row_field_widths(ui: &egui::Ui) -> (f32, f32) {
-    let spacing = ui.spacing().item_spacing.x;
-    let btn_space = 36.0 * 2.0 + spacing * 2.0;
-    let avail = ui.available_width() - btn_space;
-    let name_w = 162.0_f32.min(avail * 0.35);
-    let desc_w = (avail - name_w - spacing).max(0.0);
-    (name_w, desc_w)
-}
+const MULTILINE_H: f32 = 58.0;
 
 // ── State structs ─────────────────────────────────────────────────────────────
 
@@ -358,16 +349,7 @@ fn show_accordion(
     let scroll_to = state.scroll_to_id;
     let selected_id = state.selected_feature_id;
 
-    // ── Header row ────────────────────────────────────────────────────────────
-    ui.horizontal(|ui| {
-        ui.add_space(28.0); // arrow button column
-        ui.add_sized(
-            [162.0, 20.0],
-            egui::Label::new(egui::RichText::new("Feature name").heading()),
-        );
-        ui.label(egui::RichText::new("Description").heading());
-    });
-    ui.separator();
+    accordion::header(ui, "Feature name");
 
     egui::ScrollArea::vertical().show(ui, |ui| {
         for feature in &mut state.features {
@@ -398,7 +380,7 @@ fn show_accordion(
                     feature.expanded = !feature.expanded;
                 }
 
-                let (name_w, desc_w) = row_field_widths(ui);
+                let (name_w, desc_w) = accordion::row_field_widths(ui);
 
                 ui.add_sized(
                     [name_w, 20.0],

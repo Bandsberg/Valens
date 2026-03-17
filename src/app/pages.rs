@@ -1,3 +1,4 @@
+pub mod accordion;
 mod segments;
 pub use segments::{CustomerPage, CustomerSegment, customer_sidepanel, show_customer};
 
