@@ -1,18 +1,10 @@
 use eframe::egui;
-use egui_extras::{Column, TableBuilder};
 use uuid::Uuid;
 
 use super::super::model::CustomerSegment;
 use super::model::JobsState;
 
-// ── Row height constants ──────────────────────────────────────────────────────
-
-const COLLAPSED_H: f32 = 30.0;
-/// Covers: description line + separator + "Notes:" label + notes textarea.
-const EXPANDED_H: f32 = 120.0;
 const MULTILINE_H: f32 = 60.0;
-/// Height of one linked-item row (name link + ✕ button).
-const LINK_ROW_H: f32 = 22.0;
 
 // ── Accordion table ───────────────────────────────────────────────────────────
 
@@ -36,208 +28,177 @@ pub fn show_accordion(
     let scroll_to = state.scroll_to_id;
     let selected_id = state.selected_job_id;
 
-    TableBuilder::new(ui)
-        .column(Column::exact(24.0)) // ▶ accordion toggle
-        .column(Column::initial(170.0).resizable(true)) // Name
-        .column(Column::remainder()) // Description + Notes + Linked Segments
-        .column(Column::exact(36.0)) // ⊞ detail panel
-        .column(Column::exact(36.0)) // 🗑 delete
-        .header(20.0, |mut header| {
-            header.col(|_ui| {});
-            header.col(|ui| {
-                ui.heading("Job name");
-            });
-            header.col(|ui| {
-                ui.heading("Description");
-            });
-            header.col(|_ui| {});
-            header.col(|_ui| {});
-        })
-        .body(|mut body| {
-            for job in &mut state.jobs {
-                let id = job.id;
-                let expanded = job.expanded;
-                let is_panel_open = selected_id == Some(id);
+    // ── Header row ────────────────────────────────────────────────────────────
+    ui.horizontal(|ui| {
+        ui.add_space(28.0); // arrow button column
+        ui.add_sized(
+            [162.0, 20.0],
+            egui::Label::new(egui::RichText::new("Job name").heading()),
+        );
+        ui.label(egui::RichText::new("Description").heading());
+    });
+    ui.separator();
 
-                // Pre-compute linked segment IDs so we can size the row and
-                // determine available segments without borrowing `links` again.
-                // Link tuple: (job_id, segment_id)
-                let linked_sids: Vec<Uuid> = links_snap
-                    .iter()
-                    .filter(|(jid, _)| *jid == id)
-                    .map(|(_, sid)| *sid)
-                    .collect();
+    egui::ScrollArea::vertical().show(ui, |ui| {
+        for job in &mut state.jobs {
+            let id = job.id;
+            let expanded = job.expanded;
+            let is_panel_open = selected_id == Some(id);
 
-                // Row height:
-                //   base      = EXPANDED_H (description + separator + notes)
-                //   separator = ~8 px
-                //   label     = ~20 px   "Used by Segments:"
-                //   combo     = ~28 px   dropdown widget
-                //   rows      = LINK_ROW_H × max(n_linked, 1)  (items or "None")
-                //   padding   =  ~8 px
-                let num_linked = linked_sids.len();
-                let row_h = if expanded {
-                    EXPANDED_H + 8.0 + 20.0 + 28.0 + (num_linked.max(1) as f32 * LINK_ROW_H) + 8.0
+            // Link tuple: (job_id, segment_id)
+            let linked_sids: Vec<Uuid> = links_snap
+                .iter()
+                .filter(|(jid, _)| *jid == id)
+                .map(|(_, sid)| *sid)
+                .collect();
+
+            if scroll_to == Some(id) {
+                ui.scroll_to_cursor(Some(egui::Align::Center));
+                did_scroll = true;
+            }
+
+            // ── Collapsed / header row ────────────────────────────────────────
+            ui.horizontal(|ui| {
+                let arrow = if expanded { "▼" } else { "▶" };
+                let hover = if expanded { "Collapse" } else { "Expand" };
+                if ui
+                    .add(egui::Button::new(arrow).fill(egui::Color32::TRANSPARENT))
+                    .on_hover_text(hover)
+                    .clicked()
+                {
+                    job.expanded = !job.expanded;
+                }
+
+                let spacing = ui.spacing().item_spacing.x;
+                let btn_space = 36.0 * 2.0 + spacing * 2.0;
+                let avail = ui.available_width() - btn_space;
+                let name_w = 162.0_f32.min(avail * 0.35);
+                let desc_w = (avail - name_w - spacing).max(0.0);
+
+                ui.add_sized(
+                    [name_w, 20.0],
+                    egui::TextEdit::singleline(&mut job.name).hint_text("Job name…"),
+                );
+                ui.add_sized(
+                    [desc_w, 20.0],
+                    egui::TextEdit::singleline(&mut job.description)
+                        .hint_text("Short description…"),
+                );
+
+                let icon = if is_panel_open { "⊟" } else { "⊞" };
+                let panel_hover = if is_panel_open {
+                    "Close detail panel"
                 } else {
-                    COLLAPSED_H
+                    "Open detail panel"
                 };
+                if ui
+                    .add(egui::Button::new(icon).fill(egui::Color32::TRANSPARENT))
+                    .on_hover_text(panel_hover)
+                    .clicked()
+                {
+                    if is_panel_open {
+                        do_panel_deselect = true;
+                    } else {
+                        do_panel_select = Some(id);
+                    }
+                }
+                if ui
+                    .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
+                    .on_hover_text("Delete job")
+                    .clicked()
+                {
+                    to_delete = Some(id);
+                }
+            });
 
-                body.row(row_h, |mut row| {
-                    // ── Col 0 : accordion toggle ─────────────────────────────
-                    row.col(|ui| {
-                        if scroll_to == Some(id) {
-                            ui.scroll_to_cursor(Some(egui::Align::Center));
-                            did_scroll = true;
-                        }
-                        let arrow = if job.expanded { "▼" } else { "▶" };
-                        let hover = if expanded { "Collapse" } else { "Expand" };
-                        if ui
-                            .add(egui::Button::new(arrow).fill(egui::Color32::TRANSPARENT))
-                            .on_hover_text(hover)
-                            .clicked()
-                        {
-                            job.expanded = !job.expanded;
-                        }
-                    });
+            // ── Expanded content (full-width, no column divide) ───────────────
+            if expanded {
+                ui.indent(id, |ui| {
+                    ui.add_space(4.0);
+                    ui.label("Notes:");
+                    ui.add(
+                        egui::TextEdit::multiline(&mut job.notes)
+                            .desired_rows(3)
+                            .desired_width(f32::INFINITY)
+                            .min_size(egui::vec2(0.0, MULTILINE_H)),
+                    );
 
-                    // ── Col 1 : name ─────────────────────────────────────────
-                    row.col(|ui| {
-                        ui.add(egui::TextEdit::singleline(&mut job.name).hint_text("Job name…"));
-                    });
+                    // ── Used by Segments ──────────────────────────────────────
+                    ui.separator();
+                    ui.label("Used by Segments:");
 
-                    // ── Col 2 : description + (expanded) notes + linked segments
-                    row.col(|ui| {
-                        ui.vertical(|ui| {
-                            ui.add(
-                                egui::TextEdit::singleline(&mut job.description)
-                                    .hint_text("Short description…"),
-                            );
+                    let available: Vec<&CustomerSegment> = segments
+                        .iter()
+                        .filter(|s| !linked_sids.contains(&s.id))
+                        .collect();
 
-                            if expanded {
-                                ui.separator();
-                                ui.label("Notes:");
-                                ui.add(
-                                    egui::TextEdit::multiline(&mut job.notes)
-                                        .desired_rows(3)
-                                        .desired_width(ui.available_width())
-                                        .min_size(egui::vec2(0.0, MULTILINE_H)),
-                                );
+                    if !available.is_empty() {
+                        let combo_key = egui::Id::new("job_acc_link_seg").with(id);
+                        let mut sel: Uuid =
+                            ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
 
-                                // ── Used by Segments ─────────────────────────
-                                ui.separator();
-                                ui.label("Used by Segments:");
-
-                                let available: Vec<&CustomerSegment> = segments
-                                    .iter()
-                                    .filter(|s| !linked_sids.contains(&s.id))
-                                    .collect();
-
-                                if !available.is_empty() {
-                                    // Use egui's per-id temp storage so the
-                                    // selection survives across frames.
-                                    let combo_key = egui::Id::new("job_acc_link_seg").with(id);
-                                    let mut sel: Uuid =
-                                        ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
-
-                                    let avail_w = ui.available_width();
-                                    egui::ComboBox::from_id_salt(combo_key)
-                                        .selected_text("Add a segment…")
-                                        .width(avail_w)
-                                        .show_ui(ui, |ui| {
-                                            for seg in &available {
-                                                ui.selectable_value(&mut sel, seg.id, &seg.name);
-                                            }
-                                        });
-
-                                    if sel != Uuid::nil() {
-                                        link_to_add = Some((id, sel));
-                                        ui.data_mut(|d| d.remove::<Uuid>(combo_key));
-                                    } else {
-                                        ui.data_mut(|d| d.insert_temp(combo_key, sel));
-                                    }
-                                } else {
-                                    // All segments are already linked — show a
-                                    // disabled placeholder so the layout is stable.
-                                    ui.add_enabled(false, egui::Button::new("All segments linked"));
+                        let avail_w = ui.available_width();
+                        egui::ComboBox::from_id_salt(combo_key)
+                            .selected_text("Add a segment…")
+                            .width(avail_w)
+                            .show_ui(ui, |ui| {
+                                for seg in &available {
+                                    ui.selectable_value(&mut sel, seg.id, &seg.name);
                                 }
+                            });
 
-                                // Linked segments — name is a navigation link,
-                                // ✕ button removes the link.
-                                if !linked_sids.is_empty() {
-                                    for sid in &linked_sids {
-                                        if let Some(seg) = segments.iter().find(|s| s.id == *sid) {
-                                            ui.horizontal(|ui| {
-                                                if ui
-                                                    .link(&seg.name)
-                                                    .on_hover_text("Open in Segments")
-                                                    .clicked()
-                                                {
-                                                    *navigate_to = Some(*sid);
-                                                }
-                                                if ui
-                                                    .add(
-                                                        egui::Button::new(
-                                                            egui::RichText::new("✕").small().color(
-                                                                egui::Color32::from_rgb(
-                                                                    200, 60, 60,
-                                                                ),
-                                                            ),
-                                                        )
-                                                        .fill(egui::Color32::TRANSPARENT),
-                                                    )
-                                                    .on_hover_text("Remove link")
-                                                    .clicked()
-                                                {
-                                                    link_to_remove = Some((id, *sid));
-                                                }
-                                            });
-                                        }
-                                    }
-                                } else {
-                                    ui.label(
-                                        egui::RichText::new("None")
-                                            .italics()
-                                            .color(ui.visuals().weak_text_color()),
-                                    );
-                                }
-                            }
-                        });
-                    });
-
-                    // ── Col 3 : detail panel button ──────────────────────────
-                    row.col(|ui| {
-                        let icon = if is_panel_open { "⊟" } else { "⊞" };
-                        let hover = if is_panel_open {
-                            "Close detail panel"
+                        if sel != Uuid::nil() {
+                            link_to_add = Some((id, sel));
+                            ui.data_mut(|d| d.remove::<Uuid>(combo_key));
                         } else {
-                            "Open detail panel"
-                        };
-                        if ui
-                            .add(egui::Button::new(icon).fill(egui::Color32::TRANSPARENT))
-                            .on_hover_text(hover)
-                            .clicked()
-                        {
-                            if is_panel_open {
-                                do_panel_deselect = true;
-                            } else {
-                                do_panel_select = Some(id);
+                            ui.data_mut(|d| d.insert_temp(combo_key, sel));
+                        }
+                    } else {
+                        ui.add_enabled(false, egui::Button::new("All segments linked"));
+                    }
+
+                    if !linked_sids.is_empty() {
+                        for sid in &linked_sids {
+                            if let Some(seg) = segments.iter().find(|s| s.id == *sid) {
+                                ui.horizontal(|ui| {
+                                    if ui
+                                        .link(&seg.name)
+                                        .on_hover_text("Open in Segments")
+                                        .clicked()
+                                    {
+                                        *navigate_to = Some(*sid);
+                                    }
+                                    if ui
+                                        .add(
+                                            egui::Button::new(
+                                                egui::RichText::new("✕")
+                                                    .small()
+                                                    .color(egui::Color32::from_rgb(200, 60, 60)),
+                                            )
+                                            .fill(egui::Color32::TRANSPARENT),
+                                        )
+                                        .on_hover_text("Remove link")
+                                        .clicked()
+                                    {
+                                        link_to_remove = Some((id, *sid));
+                                    }
+                                });
                             }
                         }
-                    });
-
-                    // ── Col 4 : delete ───────────────────────────────────────
-                    row.col(|ui| {
-                        if ui
-                            .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
-                            .on_hover_text("Delete job")
-                            .clicked()
-                        {
-                            to_delete = Some(id);
-                        }
-                    });
+                    } else {
+                        ui.label(
+                            egui::RichText::new("None")
+                                .italics()
+                                .color(ui.visuals().weak_text_color()),
+                        );
+                    }
+                    ui.add_space(4.0);
                 });
             }
-        });
+
+            ui.separator();
+        }
+    });
 
     // Apply deferred mutations.
     if did_scroll {
