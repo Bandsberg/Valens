@@ -4,6 +4,9 @@ use crate::App;
 use crate::app::ProductPage;
 use crate::app::Tab;
 use crate::app::pages::CustomerSegment;
+use crate::app::pages::Gain;
+use crate::app::pages::Job;
+use crate::app::pages::Pain;
 use crate::app::pages::product::Feature;
 use crate::app::pages::product::products_window::Product;
 use uuid::Uuid;
@@ -139,6 +142,176 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
             *slot = segment;
         } else {
             seg_vec.push(segment);
+        }
+    }
+
+    // ── Demo jobs ─────────────────────────────────────────────────────────────
+    let job_1_id =
+        Uuid::from_str("e1f2a3b4-c5d6-7890-efab-012345678901").expect("hardcoded UUID is valid");
+    let job_2_id =
+        Uuid::from_str("f2a3b4c5-d6e7-8901-fabc-123456789012").expect("hardcoded UUID is valid");
+    let job_3_id =
+        Uuid::from_str("a3b4c5d6-e7f8-9012-abcd-234567890123").expect("hardcoded UUID is valid");
+
+    let job_1 = Job {
+        id: job_1_id,
+        name: "Evaluate vendors".to_owned(),
+        description: "Compare and shortlist software vendors against requirements".to_owned(),
+        notes: "Key decision makers are procurement and IT leads".to_owned(),
+        expanded: false,
+    };
+    let job_2 = Job {
+        id: job_2_id,
+        name: "Onboard new team members".to_owned(),
+        description: "Get new hires productive as quickly as possible".to_owned(),
+        notes: "Pain point: scattered documentation across multiple tools".to_owned(),
+        expanded: false,
+    };
+    let job_3 = Job {
+        id: job_3_id,
+        name: "Report progress to stakeholders".to_owned(),
+        description: "Compile and present project status to leadership".to_owned(),
+        notes: "Frequency varies: weekly for SMB, monthly for Enterprise".to_owned(),
+        expanded: false,
+    };
+
+    let job_vec = &mut demo_app.customer_page.jobs_state.jobs;
+    let demo_jobs = [job_1, job_2, job_3];
+    for (i, job) in demo_jobs.into_iter().enumerate() {
+        if let Some(slot) = job_vec.get_mut(i) {
+            *slot = job;
+        } else {
+            job_vec.push(job);
+        }
+    }
+
+    // ── Demo segment-job links ────────────────────────────────────────────────
+    // Enterprise does all three jobs; SMB does job 2 and 3.
+    let demo_seg_job_links = [
+        (job_1_id, segment_1_id),
+        (job_2_id, segment_1_id),
+        (job_3_id, segment_1_id),
+        (job_2_id, segment_2_id),
+        (job_3_id, segment_2_id),
+    ];
+    let existing_seg_job_links = &mut demo_app.customer_page.segment_job_links;
+    for link in demo_seg_job_links {
+        if !existing_seg_job_links.contains(&link) {
+            existing_seg_job_links.push(link);
+        }
+    }
+
+    // ── Demo pains ────────────────────────────────────────────────────────────
+    let pain_1_id =
+        Uuid::from_str("b4c5d6e7-f8a9-0123-bcde-345678901234").expect("hardcoded UUID is valid");
+    let pain_2_id =
+        Uuid::from_str("c5d6e7f8-a9b0-1234-cdef-456789012345").expect("hardcoded UUID is valid");
+    let pain_3_id =
+        Uuid::from_str("d6e7f8a9-b0c1-2345-defa-567890123456").expect("hardcoded UUID is valid");
+
+    let pain_1 = Pain {
+        id: pain_1_id,
+        name: "Too many tools".to_owned(),
+        description: "Context-switching between disconnected systems wastes time".to_owned(),
+        notes: "Mentioned by 8 of 10 Enterprise interviewees".to_owned(),
+        expanded: false,
+    };
+    let pain_2 = Pain {
+        id: pain_2_id,
+        name: "Stale documentation".to_owned(),
+        description: "Docs go out of date quickly and cannot be trusted".to_owned(),
+        notes: "Especially acute during onboarding".to_owned(),
+        expanded: false,
+    };
+    let pain_3 = Pain {
+        id: pain_3_id,
+        name: "Manual reporting overhead".to_owned(),
+        description: "Generating status reports takes hours of manual data gathering".to_owned(),
+        notes: "SMB teams often skip reporting altogether due to effort".to_owned(),
+        expanded: false,
+    };
+
+    let pain_vec = &mut demo_app.customer_page.pains_state.pains;
+    let demo_pains = [pain_1, pain_2, pain_3];
+    for (i, pain) in demo_pains.into_iter().enumerate() {
+        if let Some(slot) = pain_vec.get_mut(i) {
+            *slot = pain;
+        } else {
+            pain_vec.push(pain);
+        }
+    }
+
+    // ── Demo pain-job links ───────────────────────────────────────────────────
+    // Pain 1 (too many tools) → job 1 (evaluate vendors), job 2 (onboard)
+    // Pain 2 (stale docs)     → job 2 (onboard)
+    // Pain 3 (manual reports) → job 3 (report to stakeholders)
+    let demo_pain_job_links = [
+        (pain_1_id, job_1_id),
+        (pain_1_id, job_2_id),
+        (pain_2_id, job_2_id),
+        (pain_3_id, job_3_id),
+    ];
+    let existing_pain_job_links = &mut demo_app.customer_page.job_pain_links;
+    for link in demo_pain_job_links {
+        if !existing_pain_job_links.contains(&link) {
+            existing_pain_job_links.push(link);
+        }
+    }
+
+    // ── Demo gains ────────────────────────────────────────────────────────────
+    let gain_1_id =
+        Uuid::from_str("e7f8a9b0-c1d2-3456-efab-678901234567").expect("hardcoded UUID is valid");
+    let gain_2_id =
+        Uuid::from_str("f8a9b0c1-d2e3-4567-fabc-789012345678").expect("hardcoded UUID is valid");
+    let gain_3_id =
+        Uuid::from_str("a9b0c1d2-e3f4-5678-abcd-890123456789").expect("hardcoded UUID is valid");
+
+    let gain_1 = Gain {
+        id: gain_1_id,
+        name: "Single source of truth".to_owned(),
+        description: "All relevant information in one place, always up to date".to_owned(),
+        notes: "Highest-ranked desired outcome across both segments".to_owned(),
+        expanded: false,
+    };
+    let gain_2 = Gain {
+        id: gain_2_id,
+        name: "Faster onboarding".to_owned(),
+        description: "New hires become productive within days, not weeks".to_owned(),
+        notes: "SMB values speed; Enterprise values consistency".to_owned(),
+        expanded: false,
+    };
+    let gain_3 = Gain {
+        id: gain_3_id,
+        name: "Automated reporting".to_owned(),
+        description: "Status reports generated automatically from live data".to_owned(),
+        notes: "Saves 2–4 hours per reporting cycle per team".to_owned(),
+        expanded: false,
+    };
+
+    let gain_vec = &mut demo_app.customer_page.gains_state.gains;
+    let demo_gains = [gain_1, gain_2, gain_3];
+    for (i, gain) in demo_gains.into_iter().enumerate() {
+        if let Some(slot) = gain_vec.get_mut(i) {
+            *slot = gain;
+        } else {
+            gain_vec.push(gain);
+        }
+    }
+
+    // ── Demo gain-job links ───────────────────────────────────────────────────
+    // Gain 1 (single source of truth) → job 1 (evaluate vendors), job 2 (onboard)
+    // Gain 2 (faster onboarding)      → job 2 (onboard)
+    // Gain 3 (automated reporting)    → job 3 (report to stakeholders)
+    let demo_gain_job_links = [
+        (gain_1_id, job_1_id),
+        (gain_1_id, job_2_id),
+        (gain_2_id, job_2_id),
+        (gain_3_id, job_3_id),
+    ];
+    let existing_gain_job_links = &mut demo_app.customer_page.job_gain_links;
+    for link in demo_gain_job_links {
+        if !existing_gain_job_links.contains(&link) {
+            existing_gain_job_links.push(link);
         }
     }
 

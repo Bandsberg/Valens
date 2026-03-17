@@ -17,10 +17,10 @@ use gains_window::show_gains_window;
 use jobs_window::show_jobs_window;
 use pains_window::show_pains_window;
 
-pub use gains_window::GainsState;
-pub use jobs_window::JobsState;
+pub use gains_window::{Gain, GainsState};
+pub use jobs_window::{Job, JobsState};
 pub use model::{CustomerSegment, SegmentsState};
-pub use pains_window::PainsState;
+pub use pains_window::{Pain, PainsState};
 
 // ── Page structs ──────────────────────────────────────────────────────────────
 
