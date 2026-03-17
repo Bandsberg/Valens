@@ -132,25 +132,19 @@ pub fn show_accordion(
 
                     if !available.is_empty() {
                         let combo_key = egui::Id::new("seg_acc_link_job").with(id);
-                        let mut sel: Uuid =
-                            ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
-
                         let avail_w = ui.available_width();
-                        egui::ComboBox::from_id_salt(combo_key)
-                            .selected_text("Add a job…")
-                            .width(avail_w)
-                            .show_ui(ui, |ui| {
-                                for job in &available {
-                                    ui.selectable_value(&mut sel, job.id, &job.name);
-                                }
-                            });
-
                         // Link tuple is (job_id, segment_id)
-                        if sel != Uuid::nil() {
+                        if let Some(sel) = accordion::link_combo_pick(ui, combo_key, |ui, sel| {
+                            egui::ComboBox::from_id_salt(combo_key)
+                                .selected_text("Add a job…")
+                                .width(avail_w)
+                                .show_ui(ui, |ui| {
+                                    for job in &available {
+                                        ui.selectable_value(sel, job.id, &job.name);
+                                    }
+                                });
+                        }) {
                             link_to_add = Some((sel, id));
-                            ui.data_mut(|d| d.remove::<Uuid>(combo_key));
-                        } else {
-                            ui.data_mut(|d| d.insert_temp(combo_key, sel));
                         }
                     } else {
                         ui.add_enabled(false, egui::Button::new("All jobs linked"));

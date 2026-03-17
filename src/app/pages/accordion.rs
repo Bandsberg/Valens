@@ -1,4 +1,5 @@
 use eframe::egui;
+use uuid::Uuid;
 
 const DRAG_HANDLE_W: f32 = 6.0;
 
@@ -59,6 +60,26 @@ pub fn header(ui: &mut egui::Ui, name_label: &str) {
         ui.label(egui::RichText::new("Description").heading());
     });
     ui.separator();
+}
+
+/// Renders a combo box whose selection is persisted in egui temp storage
+/// between frames. The `show` closure receives `&mut egui::Ui` and a
+/// `&mut Uuid` selection value to pass to `selectable_value` calls.
+/// Returns `Some(uuid)` the frame the user makes a pick, `None` otherwise.
+pub fn link_combo_pick(
+    ui: &mut egui::Ui,
+    key: egui::Id,
+    show: impl FnOnce(&mut egui::Ui, &mut Uuid),
+) -> Option<Uuid> {
+    let mut sel: Uuid = ui.data(|d| d.get_temp(key).unwrap_or(Uuid::nil()));
+    show(ui, &mut sel);
+    if sel != Uuid::nil() {
+        ui.data_mut(|d| d.remove::<Uuid>(key));
+        Some(sel)
+    } else {
+        ui.data_mut(|d| d.insert_temp(key, sel));
+        None
+    }
 }
 
 /// Displays an italic "None" label in the weak text colour — used when a
