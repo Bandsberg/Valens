@@ -1,8 +1,6 @@
 use crate::app::App;
 use eframe::egui;
 
-// ── Delete confirmation dialog ────────────────────────────────────────────────
-
 pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_page.pains_state.pending_delete else {
         return;
@@ -30,9 +28,7 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             ui.label(
                 egui::RichText::new("This cannot be undone.").color(ui.visuals().warn_fg_color),
             );
-
             ui.add_space(8.0);
-
             ui.horizontal(|ui| {
                 if ui
                     .add(
@@ -45,7 +41,6 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
                 {
                     confirmed = true;
                 }
-
                 if ui.button("Cancel").clicked() {
                     cancelled = true;
                 }
@@ -54,7 +49,7 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
 
     if confirmed {
         app.customer_page
-            .segment_pain_links
+            .job_pain_links
             .retain(|(pid, _)| *pid != id);
         app.customer_page.pains_state.pains.retain(|p| p.id != id);
         if app.customer_page.pains_state.selected_pain_id == Some(id) {

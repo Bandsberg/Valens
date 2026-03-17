@@ -33,10 +33,10 @@ pub struct CustomerPage {
     pub gains_state: GainsState,
     /// Many-to-many links between jobs and segments. Each entry is (job_id, segment_id).
     pub segment_job_links: Vec<(Uuid, Uuid)>,
-    /// Many-to-many links between pains and segments. Each entry is (pain_id, segment_id).
-    pub segment_pain_links: Vec<(Uuid, Uuid)>,
-    /// Many-to-many links between gains and segments. Each entry is (gain_id, segment_id).
-    pub segment_gain_links: Vec<(Uuid, Uuid)>,
+    /// Many-to-many links between pains and jobs. Each entry is (pain_id, job_id).
+    pub job_pain_links: Vec<(Uuid, Uuid)>,
+    /// Many-to-many links between gains and jobs. Each entry is (gain_id, job_id).
+    pub job_gain_links: Vec<(Uuid, Uuid)>,
 }
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]

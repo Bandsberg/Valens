@@ -2,46 +2,41 @@ use crate::app::App;
 use eframe::egui;
 use uuid::Uuid;
 
-// ── Detail panel window ───────────────────────────────────────────────────────
-
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_page.gains_state.selected_gain_id else {
         return;
     };
 
-    // Snapshot linked / available segments before entering the window closure
-    // so we can borrow `gains_state.gains` mutably inside without conflict.
-    // Link tuple: (gain_id, segment_id)
-    let linked_sids: Vec<Uuid> = app
+    // Link tuple: (gain_id, job_id)
+    let linked_jids: Vec<Uuid> = app
         .customer_page
-        .segment_gain_links
+        .job_gain_links
         .iter()
         .filter(|(gid, _)| *gid == id)
-        .map(|(_, sid)| *sid)
+        .map(|(_, jid)| *jid)
         .collect();
 
-    let linked_segments: Vec<(Uuid, String)> = app
+    let linked_jobs: Vec<(Uuid, String)> = app
         .customer_page
-        .segments_state
-        .segments
+        .jobs_state
+        .jobs
         .iter()
-        .filter(|s| linked_sids.contains(&s.id))
-        .map(|s| (s.id, s.name.clone()))
+        .filter(|j| linked_jids.contains(&j.id))
+        .map(|j| (j.id, j.name.clone()))
         .collect();
 
-    let available_segments: Vec<(Uuid, String)> = app
+    let available_jobs: Vec<(Uuid, String)> = app
         .customer_page
-        .segments_state
-        .segments
+        .jobs_state
+        .jobs
         .iter()
-        .filter(|s| !linked_sids.contains(&s.id))
-        .map(|s| (s.id, s.name.clone()))
+        .filter(|j| !linked_jids.contains(&j.id))
+        .map(|j| (j.id, j.name.clone()))
         .collect();
 
-    // Collect mutations during the window; apply them afterwards.
     let mut link_to_add: Option<(Uuid, Uuid)> = None;
     let mut link_to_remove: Option<(Uuid, Uuid)> = None;
-    let mut navigate_to_seg: Option<Uuid> = None;
+    let mut navigate_to_job_id: Option<Uuid> = None;
 
     let mut keep_open = true;
     egui::Window::new("Gain Details")
@@ -87,20 +82,20 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                     );
                     ui.end_row();
 
-                    // ── Used by Segments ─────────────────────────────────────
-                    ui.label("Used by\nSegments:");
+                    // ── Used by Jobs ──────────────────────────────────────────
+                    ui.label("Used by\nJobs:");
                     ui.vertical(|ui| {
-                        if linked_segments.is_empty() {
+                        if linked_jobs.is_empty() {
                             ui.label(
                                 egui::RichText::new("None")
                                     .italics()
                                     .color(ui.visuals().weak_text_color()),
                             );
                         } else {
-                            for (sid, sname) in &linked_segments {
+                            for (jid, jname) in &linked_jobs {
                                 ui.horizontal(|ui| {
-                                    if ui.link(sname).on_hover_text("Open in Segments").clicked() {
-                                        navigate_to_seg = Some(*sid);
+                                    if ui.link(jname).on_hover_text("Open in Jobs").clicked() {
+                                        navigate_to_job_id = Some(*jid);
                                     }
                                     if ui
                                         .add(
@@ -114,29 +109,26 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                                         .on_hover_text("Remove link")
                                         .clicked()
                                     {
-                                        link_to_remove = Some((id, *sid));
+                                        link_to_remove = Some((id, *jid));
                                     }
                                 });
                             }
                         }
 
-                        if !available_segments.is_empty() {
+                        if !available_jobs.is_empty() {
                             ui.add_space(4.0);
-
-                            let combo_key = egui::Id::new("gain_detail_link_seg").with(id);
+                            let combo_key = egui::Id::new("gain_detail_link_job").with(id);
                             let mut sel: Uuid =
                                 ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
-
                             let avail_w = ui.available_width();
                             egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a segment…")
+                                .selected_text("Add a job…")
                                 .width(avail_w)
                                 .show_ui(ui, |ui| {
-                                    for (sid, sname) in &available_segments {
-                                        ui.selectable_value(&mut sel, *sid, sname);
+                                    for (jid, jname) in &available_jobs {
+                                        ui.selectable_value(&mut sel, *jid, jname);
                                     }
                                 });
-
                             if sel != Uuid::nil() {
                                 link_to_add = Some((id, sel));
                                 ui.data_mut(|d| d.remove::<Uuid>(combo_key));
@@ -152,39 +144,38 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     if !keep_open {
         app.customer_page.gains_state.selected_gain_id = None;
     }
-
     if let Some(pair) = link_to_add {
-        if !app.customer_page.segment_gain_links.contains(&pair) {
-            app.customer_page.segment_gain_links.push(pair);
+        if !app.customer_page.job_gain_links.contains(&pair) {
+            app.customer_page.job_gain_links.push(pair);
         }
     }
     if let Some(pair) = link_to_remove {
-        app.customer_page.segment_gain_links.retain(|l| l != &pair);
+        app.customer_page.job_gain_links.retain(|l| l != &pair);
     }
-    if let Some(seg_id) = navigate_to_seg {
-        navigate_to_segment(app, ctx, seg_id);
+    if let Some(job_id) = navigate_to_job_id {
+        navigate_to_job(app, ctx, job_id);
     }
 }
 
 // ── Navigation helpers ────────────────────────────────────────────────────────
 
-/// Opens the Customer Segments window and ensures `seg_id` is visible.
-pub fn navigate_to_segment(app: &mut App, ctx: &egui::Context, seg_id: Uuid) {
-    app.customer_page.customer_windows.segments_open = true;
-    if let Some(seg) = app
+/// Opens the Jobs window and ensures `job_id` is visible.
+pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
+    app.customer_page.customer_windows.jobs_open = true;
+    if let Some(job) = app
         .customer_page
-        .segments_state
-        .segments
+        .jobs_state
+        .jobs
         .iter_mut()
-        .find(|s| s.id == seg_id)
+        .find(|j| j.id == job_id)
     {
-        seg.expanded = true;
+        job.expanded = true;
     }
-    app.customer_page.segments_state.selected_segment_id = Some(seg_id);
-    app.customer_page.segments_state.scroll_to_id = Some(seg_id);
+    app.customer_page.jobs_state.selected_job_id = Some(job_id);
+    app.customer_page.jobs_state.scroll_to_id = Some(job_id);
     ctx.move_to_top(egui::LayerId::new(
         egui::Order::Middle,
-        egui::Id::new("Customer Segments"),
+        egui::Id::new("Jobs"),
     ));
 }
 

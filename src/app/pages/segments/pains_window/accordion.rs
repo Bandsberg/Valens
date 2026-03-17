@@ -1,7 +1,7 @@
 use eframe::egui;
 use uuid::Uuid;
 
-use super::super::model::CustomerSegment;
+use super::super::jobs_window::Job;
 use super::model::PainsState;
 
 use super::super::super::accordion;
@@ -13,7 +13,7 @@ const MULTILINE_H: f32 = 60.0;
 pub fn show_accordion(
     ui: &mut egui::Ui,
     state: &mut PainsState,
-    segments: &[CustomerSegment],
+    jobs: &[Job],
     links: &mut Vec<(Uuid, Uuid)>,
     navigate_to: &mut Option<Uuid>,
 ) {
@@ -24,8 +24,6 @@ pub fn show_accordion(
     let mut do_panel_select: Option<Uuid> = None;
     let mut do_panel_deselect = false;
 
-    // Snapshot links for reading inside row closures (avoids borrow conflict
-    // with the mutable `links` we need to update afterwards).
     let links_snap = links.clone();
     let scroll_to = state.scroll_to_id;
     let selected_id = state.selected_pain_id;
@@ -38,11 +36,11 @@ pub fn show_accordion(
             let expanded = pain.expanded;
             let is_panel_open = selected_id == Some(id);
 
-            // Link tuple: (pain_id, segment_id)
-            let linked_sids: Vec<Uuid> = links_snap
+            // Link tuple: (pain_id, job_id)
+            let linked_jids: Vec<Uuid> = links_snap
                 .iter()
                 .filter(|(pid, _)| *pid == id)
-                .map(|(_, sid)| *sid)
+                .map(|(_, jid)| *jid)
                 .collect();
 
             if scroll_to == Some(id) {
@@ -50,7 +48,6 @@ pub fn show_accordion(
                 did_scroll = true;
             }
 
-            // ── Collapsed / header row ────────────────────────────────────────
             ui.horizontal(|ui| {
                 let arrow = if expanded { "▼" } else { "▶" };
                 let hover = if expanded { "Collapse" } else { "Expand" };
@@ -100,7 +97,6 @@ pub fn show_accordion(
                 }
             });
 
-            // ── Expanded content (full-width, no column divide) ───────────────
             if expanded {
                 ui.indent(id, |ui| {
                     ui.add_space(4.0);
@@ -112,27 +108,27 @@ pub fn show_accordion(
                             .min_size(egui::vec2(0.0, MULTILINE_H)),
                     );
 
-                    // ── Used by Segments ──────────────────────────────────────
+                    // ── Used by Jobs ──────────────────────────────────────────
                     ui.separator();
-                    ui.label("Used by Segments:");
+                    ui.label("Used by Jobs:");
 
-                    let available: Vec<&CustomerSegment> = segments
+                    let available: Vec<&Job> = jobs
                         .iter()
-                        .filter(|s| !linked_sids.contains(&s.id))
+                        .filter(|j| !linked_jids.contains(&j.id))
                         .collect();
 
                     if !available.is_empty() {
-                        let combo_key = egui::Id::new("pain_acc_link_seg").with(id);
+                        let combo_key = egui::Id::new("pain_acc_link_job").with(id);
                         let mut sel: Uuid =
                             ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
 
                         let avail_w = ui.available_width();
                         egui::ComboBox::from_id_salt(combo_key)
-                            .selected_text("Add a segment…")
+                            .selected_text("Add a job…")
                             .width(avail_w)
                             .show_ui(ui, |ui| {
-                                for seg in &available {
-                                    ui.selectable_value(&mut sel, seg.id, &seg.name);
+                                for job in &available {
+                                    ui.selectable_value(&mut sel, job.id, &job.name);
                                 }
                             });
 
@@ -143,19 +139,19 @@ pub fn show_accordion(
                             ui.data_mut(|d| d.insert_temp(combo_key, sel));
                         }
                     } else {
-                        ui.add_enabled(false, egui::Button::new("All segments linked"));
+                        ui.add_enabled(false, egui::Button::new("All jobs linked"));
                     }
 
-                    if !linked_sids.is_empty() {
-                        for sid in &linked_sids {
-                            if let Some(seg) = segments.iter().find(|s| s.id == *sid) {
+                    if !linked_jids.is_empty() {
+                        for jid in &linked_jids {
+                            if let Some(job) = jobs.iter().find(|j| j.id == *jid) {
                                 ui.horizontal(|ui| {
                                     if ui
-                                        .link(&seg.name)
-                                        .on_hover_text("Open in Segments")
+                                        .link(&job.name)
+                                        .on_hover_text("Open in Jobs")
                                         .clicked()
                                     {
-                                        *navigate_to = Some(*sid);
+                                        *navigate_to = Some(*jid);
                                     }
                                     if ui
                                         .add(
@@ -169,7 +165,7 @@ pub fn show_accordion(
                                         .on_hover_text("Remove link")
                                         .clicked()
                                     {
-                                        link_to_remove = Some((id, *sid));
+                                        link_to_remove = Some((id, *jid));
                                     }
                                 });
                             }
@@ -189,7 +185,6 @@ pub fn show_accordion(
         }
     });
 
-    // Apply deferred mutations.
     if did_scroll {
         state.scroll_to_id = None;
     }
