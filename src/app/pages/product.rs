@@ -59,7 +59,48 @@ struct ProductWindows {
 
 pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     ui.heading("Products & Services");
-    ui.label("This page has no local state (yet).");
+    ui.add_space(8.0);
+
+    ui.columns(2, |cols| {
+        // ── Left column: Products & Services ─────────────────────────────────
+        cols[0].label(egui::RichText::new("Products & Services").strong());
+        cols[0].separator();
+        for product in &app.product_page.products_state.products {
+            let name = if product.name.is_empty() {
+                "Unnamed product"
+            } else {
+                &product.name
+            };
+            cols[0].label(name);
+        }
+
+        // ── Right column: Pain Reliefs + Gain Creators ────────────────────────
+        cols[1].label(egui::RichText::new("Pain Reliefs").strong());
+        cols[1].separator();
+        for item in &app.product_page.pain_relief_state.pain_reliefs {
+            let name = if item.name.is_empty() {
+                "Unnamed pain relief"
+            } else {
+                &item.name
+            };
+            cols[1].label(name);
+        }
+
+        cols[1].add_space(12.0);
+        cols[1].label(egui::RichText::new("Gain Creators").strong());
+        cols[1].separator();
+        for item in &app.product_page.gain_creator_state.gain_creators {
+            let name = if item.name.is_empty() {
+                "Unnamed gain creator"
+            } else {
+                &item.name
+            };
+            cols[1].label(name);
+        }
+    });
+
+    ui.add_space(8.0);
+
     if app.product_page.product_windows.products_open {
         show_products_window(app, ctx);
     }
