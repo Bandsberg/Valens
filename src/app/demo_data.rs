@@ -14,16 +14,15 @@ use crate::app::pages::product::products_window::Product;
 use uuid::Uuid;
 
 pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
-    let mut demo_app: App;
-    if let Some(storage) = cc.storage {
-        demo_app = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+    let mut demo_app: App = if let Some(storage) = cc.storage {
+        eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
     } else {
-        demo_app = App {
+        App {
             tab: Tab::ValueProp,
             valueprop_page: ValuePropPage::default(),
             customer_segment_page: Default::default(),
-        };
-    }
+        }
+    };
 
     // ── Demo products ─────────────────────────────────────────────────────────
     let product_1_id =

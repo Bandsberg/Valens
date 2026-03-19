@@ -89,10 +89,7 @@ pub fn customer_sidepanel(app: &mut App, ctx: &egui::Context) {
 ///   Pain ↔ Job  (job_pain_links: (pain_id, job_id))
 fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
     let mut result = HashSet::new();
-    let hovered_id = match hovered {
-        Some(id) => id,
-        None => return result,
-    };
+    let Some(hovered_id) = hovered else { return result };
 
     let cs = &app.customer_segment_page;
 
