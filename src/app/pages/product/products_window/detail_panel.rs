@@ -166,8 +166,9 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
 /// Opens the Features window and ensures `feat_id` is visible regardless of
 /// which expand mode is currently active:
-///   - Accordion → sets `expanded = true` on the target feature row.
-///   - Panel     → sets `selected_feature_id` so the detail window opens.
+/// - Accordion → sets `expanded = true` on the target feature row.
+/// - Panel → sets `selected_feature_id` so the detail window opens.
+///
 /// Both are applied so switching modes also works correctly.
 pub fn navigate_to_feature(app: &mut App, ctx: &egui::Context, feat_id: Uuid) {
     app.valueprop_page.product_windows.features_open = true;

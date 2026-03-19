@@ -33,11 +33,11 @@ pub struct CustomerSegmentPage {
     pub jobs_state: JobsState,
     pub pains_state: PainsState,
     pub gains_state: GainsState,
-    /// Many-to-many links between jobs and segments. Each entry is (job_id, segment_id).
+    /// Many-to-many links between jobs and segments. Each entry is `(job_id, segment_id)`.
     pub segment_job_links: Vec<(Uuid, Uuid)>,
-    /// Many-to-many links between pains and jobs. Each entry is (pain_id, job_id).
+    /// Many-to-many links between pains and jobs. Each entry is `(pain_id, job_id)`.
     pub job_pain_links: Vec<(Uuid, Uuid)>,
-    /// Many-to-many links between gains and jobs. Each entry is (gain_id, job_id).
+    /// Many-to-many links between gains and jobs. Each entry is `(gain_id, job_id)`.
     pub job_gain_links: Vec<(Uuid, Uuid)>,
 }
 
@@ -85,8 +85,8 @@ pub fn customer_sidepanel(app: &mut App, ctx: &egui::Context) {
 ///
 /// On the Customer Segment page the visible entity types are Gains, Pains,
 /// and Jobs. The links run:
-///   Gain ↔ Job  (job_gain_links: (gain_id, job_id))
-///   Pain ↔ Job  (job_pain_links: (pain_id, job_id))
+/// - `Gain` ↔ `Job` (`job_gain_links`: `(gain_id, job_id)`)
+/// - `Pain` ↔ `Job` (`job_pain_links`: `(pain_id, job_id)`)
 fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
     let mut result = HashSet::new();
     let Some(hovered_id) = hovered else { return result };

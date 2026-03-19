@@ -34,19 +34,19 @@ pub struct ValuePropPage {
     pub pain_relief_state: PainReliefState,
     pub gain_creator_state: GainCreatorState,
     /// Many-to-many links between products and features.
-    /// Each entry is (product_id, feature_id).
+    /// Each entry is `(product_id, feature_id)`.
     pub product_feature_links: Vec<(Uuid, Uuid)>,
     /// Many-to-many links between features and pain relief items.
-    /// Each entry is (feature_id, pain_relief_id).
+    /// Each entry is `(feature_id, pain_relief_id)`.
     pub feature_pain_relief_links: Vec<(Uuid, Uuid)>,
     /// Many-to-many links between pains and pain relief items.
-    /// Each entry is (pain_id, pain_relief_id).
+    /// Each entry is `(pain_id, pain_relief_id)`.
     pub pain_pain_relief_links: Vec<(Uuid, Uuid)>,
     /// Many-to-many links between features and gain creators.
-    /// Each entry is (feature_id, gain_creator_id).
+    /// Each entry is `(feature_id, gain_creator_id)`.
     pub feature_gain_creator_links: Vec<(Uuid, Uuid)>,
     /// Many-to-many links between gains and gain creators.
-    /// Each entry is (gain_id, gain_creator_id).
+    /// Each entry is `(gain_id, gain_creator_id)`.
     pub gain_gain_creator_links: Vec<(Uuid, Uuid)>,
 }
 
@@ -64,8 +64,8 @@ struct ProductWindows {
 ///
 /// On the Value Proposition page the visible entity types are Products,
 /// Gain Creators, and Pain Reliefs. The links run:
-///   Product ↔ Feature ↔ GainCreator
-///   Product ↔ Feature ↔ PainRelief
+/// - `Product` ↔ `Feature` ↔ `GainCreator`
+/// - `Product` ↔ `Feature` ↔ `PainRelief`
 fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
     let mut result = HashSet::new();
     let Some(hovered_id) = hovered else { return result };

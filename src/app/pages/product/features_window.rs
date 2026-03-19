@@ -293,8 +293,9 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
 /// Opens the Products window and ensures `prod_id` is visible regardless of
 /// which expand mode is currently active:
-///   - Accordion → sets `expanded = true` on the target product row.
-///   - Panel     → sets `selected_product_id` so the detail window opens.
+/// - Accordion → sets `expanded = true` on the target product row.
+/// - Panel → sets `selected_product_id` so the detail window opens.
+///
 /// Both are applied so switching modes also works correctly.
 fn navigate_to_product(app: &mut App, ctx: &egui::Context, prod_id: Uuid) {
     app.valueprop_page.product_windows.products_open = true;

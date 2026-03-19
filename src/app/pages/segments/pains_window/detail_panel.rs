@@ -165,7 +165,7 @@ pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
 }
 
 /// Opens the Pains window and ensures `pain_id` is visible.
-#[allow(dead_code)]
+#[expect(dead_code)]
 pub fn navigate_to_pain(app: &mut App, ctx: &egui::Context, pain_id: Uuid) {
     app.customer_segment_page.customer_windows.pains_open = true;
     if let Some(pain) = app

@@ -165,7 +165,7 @@ pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
 }
 
 /// Opens the Gains window and ensures `gain_id` is visible.
-#[allow(dead_code)]
+#[expect(dead_code)]
 pub fn navigate_to_gain(app: &mut App, ctx: &egui::Context, gain_id: Uuid) {
     app.customer_segment_page.customer_windows.gains_open = true;
     if let Some(gain) = app
