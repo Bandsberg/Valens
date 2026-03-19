@@ -280,24 +280,20 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         app.valueprop_page.gain_creator_state.selected_id = None;
     }
 
-    if let Some(pair) = feat_link_to_add {
-        if !app
-            .valueprop_page
-            .feature_gain_creator_links
-            .contains(&pair)
-        {
-            app.valueprop_page.feature_gain_creator_links.push(pair);
-        }
+    if let Some(pair) = feat_link_to_add
+        && !app.valueprop_page.feature_gain_creator_links.contains(&pair)
+    {
+        app.valueprop_page.feature_gain_creator_links.push(pair);
     }
     if let Some(pair) = feat_link_to_remove {
         app.valueprop_page
             .feature_gain_creator_links
             .retain(|l| l != &pair);
     }
-    if let Some(pair) = gain_link_to_add {
-        if !app.valueprop_page.gain_gain_creator_links.contains(&pair) {
-            app.valueprop_page.gain_gain_creator_links.push(pair);
-        }
+    if let Some(pair) = gain_link_to_add
+        && !app.valueprop_page.gain_gain_creator_links.contains(&pair)
+    {
+        app.valueprop_page.gain_gain_creator_links.push(pair);
     }
     if let Some(pair) = gain_link_to_remove {
         app.valueprop_page
@@ -512,18 +508,18 @@ fn show_accordion(
     if let Some(id) = to_delete {
         state.pending_delete = Some(id);
     }
-    if let Some(pair) = feat_link_to_add {
-        if !feature_links.contains(&pair) {
-            feature_links.push(pair);
-        }
+    if let Some(pair) = feat_link_to_add
+        && !feature_links.contains(&pair)
+    {
+        feature_links.push(pair);
     }
     if let Some(pair) = feat_link_to_remove {
         feature_links.retain(|l| l != &pair);
     }
-    if let Some(pair) = gain_link_to_add {
-        if !gain_links.contains(&pair) {
-            gain_links.push(pair);
-        }
+    if let Some(pair) = gain_link_to_add
+        && !gain_links.contains(&pair)
+    {
+        gain_links.push(pair);
     }
     if let Some(pair) = gain_link_to_remove {
         gain_links.retain(|l| l != &pair);

@@ -153,10 +153,10 @@ pub fn show_accordion(
     if let Some(id) = to_delete {
         state.pending_delete = Some(id);
     }
-    if let Some(pair) = link_to_add {
-        if !links.contains(&pair) {
-            links.push(pair);
-        }
+    if let Some(pair) = link_to_add
+        && !links.contains(&pair)
+    {
+        links.push(pair);
     }
     if let Some(pair) = link_to_remove {
         links.retain(|l| l != &pair);

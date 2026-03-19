@@ -274,10 +274,10 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     }
 
     // Apply mutations now that the closure has released all borrows.
-    if let Some(pair) = link_to_add {
-        if !app.valueprop_page.product_feature_links.contains(&pair) {
-            app.valueprop_page.product_feature_links.push(pair);
-        }
+    if let Some(pair) = link_to_add
+        && !app.valueprop_page.product_feature_links.contains(&pair)
+    {
+        app.valueprop_page.product_feature_links.push(pair);
     }
     if let Some(pair) = link_to_remove {
         app.valueprop_page
@@ -502,10 +502,10 @@ fn show_accordion(
     if let Some(id) = to_delete {
         state.pending_delete = Some(id);
     }
-    if let Some(pair) = link_to_add {
-        if !links.contains(&pair) {
-            links.push(pair);
-        }
+    if let Some(pair) = link_to_add
+        && !links.contains(&pair)
+    {
+        links.push(pair);
     }
     if let Some(pair) = link_to_remove {
         links.retain(|l| l != &pair);

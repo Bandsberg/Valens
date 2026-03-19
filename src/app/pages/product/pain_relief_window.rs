@@ -280,20 +280,20 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         app.valueprop_page.pain_relief_state.selected_id = None;
     }
 
-    if let Some(pair) = feat_link_to_add {
-        if !app.valueprop_page.feature_pain_relief_links.contains(&pair) {
-            app.valueprop_page.feature_pain_relief_links.push(pair);
-        }
+    if let Some(pair) = feat_link_to_add
+        && !app.valueprop_page.feature_pain_relief_links.contains(&pair)
+    {
+        app.valueprop_page.feature_pain_relief_links.push(pair);
     }
     if let Some(pair) = feat_link_to_remove {
         app.valueprop_page
             .feature_pain_relief_links
             .retain(|l| l != &pair);
     }
-    if let Some(pair) = pain_link_to_add {
-        if !app.valueprop_page.pain_pain_relief_links.contains(&pair) {
-            app.valueprop_page.pain_pain_relief_links.push(pair);
-        }
+    if let Some(pair) = pain_link_to_add
+        && !app.valueprop_page.pain_pain_relief_links.contains(&pair)
+    {
+        app.valueprop_page.pain_pain_relief_links.push(pair);
     }
     if let Some(pair) = pain_link_to_remove {
         app.valueprop_page
@@ -508,18 +508,18 @@ fn show_accordion(
     if let Some(id) = to_delete {
         state.pending_delete = Some(id);
     }
-    if let Some(pair) = feat_link_to_add {
-        if !feature_links.contains(&pair) {
-            feature_links.push(pair);
-        }
+    if let Some(pair) = feat_link_to_add
+        && !feature_links.contains(&pair)
+    {
+        feature_links.push(pair);
     }
     if let Some(pair) = feat_link_to_remove {
         feature_links.retain(|l| l != &pair);
     }
-    if let Some(pair) = pain_link_to_add {
-        if !pain_links.contains(&pair) {
-            pain_links.push(pair);
-        }
+    if let Some(pair) = pain_link_to_add
+        && !pain_links.contains(&pair)
+    {
+        pain_links.push(pair);
     }
     if let Some(pair) = pain_link_to_remove {
         pain_links.retain(|l| l != &pair);

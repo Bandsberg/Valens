@@ -158,10 +158,10 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     }
 
     // Apply mutations now that the closure has released all borrows.
-    if let Some(pair) = link_to_add {
-        if !app.customer_segment_page.segment_job_links.contains(&pair) {
-            app.customer_segment_page.segment_job_links.push(pair);
-        }
+    if let Some(pair) = link_to_add
+        && !app.customer_segment_page.segment_job_links.contains(&pair)
+    {
+        app.customer_segment_page.segment_job_links.push(pair);
     }
     if let Some(pair) = link_to_remove {
         app.customer_segment_page.segment_job_links.retain(|l| l != &pair);

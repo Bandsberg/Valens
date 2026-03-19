@@ -129,10 +129,10 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     if !keep_open {
         app.customer_segment_page.pains_state.selected_pain_id = None;
     }
-    if let Some(pair) = link_to_add {
-        if !app.customer_segment_page.job_pain_links.contains(&pair) {
-            app.customer_segment_page.job_pain_links.push(pair);
-        }
+    if let Some(pair) = link_to_add
+        && !app.customer_segment_page.job_pain_links.contains(&pair)
+    {
+        app.customer_segment_page.job_pain_links.push(pair);
     }
     if let Some(pair) = link_to_remove {
         app.customer_segment_page.job_pain_links.retain(|l| l != &pair);
