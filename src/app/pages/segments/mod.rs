@@ -1,5 +1,6 @@
 use crate::app::App;
 use eframe::egui;
+use std::collections::HashSet;
 use uuid::Uuid;
 
 mod accordion;
@@ -10,8 +11,8 @@ mod jobs_window;
 mod model;
 mod pains_window;
 
+use super::accordion::{color_gain, color_job, color_pain, display_name, label_with_hover_id};
 use accordion::show_accordion;
-use super::accordion::{color_gain, color_job, color_pain, display_name, label_with_hover};
 use delete_dialog::show_delete_confirmation;
 use detail_panel::{navigate_to_job_fn, show_detail_panel};
 use gains_window::show_gains_window;
@@ -26,7 +27,7 @@ pub use pains_window::{Pain, PainsState};
 // ── Page structs ──────────────────────────────────────────────────────────────
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]
-pub struct CustomerPage {
+pub struct CustomerSegmentPage {
     customer_windows: CustomerWindows,
     pub segments_state: SegmentsState,
     pub jobs_state: JobsState,
@@ -59,56 +60,137 @@ pub fn customer_sidepanel(app: &mut App, ctx: &egui::Context) {
             ui.heading("Tools");
             ui.separator();
             ui.checkbox(
-                &mut app.customer_page.customer_windows.segments_open,
+                &mut app.customer_segment_page.customer_windows.segments_open,
                 "Customer Segments",
             );
-            ui.checkbox(&mut app.customer_page.customer_windows.jobs_open, "Jobs");
-            ui.checkbox(&mut app.customer_page.customer_windows.pains_open, "Pains");
-            ui.checkbox(&mut app.customer_page.customer_windows.gains_open, "Gains");
+            ui.checkbox(
+                &mut app.customer_segment_page.customer_windows.jobs_open,
+                "Jobs",
+            );
+            ui.checkbox(
+                &mut app.customer_segment_page.customer_windows.pains_open,
+                "Pains",
+            );
+            ui.checkbox(
+                &mut app.customer_segment_page.customer_windows.gains_open,
+                "Gains",
+            );
         });
 }
 
 // ── Central panel entry point ─────────────────────────────────────────────────
 
+/// Computes the set of entity IDs that should be highlighted because they are
+/// linked to the currently hovered entity.
+///
+/// On the Customer Segment page the visible entity types are Gains, Pains,
+/// and Jobs. The links run:
+///   Gain ↔ Job  (job_gain_links: (gain_id, job_id))
+///   Pain ↔ Job  (job_pain_links: (pain_id, job_id))
+fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
+    let mut result = HashSet::new();
+    let hovered_id = match hovered {
+        Some(id) => id,
+        None => return result,
+    };
+
+    let cs = &app.customer_segment_page;
+
+    // Hover Job → highlight linked Gains and Pains.
+    for (gain_id, job_id) in &cs.job_gain_links {
+        if *job_id == hovered_id {
+            result.insert(*gain_id);
+        }
+    }
+    for (pain_id, job_id) in &cs.job_pain_links {
+        if *job_id == hovered_id {
+            result.insert(*pain_id);
+        }
+    }
+
+    // Hover Gain → highlight linked Jobs.
+    for (gain_id, job_id) in &cs.job_gain_links {
+        if *gain_id == hovered_id {
+            result.insert(*job_id);
+        }
+    }
+
+    // Hover Pain → highlight linked Jobs.
+    for (pain_id, job_id) in &cs.job_pain_links {
+        if *pain_id == hovered_id {
+            result.insert(*job_id);
+        }
+    }
+
+    result
+}
+
 pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     ui.heading("Customer Segment");
     ui.add_space(8.0);
+
+    let hovered_key = egui::Id::new("cs_hovered_entity");
+    let prev_hovered: Option<Uuid> = ctx.data(|d| d.get_temp(hovered_key));
+    ctx.data_mut(|d| d.remove::<Uuid>(hovered_key));
+
+    let highlighted = highlighted_ids(prev_hovered, app);
 
     ui.columns(2, |cols| {
         // ── Left column: Gains + Pains ────────────────────────────────────────
         cols[0].label(egui::RichText::new("Gains").strong());
         cols[0].separator();
-        for item in &app.customer_page.gains_state.gains {
-            label_with_hover(&mut cols[0], display_name(&item.name, "Unnamed gain"), color_gain());
+        for item in &app.customer_segment_page.gains_state.gains {
+            label_with_hover_id(
+                &mut cols[0],
+                display_name(&item.name, "Unnamed gain"),
+                item.id,
+                color_gain(),
+                highlighted.contains(&item.id),
+                hovered_key,
+            );
         }
 
         cols[0].add_space(12.0);
         cols[0].label(egui::RichText::new("Pains").strong());
         cols[0].separator();
-        for item in &app.customer_page.pains_state.pains {
-            label_with_hover(&mut cols[0], display_name(&item.name, "Unnamed pain"), color_pain());
+        for item in &app.customer_segment_page.pains_state.pains {
+            label_with_hover_id(
+                &mut cols[0],
+                display_name(&item.name, "Unnamed pain"),
+                item.id,
+                color_pain(),
+                highlighted.contains(&item.id),
+                hovered_key,
+            );
         }
 
         // ── Right column: Jobs ────────────────────────────────────────────────
         cols[1].label(egui::RichText::new("Jobs").strong());
         cols[1].separator();
-        for item in &app.customer_page.jobs_state.jobs {
-            label_with_hover(&mut cols[1], display_name(&item.name, "Unnamed job"), color_job());
+        for item in &app.customer_segment_page.jobs_state.jobs {
+            label_with_hover_id(
+                &mut cols[1],
+                display_name(&item.name, "Unnamed job"),
+                item.id,
+                color_job(),
+                highlighted.contains(&item.id),
+                hovered_key,
+            );
         }
     });
 
     ui.add_space(8.0);
 
-    if app.customer_page.customer_windows.segments_open {
+    if app.customer_segment_page.customer_windows.segments_open {
         show_segments_window(app, ctx);
     }
-    if app.customer_page.customer_windows.jobs_open {
+    if app.customer_segment_page.customer_windows.jobs_open {
         show_jobs_window(app, ctx);
     }
-    if app.customer_page.customer_windows.pains_open {
+    if app.customer_segment_page.customer_windows.pains_open {
         show_pains_window(app, ctx);
     }
-    if app.customer_page.customer_windows.gains_open {
+    if app.customer_segment_page.customer_windows.gains_open {
         show_gains_window(app, ctx);
     }
 }
@@ -124,7 +206,7 @@ fn show_segments_window(app: &mut App, ctx: &egui::Context) {
     let mut nav_to_job: Option<Uuid> = None;
 
     egui::Window::new("Customer Segments")
-        .open(&mut app.customer_page.customer_windows.segments_open)
+        .open(&mut app.customer_segment_page.customer_windows.segments_open)
         .default_size([720.0, 380.0])
         .show(ctx, |ui| {
             ui.heading("Customer Segments");
@@ -132,7 +214,7 @@ fn show_segments_window(app: &mut App, ctx: &egui::Context) {
             ui.add_space(4.0);
 
             if ui.button("➕ Add Segment").clicked() {
-                app.customer_page
+                app.customer_segment_page
                     .segments_state
                     .segments
                     .push(CustomerSegment {
@@ -144,11 +226,11 @@ fn show_segments_window(app: &mut App, ctx: &egui::Context) {
             ui.separator();
 
             // Split borrows across different CustomerPage fields.
-            let jobs = &app.customer_page.jobs_state.jobs;
-            let links = &mut app.customer_page.segment_job_links;
+            let jobs = &app.customer_segment_page.jobs_state.jobs;
+            let links = &mut app.customer_segment_page.segment_job_links;
             show_accordion(
                 ui,
-                &mut app.customer_page.segments_state,
+                &mut app.customer_segment_page.segments_state,
                 jobs,
                 links,
                 &mut nav_to_job,

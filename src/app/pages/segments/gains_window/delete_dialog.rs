@@ -2,12 +2,12 @@ use crate::app::App;
 use eframe::egui;
 
 pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.customer_page.gains_state.pending_delete else {
+    let Some(id) = app.customer_segment_page.gains_state.pending_delete else {
         return;
     };
 
     let gain_name = app
-        .customer_page
+        .customer_segment_page
         .gains_state
         .gains
         .iter()
@@ -48,15 +48,15 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         });
 
     if confirmed {
-        app.customer_page
+        app.customer_segment_page
             .job_gain_links
             .retain(|(gid, _)| *gid != id);
-        app.customer_page.gains_state.gains.retain(|g| g.id != id);
-        if app.customer_page.gains_state.selected_gain_id == Some(id) {
-            app.customer_page.gains_state.selected_gain_id = None;
+        app.customer_segment_page.gains_state.gains.retain(|g| g.id != id);
+        if app.customer_segment_page.gains_state.selected_gain_id == Some(id) {
+            app.customer_segment_page.gains_state.selected_gain_id = None;
         }
     }
     if confirmed || dismiss {
-        app.customer_page.gains_state.pending_delete = None;
+        app.customer_segment_page.gains_state.pending_delete = None;
     }
 }

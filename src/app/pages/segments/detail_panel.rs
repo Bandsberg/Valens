@@ -7,7 +7,7 @@ use super::super::accordion;
 // ── Detail panel window ───────────────────────────────────────────────────────
 
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.customer_page.segments_state.selected_segment_id else {
+    let Some(id) = app.customer_segment_page.segments_state.selected_segment_id else {
         return;
     };
 
@@ -15,7 +15,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     // can borrow `segments_state.segments` mutably inside without conflict.
     // Link tuple: (job_id, segment_id)
     let linked_jids: Vec<Uuid> = app
-        .customer_page
+        .customer_segment_page
         .segment_job_links
         .iter()
         .filter(|(_, sid)| *sid == id)
@@ -23,7 +23,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let linked_jobs: Vec<(Uuid, String)> = app
-        .customer_page
+        .customer_segment_page
         .jobs_state
         .jobs
         .iter()
@@ -32,7 +32,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let available_jobs: Vec<(Uuid, String)> = app
-        .customer_page
+        .customer_segment_page
         .jobs_state
         .jobs
         .iter()
@@ -53,7 +53,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .open(&mut keep_open)
         .show(ctx, |ui| {
             let Some(segment) = app
-                .customer_page
+                .customer_segment_page
                 .segments_state
                 .segments
                 .iter_mut()
@@ -110,8 +110,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                                     if ui.link(jname).on_hover_text("Open in Jobs").clicked() {
                                         navigate_to_job = Some(*jid);
                                     }
-                                    if accordion::unlink_button(ui).clicked()
-                                    {
+                                    if accordion::unlink_button(ui).clicked() {
                                         // Link tuple: (job_id, segment_id)
                                         link_to_remove = Some((*jid, id));
                                     }
@@ -155,17 +154,17 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
     // User dismissed with ✕ → deselect.
     if !keep_open {
-        app.customer_page.segments_state.selected_segment_id = None;
+        app.customer_segment_page.segments_state.selected_segment_id = None;
     }
 
     // Apply mutations now that the closure has released all borrows.
     if let Some(pair) = link_to_add {
-        if !app.customer_page.segment_job_links.contains(&pair) {
-            app.customer_page.segment_job_links.push(pair);
+        if !app.customer_segment_page.segment_job_links.contains(&pair) {
+            app.customer_segment_page.segment_job_links.push(pair);
         }
     }
     if let Some(pair) = link_to_remove {
-        app.customer_page.segment_job_links.retain(|l| l != &pair);
+        app.customer_segment_page.segment_job_links.retain(|l| l != &pair);
     }
     if let Some(job_id) = navigate_to_job {
         navigate_to_job_fn(app, ctx, job_id);
@@ -179,9 +178,9 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 ///   - Sets `selected_job_id` so the detail panel opens.
 ///   - Sets `scroll_to_id` so the table scrolls to the row.
 pub fn navigate_to_job_fn(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
-    app.customer_page.customer_windows.jobs_open = true;
+    app.customer_segment_page.customer_windows.jobs_open = true;
     if let Some(job) = app
-        .customer_page
+        .customer_segment_page
         .jobs_state
         .jobs
         .iter_mut()
@@ -189,8 +188,8 @@ pub fn navigate_to_job_fn(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
     {
         job.expanded = true;
     }
-    app.customer_page.jobs_state.selected_job_id = Some(job_id);
-    app.customer_page.jobs_state.scroll_to_id = Some(job_id);
+    app.customer_segment_page.jobs_state.selected_job_id = Some(job_id);
+    app.customer_segment_page.jobs_state.scroll_to_id = Some(job_id);
     // Bring the Jobs window in front of all other windows.
     ctx.move_to_top(egui::LayerId::new(
         egui::Order::Middle,

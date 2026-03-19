@@ -10,23 +10,23 @@ pub fn product_sidepanel(app: &mut App, ctx: &egui::Context) {
             ui.separator();
             // toggles / list / etc
             ui.checkbox(
-                &mut app.product_page.product_windows.products_open,
+                &mut app.valueprop_page.product_windows.products_open,
                 "Products & Services",
             );
             ui.checkbox(
-                &mut app.product_page.product_windows.features_open,
+                &mut app.valueprop_page.product_windows.features_open,
                 "Features",
             );
             ui.checkbox(
-                &mut app.product_page.product_windows.pain_relief_open,
+                &mut app.valueprop_page.product_windows.pain_relief_open,
                 "Pain Relief",
             );
             ui.checkbox(
-                &mut app.product_page.product_windows.gain_creators_open,
+                &mut app.valueprop_page.product_windows.gain_creators_open,
                 "Gain Creators",
             );
             ui.checkbox(
-                &mut app.product_page.product_windows.thoughtful_execution_open,
+                &mut app.valueprop_page.product_windows.thoughtful_execution_open,
                 "Thoughtfull Execution",
             );
         });

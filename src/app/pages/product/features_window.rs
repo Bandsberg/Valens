@@ -45,12 +45,12 @@ pub struct Feature {
 // ── Delete confirmation dialog ────────────────────────────────────────────────
 
 fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.product_page.features_state.pending_delete else {
+    let Some(id) = app.valueprop_page.features_state.pending_delete else {
         return;
     };
 
     let feature_name = app
-        .product_page
+        .valueprop_page
         .features_state
         .features
         .iter()
@@ -77,44 +77,44 @@ fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
                 );
                 if delete_btn.clicked() {
                     // Remove all links associated with this feature.
-                    app.product_page
+                    app.valueprop_page
                         .product_feature_links
                         .retain(|(_, fid)| *fid != id);
-                    app.product_page
+                    app.valueprop_page
                         .feature_pain_relief_links
                         .retain(|(fid, _)| *fid != id);
-                    app.product_page
+                    app.valueprop_page
                         .feature_gain_creator_links
                         .retain(|(fid, _)| *fid != id);
-                    app.product_page
+                    app.valueprop_page
                         .features_state
                         .features
                         .retain(|f| f.id != id);
-                    app.product_page.features_state.pending_delete = None;
+                    app.valueprop_page.features_state.pending_delete = None;
                 }
                 if ui.button("Cancel").clicked() {
-                    app.product_page.features_state.pending_delete = None;
+                    app.valueprop_page.features_state.pending_delete = None;
                 }
             });
         });
 
     // User dismissed the dialog with ✕ → treat as cancel.
     if !keep_open {
-        app.product_page.features_state.pending_delete = None;
+        app.valueprop_page.features_state.pending_delete = None;
     }
 }
 
 // ── Detail panel window (Panel mode) ─────────────────────────────────────────
 
 fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.product_page.features_state.selected_feature_id else {
+    let Some(id) = app.valueprop_page.features_state.selected_feature_id else {
         return;
     };
 
     // Snapshot linked / available products before the window closure to avoid
     // borrow conflicts with the mutable borrow of features_state.features inside.
     let linked_pids: Vec<Uuid> = app
-        .product_page
+        .valueprop_page
         .product_feature_links
         .iter()
         .filter(|(_, fid)| *fid == id)
@@ -122,7 +122,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let linked_products: Vec<(Uuid, String)> = app
-        .product_page
+        .valueprop_page
         .products_state
         .products
         .iter()
@@ -131,7 +131,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let available_products: Vec<(Uuid, String)> = app
-        .product_page
+        .valueprop_page
         .products_state
         .products
         .iter()
@@ -152,7 +152,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .open(&mut keep_open)
         .show(ctx, |ui| {
             let Some(feature) = app
-                .product_page
+                .valueprop_page
                 .features_state
                 .features
                 .iter_mut()
@@ -221,11 +221,14 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         } else {
                             for (pid, pname) in &linked_products {
                                 ui.horizontal(|ui| {
-                                    if ui.link(pname).on_hover_text("Open in Products & Services").clicked() {
+                                    if ui
+                                        .link(pname)
+                                        .on_hover_text("Open in Products & Services")
+                                        .clicked()
+                                    {
                                         navigate_to_prod = Some(*pid);
                                     }
-                                    if accordion::unlink_button(ui).clicked()
-                                    {
+                                    if accordion::unlink_button(ui).clicked() {
                                         link_to_remove = Some((*pid, id));
                                     }
                                 });
@@ -267,17 +270,17 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
     // User dismissed with ✕ → deselect.
     if !keep_open {
-        app.product_page.features_state.selected_feature_id = None;
+        app.valueprop_page.features_state.selected_feature_id = None;
     }
 
     // Apply mutations now that the closure has released all borrows.
     if let Some(pair) = link_to_add {
-        if !app.product_page.product_feature_links.contains(&pair) {
-            app.product_page.product_feature_links.push(pair);
+        if !app.valueprop_page.product_feature_links.contains(&pair) {
+            app.valueprop_page.product_feature_links.push(pair);
         }
     }
     if let Some(pair) = link_to_remove {
-        app.product_page
+        app.valueprop_page
             .product_feature_links
             .retain(|l| l != &pair);
     }
@@ -294,9 +297,9 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 ///   - Panel     → sets `selected_product_id` so the detail window opens.
 /// Both are applied so switching modes also works correctly.
 fn navigate_to_product(app: &mut App, ctx: &egui::Context, prod_id: Uuid) {
-    app.product_page.product_windows.products_open = true;
+    app.valueprop_page.product_windows.products_open = true;
     if let Some(prod) = app
-        .product_page
+        .valueprop_page
         .products_state
         .products
         .iter_mut()
@@ -304,8 +307,8 @@ fn navigate_to_product(app: &mut App, ctx: &egui::Context, prod_id: Uuid) {
     {
         prod.expanded = true;
     }
-    app.product_page.products_state.selected_product_id = Some(prod_id);
-    app.product_page.products_state.scroll_to_id = Some(prod_id);
+    app.valueprop_page.products_state.selected_product_id = Some(prod_id);
+    app.valueprop_page.products_state.scroll_to_id = Some(prod_id);
     // Bring the Products window in front of all other windows.
     ctx.move_to_top(egui::LayerId::new(
         egui::Order::Middle,
@@ -454,7 +457,10 @@ fn show_accordion(
                             ui.data_mut(|d| d.insert_temp(combo_key, sel));
                         }
                     } else {
-                        ui.add_enabled(false, egui::Button::new("All products and services linked"));
+                        ui.add_enabled(
+                            false,
+                            egui::Button::new("All products and services linked"),
+                        );
                     }
 
                     if !linked_pids.is_empty() {
@@ -468,8 +474,7 @@ fn show_accordion(
                                     {
                                         *navigate_to = Some(*pid);
                                     }
-                                    if accordion::unlink_button(ui).clicked()
-                                    {
+                                    if accordion::unlink_button(ui).clicked() {
                                         link_to_remove = Some((*pid, id));
                                     }
                                 });
@@ -524,7 +529,7 @@ pub fn show_features_window(app: &mut App, ctx: &egui::Context) {
     let mut nav_to_prod: Option<Uuid> = None;
 
     egui::Window::new("Features")
-        .open(&mut app.product_page.product_windows.features_open)
+        .open(&mut app.valueprop_page.product_windows.features_open)
         .default_size([720.0, 380.0])
         .show(ctx, |ui| {
             ui.heading("Features");
@@ -532,7 +537,7 @@ pub fn show_features_window(app: &mut App, ctx: &egui::Context) {
             ui.add_space(4.0);
 
             if ui.button("➕ Add Feature").clicked() {
-                app.product_page.features_state.features.push(Feature {
+                app.valueprop_page.features_state.features.push(Feature {
                     id: Uuid::new_v4(),
                     ..Default::default()
                 });
@@ -541,11 +546,11 @@ pub fn show_features_window(app: &mut App, ctx: &egui::Context) {
             ui.separator();
 
             // Split borrows across different ProductPage fields.
-            let products = &app.product_page.products_state.products;
-            let links = &mut app.product_page.product_feature_links;
+            let products = &app.valueprop_page.products_state.products;
+            let links = &mut app.valueprop_page.product_feature_links;
             show_accordion(
                 ui,
-                &mut app.product_page.features_state,
+                &mut app.valueprop_page.features_state,
                 products,
                 links,
                 &mut nav_to_prod,

@@ -2,9 +2,9 @@ use crate::app::App;
 use eframe::egui;
 use uuid::Uuid;
 
-use super::features_window::Feature;
-use super::super::accordion;
 use super::super::Pain;
+use super::super::accordion;
+use super::features_window::Feature;
 
 const MULTILINE_H: f32 = 58.0;
 
@@ -36,12 +36,12 @@ pub struct PainRelief {
 // ── Delete confirmation dialog ────────────────────────────────────────────────
 
 fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.product_page.pain_relief_state.pending_delete else {
+    let Some(id) = app.valueprop_page.pain_relief_state.pending_delete else {
         return;
     };
 
     let item_name = app
-        .product_page
+        .valueprop_page
         .pain_relief_state
         .pain_reliefs
         .iter()
@@ -56,52 +56,48 @@ fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
         .open(&mut keep_open)
         .show(ctx, |ui| {
-            ui.label(format!(
-                "Are you sure you want to delete \"{item_name}\"?"
-            ));
+            ui.label(format!("Are you sure you want to delete \"{item_name}\"?"));
             ui.label("This action cannot be undone.");
             ui.add_space(8.0);
             ui.horizontal(|ui| {
                 let delete_btn = ui.add(
-                    egui::Button::new(
-                        egui::RichText::new("🗑  Delete").color(egui::Color32::WHITE),
-                    )
-                    .fill(egui::Color32::from_rgb(180, 40, 40)),
+                    egui::Button::new(egui::RichText::new("🗑  Delete").color(egui::Color32::WHITE))
+                        .fill(egui::Color32::from_rgb(180, 40, 40)),
                 );
                 if delete_btn.clicked() {
-                    app.product_page
+                    app.valueprop_page
                         .feature_pain_relief_links
                         .retain(|(_, rid)| *rid != id);
-                    app.product_page
+                    app.valueprop_page
                         .pain_pain_relief_links
                         .retain(|(_, rid)| *rid != id);
-                    app.product_page
+                    app.valueprop_page
                         .pain_relief_state
                         .pain_reliefs
                         .retain(|r| r.id != id);
-                    app.product_page.pain_relief_state.pending_delete = None;
+                    app.valueprop_page.pain_relief_state.pending_delete = None;
                 }
                 if ui.button("Cancel").clicked() {
-                    app.product_page.pain_relief_state.pending_delete = None;
+                    app.valueprop_page.pain_relief_state.pending_delete = None;
                 }
             });
         });
 
     if !keep_open {
-        app.product_page.pain_relief_state.pending_delete = None;
+        app.valueprop_page.pain_relief_state.pending_delete = None;
     }
 }
 
 // ── Detail panel window ───────────────────────────────────────────────────────
 
 fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.product_page.pain_relief_state.selected_id else {
+    let Some(id) = app.valueprop_page.pain_relief_state.selected_id else {
         return;
     };
 
     // Snapshot linked features before the window closure.
     let linked_fids: Vec<Uuid> = app
-        .product_page
+        .valueprop_page
         .feature_pain_relief_links
         .iter()
         .filter(|(_, rid)| *rid == id)
@@ -109,7 +105,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let linked_features: Vec<(Uuid, String)> = app
-        .product_page
+        .valueprop_page
         .features_state
         .features
         .iter()
@@ -118,7 +114,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let available_features: Vec<(Uuid, String)> = app
-        .product_page
+        .valueprop_page
         .features_state
         .features
         .iter()
@@ -128,7 +124,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
     // Snapshot linked pains before the window closure.
     let linked_pids: Vec<Uuid> = app
-        .product_page
+        .valueprop_page
         .pain_pain_relief_links
         .iter()
         .filter(|(_, rid)| *rid == id)
@@ -136,7 +132,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let linked_pains: Vec<(Uuid, String)> = app
-        .customer_page
+        .customer_segment_page
         .pains_state
         .pains
         .iter()
@@ -145,7 +141,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let available_pains: Vec<(Uuid, String)> = app
-        .customer_page
+        .customer_segment_page
         .pains_state
         .pains
         .iter()
@@ -167,7 +163,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .open(&mut keep_open)
         .show(ctx, |ui| {
             let Some(item) = app
-                .product_page
+                .valueprop_page
                 .pain_relief_state
                 .pain_reliefs
                 .iter_mut()
@@ -183,10 +179,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                 .min_col_width(100.0)
                 .show(ui, |ui| {
                     ui.label("Name:");
-                    ui.add(
-                        egui::TextEdit::singleline(&mut item.name)
-                            .desired_width(f32::INFINITY),
-                    );
+                    ui.add(egui::TextEdit::singleline(&mut item.name).desired_width(f32::INFINITY));
                     ui.end_row();
 
                     ui.label("Description:");
@@ -212,11 +205,7 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         } else {
                             for (fid, fname) in &linked_features {
                                 ui.horizontal(|ui| {
-                                    if ui
-                                        .link(fname)
-                                        .on_hover_text("Open in Features")
-                                        .clicked()
-                                    {
+                                    if ui.link(fname).on_hover_text("Open in Features").clicked() {
                                         navigate_to_feat = Some(*fid);
                                     }
                                     if accordion::unlink_button(ui).clicked() {
@@ -287,26 +276,26 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         });
 
     if !keep_open {
-        app.product_page.pain_relief_state.selected_id = None;
+        app.valueprop_page.pain_relief_state.selected_id = None;
     }
 
     if let Some(pair) = feat_link_to_add {
-        if !app.product_page.feature_pain_relief_links.contains(&pair) {
-            app.product_page.feature_pain_relief_links.push(pair);
+        if !app.valueprop_page.feature_pain_relief_links.contains(&pair) {
+            app.valueprop_page.feature_pain_relief_links.push(pair);
         }
     }
     if let Some(pair) = feat_link_to_remove {
-        app.product_page
+        app.valueprop_page
             .feature_pain_relief_links
             .retain(|l| l != &pair);
     }
     if let Some(pair) = pain_link_to_add {
-        if !app.product_page.pain_pain_relief_links.contains(&pair) {
-            app.product_page.pain_pain_relief_links.push(pair);
+        if !app.valueprop_page.pain_pain_relief_links.contains(&pair) {
+            app.valueprop_page.pain_pain_relief_links.push(pair);
         }
     }
     if let Some(pair) = pain_link_to_remove {
-        app.product_page
+        app.valueprop_page
             .pain_pain_relief_links
             .retain(|l| l != &pair);
     }
@@ -318,9 +307,9 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 // ── Navigation helper ─────────────────────────────────────────────────────────
 
 fn navigate_to_feature(app: &mut App, ctx: &egui::Context, feat_id: Uuid) {
-    app.product_page.product_windows.features_open = true;
+    app.valueprop_page.product_windows.features_open = true;
     if let Some(feat) = app
-        .product_page
+        .valueprop_page
         .features_state
         .features
         .iter_mut()
@@ -328,8 +317,8 @@ fn navigate_to_feature(app: &mut App, ctx: &egui::Context, feat_id: Uuid) {
     {
         feat.expanded = true;
     }
-    app.product_page.features_state.selected_feature_id = Some(feat_id);
-    app.product_page.features_state.scroll_to_id = Some(feat_id);
+    app.valueprop_page.features_state.selected_feature_id = Some(feat_id);
+    app.valueprop_page.features_state.scroll_to_id = Some(feat_id);
     ctx.move_to_top(egui::LayerId::new(
         egui::Order::Middle,
         egui::Id::new("Features"),
@@ -396,8 +385,7 @@ fn show_accordion(
 
                 ui.add_sized(
                     [name_w, 20.0],
-                    egui::TextEdit::singleline(&mut item.name)
-                        .hint_text("Pain relief name…"),
+                    egui::TextEdit::singleline(&mut item.name).hint_text("Pain relief name…"),
                 );
                 ui.add_sized(
                     [desc_w, 20.0],
@@ -445,18 +433,16 @@ fn show_accordion(
                     if !available_feats.is_empty() {
                         let combo_key = egui::Id::new("pr_acc_link_feat").with(id);
                         let avail_w = ui.available_width();
-                        if let Some(sel) =
-                            accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                                egui::ComboBox::from_id_salt(combo_key)
-                                    .selected_text("Add a feature…")
-                                    .width(avail_w)
-                                    .show_ui(ui, |ui| {
-                                        for feat in &available_feats {
-                                            ui.selectable_value(sel, feat.id, &feat.name);
-                                        }
-                                    });
-                            })
-                        {
+                        if let Some(sel) = accordion::link_combo_pick(ui, combo_key, |ui, sel| {
+                            egui::ComboBox::from_id_salt(combo_key)
+                                .selected_text("Add a feature…")
+                                .width(avail_w)
+                                .show_ui(ui, |ui| {
+                                    for feat in &available_feats {
+                                        ui.selectable_value(sel, feat.id, &feat.name);
+                                    }
+                                });
+                        }) {
                             feat_link_to_add = Some((sel, id));
                         }
                     } else {
@@ -496,18 +482,16 @@ fn show_accordion(
                     if !available_pains.is_empty() {
                         let combo_key = egui::Id::new("pr_acc_link_pain").with(id);
                         let avail_w = ui.available_width();
-                        if let Some(sel) =
-                            accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                                egui::ComboBox::from_id_salt(combo_key)
-                                    .selected_text("Add a pain…")
-                                    .width(avail_w)
-                                    .show_ui(ui, |ui| {
-                                        for pain in &available_pains {
-                                            ui.selectable_value(sel, pain.id, &pain.name);
-                                        }
-                                    });
-                            })
-                        {
+                        if let Some(sel) = accordion::link_combo_pick(ui, combo_key, |ui, sel| {
+                            egui::ComboBox::from_id_salt(combo_key)
+                                .selected_text("Add a pain…")
+                                .width(avail_w)
+                                .show_ui(ui, |ui| {
+                                    for pain in &available_pains {
+                                        ui.selectable_value(sel, pain.id, &pain.name);
+                                    }
+                                });
+                        }) {
                             pain_link_to_add = Some((sel, id));
                         }
                     } else {
@@ -577,13 +561,13 @@ pub fn show_pain_relief_window(app: &mut App, ctx: &egui::Context) {
     let mut nav_to_feat: Option<Uuid> = None;
 
     egui::Window::new("Pain Relief")
-        .open(&mut app.product_page.product_windows.pain_relief_open)
+        .open(&mut app.valueprop_page.product_windows.pain_relief_open)
         .default_size([720.0, 380.0])
         .show(ctx, |ui| {
             ui.heading("Pain Relief");
             ui.add_space(4.0);
             if ui.button("➕ Add Pain Relief").clicked() {
-                app.product_page
+                app.valueprop_page
                     .pain_relief_state
                     .pain_reliefs
                     .push(PainRelief {
@@ -593,13 +577,13 @@ pub fn show_pain_relief_window(app: &mut App, ctx: &egui::Context) {
             }
             ui.separator();
 
-            let features = app.product_page.features_state.features.as_slice();
-            let pains = app.customer_page.pains_state.pains.as_slice();
-            let feature_links = &mut app.product_page.feature_pain_relief_links;
-            let pain_links = &mut app.product_page.pain_pain_relief_links;
+            let features = app.valueprop_page.features_state.features.as_slice();
+            let pains = app.customer_segment_page.pains_state.pains.as_slice();
+            let feature_links = &mut app.valueprop_page.feature_pain_relief_links;
+            let pain_links = &mut app.valueprop_page.pain_pain_relief_links;
             show_accordion(
                 ui,
-                &mut app.product_page.pain_relief_state,
+                &mut app.valueprop_page.pain_relief_state,
                 features,
                 pains,
                 feature_links,

@@ -1,7 +1,8 @@
+use super::accordion::{self, label_with_hover_id};
 use crate::app::App;
 use eframe::egui;
+use std::collections::HashSet;
 use uuid::Uuid;
-use super::accordion::{self, label_with_hover};
 mod side_panel;
 pub use side_panel::product_sidepanel;
 pub mod products_window;
@@ -26,7 +27,7 @@ use thoughtful_execution_window::show_thoughtful_execution_window;
 /// which are implemented through user stories.
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]
-pub struct ProductPage {
+pub struct ValuePropPage {
     product_windows: ProductWindows,
     pub products_state: ProductsState,
     pub features_state: FeaturesState,
@@ -58,60 +59,149 @@ struct ProductWindows {
     thoughtful_execution_open: bool,
 }
 
+/// Computes the set of entity IDs that should be highlighted because they are
+/// linked (directly or via features) to the currently hovered entity.
+///
+/// On the Value Proposition page the visible entity types are Products,
+/// Gain Creators, and Pain Reliefs. The links run:
+///   Product ↔ Feature ↔ GainCreator
+///   Product ↔ Feature ↔ PainRelief
+fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
+    let mut result = HashSet::new();
+    let hovered_id = match hovered {
+        Some(id) => id,
+        None => return result,
+    };
+
+    let vp = &app.valueprop_page;
+
+    // Features linked to the hovered entity when it is a Product.
+    let features_of_product: Vec<Uuid> = vp
+        .product_feature_links
+        .iter()
+        .filter(|(pid, _)| *pid == hovered_id)
+        .map(|(_, fid)| *fid)
+        .collect();
+
+    for fid in &features_of_product {
+        for (f, gc) in &vp.feature_gain_creator_links {
+            if f == fid {
+                result.insert(*gc);
+            }
+        }
+        for (f, pr) in &vp.feature_pain_relief_links {
+            if f == fid {
+                result.insert(*pr);
+            }
+        }
+    }
+
+    // Products linked to the hovered entity when it is a GainCreator.
+    let features_of_gc: Vec<Uuid> = vp
+        .feature_gain_creator_links
+        .iter()
+        .filter(|(_, gcid)| *gcid == hovered_id)
+        .map(|(fid, _)| *fid)
+        .collect();
+
+    for fid in &features_of_gc {
+        for (pid, f) in &vp.product_feature_links {
+            if f == fid {
+                result.insert(*pid);
+            }
+        }
+    }
+
+    // Products linked to the hovered entity when it is a PainRelief.
+    let features_of_pr: Vec<Uuid> = vp
+        .feature_pain_relief_links
+        .iter()
+        .filter(|(_, prid)| *prid == hovered_id)
+        .map(|(fid, _)| *fid)
+        .collect();
+
+    for fid in &features_of_pr {
+        for (pid, f) in &vp.product_feature_links {
+            if f == fid {
+                result.insert(*pid);
+            }
+        }
+    }
+
+    result
+}
+
 pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
-    ui.heading("Products & Services");
+    ui.heading("Value Proposition");
     ui.add_space(8.0);
+
+    // Read which entity was hovered last frame, then clear it so it resets
+    // if nothing is hovered this frame.
+    let hovered_key = egui::Id::new("vp_hovered_entity");
+    let prev_hovered: Option<Uuid> = ctx.data(|d| d.get_temp(hovered_key));
+    ctx.data_mut(|d| d.remove::<Uuid>(hovered_key));
+
+    let highlighted = highlighted_ids(prev_hovered, app);
 
     ui.columns(2, |cols| {
         // ── Left column: Products & Services ─────────────────────────────────
         cols[0].label(egui::RichText::new("Products & Services").strong());
         cols[0].separator();
-        for product in &app.product_page.products_state.products {
-            label_with_hover(
+        for product in &app.valueprop_page.products_state.products {
+            label_with_hover_id(
                 &mut cols[0],
                 accordion::display_name(&product.name, "Unnamed product"),
+                product.id,
                 accordion::color_job(),
+                highlighted.contains(&product.id),
+                hovered_key,
             );
         }
 
         // ── Right column: Gain Creators + Pain Reliefs ────────────────────────
         cols[1].label(egui::RichText::new("Gain Creators").strong());
         cols[1].separator();
-        for item in &app.product_page.gain_creator_state.gain_creators {
-            label_with_hover(
+        for item in &app.valueprop_page.gain_creator_state.gain_creators {
+            label_with_hover_id(
                 &mut cols[1],
                 accordion::display_name(&item.name, "Unnamed gain creator"),
+                item.id,
                 accordion::color_gain(),
+                highlighted.contains(&item.id),
+                hovered_key,
             );
         }
 
         cols[1].add_space(12.0);
         cols[1].label(egui::RichText::new("Pain Reliefs").strong());
         cols[1].separator();
-        for item in &app.product_page.pain_relief_state.pain_reliefs {
-            label_with_hover(
+        for item in &app.valueprop_page.pain_relief_state.pain_reliefs {
+            label_with_hover_id(
                 &mut cols[1],
                 accordion::display_name(&item.name, "Unnamed pain relief"),
+                item.id,
                 accordion::color_pain(),
+                highlighted.contains(&item.id),
+                hovered_key,
             );
         }
     });
 
     ui.add_space(8.0);
 
-    if app.product_page.product_windows.products_open {
+    if app.valueprop_page.product_windows.products_open {
         show_products_window(app, ctx);
     }
-    if app.product_page.product_windows.features_open {
+    if app.valueprop_page.product_windows.features_open {
         show_features_window(app, ctx);
     }
-    if app.product_page.product_windows.pain_relief_open {
+    if app.valueprop_page.product_windows.pain_relief_open {
         show_pain_relief_window(app, ctx);
     }
-    if app.product_page.product_windows.gain_creators_open {
+    if app.valueprop_page.product_windows.gain_creators_open {
         show_gain_creators_window(app, ctx);
     }
-    if app.product_page.product_windows.thoughtful_execution_open {
+    if app.valueprop_page.product_windows.thoughtful_execution_open {
         show_thoughtful_execution_window(app, ctx);
     }
 }

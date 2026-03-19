@@ -23,24 +23,24 @@ pub fn show_gains_window(app: &mut App, ctx: &egui::Context) {
     let mut nav_to_job: Option<Uuid> = None;
 
     egui::Window::new("Gains")
-        .open(&mut app.customer_page.customer_windows.gains_open)
+        .open(&mut app.customer_segment_page.customer_windows.gains_open)
         .default_size([720.0, 380.0])
         .show(ctx, |ui| {
             ui.heading("Gains");
             ui.add_space(4.0);
             if ui.button("➕ Add Gain").clicked() {
-                app.customer_page.gains_state.gains.push(Gain {
+                app.customer_segment_page.gains_state.gains.push(Gain {
                     id: Uuid::new_v4(),
                     ..Default::default()
                 });
             }
             ui.separator();
 
-            let jobs = &app.customer_page.jobs_state.jobs;
-            let links = &mut app.customer_page.job_gain_links;
+            let jobs = &app.customer_segment_page.jobs_state.jobs;
+            let links = &mut app.customer_segment_page.job_gain_links;
             show_accordion(
                 ui,
-                &mut app.customer_page.gains_state,
+                &mut app.customer_segment_page.gains_state,
                 jobs,
                 links,
                 &mut nav_to_job,

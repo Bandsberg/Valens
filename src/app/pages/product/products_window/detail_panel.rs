@@ -7,14 +7,14 @@ use super::super::super::accordion;
 // ── Detail panel window (Panel mode) ─────────────────────────────────────────
 
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.product_page.products_state.selected_product_id else {
+    let Some(id) = app.valueprop_page.products_state.selected_product_id else {
         return;
     };
 
     // Snapshot linked / available features before entering the window closure
     // so we can borrow `products_state.products` mutably inside without conflict.
     let linked_fids: Vec<Uuid> = app
-        .product_page
+        .valueprop_page
         .product_feature_links
         .iter()
         .filter(|(pid, _)| *pid == id)
@@ -22,7 +22,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let linked_features: Vec<(Uuid, String)> = app
-        .product_page
+        .valueprop_page
         .features_state
         .features
         .iter()
@@ -31,7 +31,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let available_features: Vec<(Uuid, String)> = app
-        .product_page
+        .valueprop_page
         .features_state
         .features
         .iter()
@@ -52,7 +52,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .open(&mut keep_open)
         .show(ctx, |ui| {
             let Some(product) = app
-                .product_page
+                .valueprop_page
                 .products_state
                 .products
                 .iter_mut()
@@ -101,8 +101,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                                     if ui.link(fname).on_hover_text("Open in Features").clicked() {
                                         navigate_to_feat = Some(*fid);
                                     }
-                                    if accordion::unlink_button(ui).clicked()
-                                    {
+                                    if accordion::unlink_button(ui).clicked() {
                                         link_to_remove = Some((id, *fid));
                                     }
                                 });
@@ -144,17 +143,17 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
     // User dismissed with ✕ → deselect.
     if !keep_open {
-        app.product_page.products_state.selected_product_id = None;
+        app.valueprop_page.products_state.selected_product_id = None;
     }
 
     // Apply mutations now that the closure has released all borrows.
     if let Some(pair) = link_to_add {
-        if !app.product_page.product_feature_links.contains(&pair) {
-            app.product_page.product_feature_links.push(pair);
+        if !app.valueprop_page.product_feature_links.contains(&pair) {
+            app.valueprop_page.product_feature_links.push(pair);
         }
     }
     if let Some(pair) = link_to_remove {
-        app.product_page
+        app.valueprop_page
             .product_feature_links
             .retain(|l| l != &pair);
     }
@@ -171,9 +170,9 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 ///   - Panel     → sets `selected_feature_id` so the detail window opens.
 /// Both are applied so switching modes also works correctly.
 pub fn navigate_to_feature(app: &mut App, ctx: &egui::Context, feat_id: Uuid) {
-    app.product_page.product_windows.features_open = true;
+    app.valueprop_page.product_windows.features_open = true;
     if let Some(feat) = app
-        .product_page
+        .valueprop_page
         .features_state
         .features
         .iter_mut()
@@ -181,8 +180,8 @@ pub fn navigate_to_feature(app: &mut App, ctx: &egui::Context, feat_id: Uuid) {
     {
         feat.expanded = true;
     }
-    app.product_page.features_state.selected_feature_id = Some(feat_id);
-    app.product_page.features_state.scroll_to_id = Some(feat_id);
+    app.valueprop_page.features_state.selected_feature_id = Some(feat_id);
+    app.valueprop_page.features_state.scroll_to_id = Some(feat_id);
     // Bring the Features window in front of all other windows.
     ctx.move_to_top(egui::LayerId::new(
         egui::Order::Middle,

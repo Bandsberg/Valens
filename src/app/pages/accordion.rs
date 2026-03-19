@@ -103,10 +103,23 @@ pub fn display_name<'a>(name: &'a str, fallback: &'a str) -> &'a str {
     if name.is_empty() { fallback } else { name }
 }
 
-/// Renders a label and paints a coloured highlight behind it on hover.
-pub fn label_with_hover(ui: &mut egui::Ui, text: &str, color: egui::Color32) {
+/// Renders a label and paints a coloured highlight behind it on hover or when
+/// `highlighted` is true (i.e. this entity is linked to whatever is hovered).
+/// Stores the hovered entity UUID in egui temp storage under `hover_key` so
+/// the caller can read it next frame to compute cross-highlighted siblings.
+pub fn label_with_hover_id(
+    ui: &mut egui::Ui,
+    text: &str,
+    id: Uuid,
+    color: egui::Color32,
+    highlighted: bool,
+    hover_key: egui::Id,
+) {
     let response = ui.label(text);
     if response.hovered() {
+        ui.ctx().data_mut(|d| d.insert_temp(hover_key, id));
+    }
+    if response.hovered() || highlighted {
         ui.painter().rect_filled(response.rect, 3.0, color);
     }
 }

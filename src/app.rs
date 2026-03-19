@@ -1,6 +1,7 @@
 mod pages;
 use pages::{
-    CustomerPage, ProductPage, customer_sidepanel, product_sidepanel, show_customer, show_product,
+    CustomerSegmentPage, ValuePropPage, customer_sidepanel, product_sidepanel, show_customer,
+    show_product,
 };
 mod demo_data;
 use demo_data::load_demo_data;
@@ -13,7 +14,7 @@ pub enum Mode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 enum Tab {
-    Product,
+    ValueProp,
     Customer,
 }
 
@@ -27,8 +28,8 @@ pub struct App {
     #[serde(skip)] // This how you opt-out of serialization of a field
     value: f32,
     tab: Tab,
-    product_page: ProductPage,
-    customer_page: CustomerPage,
+    valueprop_page: ValuePropPage,
+    customer_segment_page: CustomerSegmentPage,
 }
 
 impl Default for App {
@@ -37,9 +38,9 @@ impl Default for App {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
-            tab: Tab::Product,
-            product_page: ProductPage::default(),
-            customer_page: CustomerPage::default(),
+            tab: Tab::ValueProp,
+            valueprop_page: ValuePropPage::default(),
+            customer_segment_page: CustomerSegmentPage::default(),
         }
     }
 }
@@ -93,12 +94,12 @@ impl eframe::App for App {
 
                 egui::widgets::global_theme_preference_buttons(ui);
                 ui.separator();
-                ui.selectable_value(&mut self.tab, Tab::Product, "Products & Services");
+                ui.selectable_value(&mut self.tab, Tab::ValueProp, "Value Proposition");
                 ui.selectable_value(&mut self.tab, Tab::Customer, "Customer segment");
             });
         });
 
-        if self.tab == Tab::Product {
+        if self.tab == Tab::ValueProp {
             product_sidepanel(self, ctx);
         }
         if self.tab == Tab::Customer {
@@ -109,7 +110,7 @@ impl eframe::App for App {
             // The central panel the region left after adding TopPanel's and SidePanel's
             //
             match self.tab {
-                Tab::Product => {
+                Tab::ValueProp => {
                     show_product(self, ctx, ui);
                 }
                 Tab::Customer => {

@@ -5,12 +5,12 @@ use eframe::egui;
 // ── Delete confirmation dialog ────────────────────────────────────────────────
 
 pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.product_page.products_state.pending_delete else {
+    let Some(id) = app.valueprop_page.products_state.pending_delete else {
         return;
     };
 
     let product_name = app
-        .product_page
+        .valueprop_page
         .products_state
         .products
         .iter()
@@ -37,23 +37,23 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
                 );
                 if delete_btn.clicked() {
                     // Remove all links associated with this product.
-                    app.product_page
+                    app.valueprop_page
                         .product_feature_links
                         .retain(|(pid, _)| *pid != id);
-                    app.product_page
+                    app.valueprop_page
                         .products_state
                         .products
                         .retain(|p| p.id != id);
-                    app.product_page.products_state.pending_delete = None;
+                    app.valueprop_page.products_state.pending_delete = None;
                 }
                 if ui.button("Cancel").clicked() {
-                    app.product_page.products_state.pending_delete = None;
+                    app.valueprop_page.products_state.pending_delete = None;
                 }
             });
         });
 
     // User dismissed the dialog with ✕ → treat as cancel.
     if !keep_open {
-        app.product_page.products_state.pending_delete = None;
+        app.valueprop_page.products_state.pending_delete = None;
     }
 }

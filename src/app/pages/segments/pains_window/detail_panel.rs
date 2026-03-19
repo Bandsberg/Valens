@@ -5,13 +5,13 @@ use uuid::Uuid;
 use super::super::super::accordion;
 
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.customer_page.pains_state.selected_pain_id else {
+    let Some(id) = app.customer_segment_page.pains_state.selected_pain_id else {
         return;
     };
 
     // Link tuple: (pain_id, job_id)
     let linked_jids: Vec<Uuid> = app
-        .customer_page
+        .customer_segment_page
         .job_pain_links
         .iter()
         .filter(|(pid, _)| *pid == id)
@@ -19,7 +19,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let linked_jobs: Vec<(Uuid, String)> = app
-        .customer_page
+        .customer_segment_page
         .jobs_state
         .jobs
         .iter()
@@ -28,7 +28,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .collect();
 
     let available_jobs: Vec<(Uuid, String)> = app
-        .customer_page
+        .customer_segment_page
         .jobs_state
         .jobs
         .iter()
@@ -48,7 +48,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         .open(&mut keep_open)
         .show(ctx, |ui| {
             let Some(pain) = app
-                .customer_page
+                .customer_segment_page
                 .pains_state
                 .pains
                 .iter_mut()
@@ -64,9 +64,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                 .min_col_width(100.0)
                 .show(ui, |ui| {
                     ui.label("Name:");
-                    ui.add(
-                        egui::TextEdit::singleline(&mut pain.name).desired_width(f32::INFINITY),
-                    );
+                    ui.add(egui::TextEdit::singleline(&mut pain.name).desired_width(f32::INFINITY));
                     ui.end_row();
 
                     ui.label("Description:");
@@ -95,8 +93,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                                     if ui.link(jname).on_hover_text("Open in Jobs").clicked() {
                                         navigate_to_job_id = Some(*jid);
                                     }
-                                    if accordion::unlink_button(ui).clicked()
-                                    {
+                                    if accordion::unlink_button(ui).clicked() {
                                         link_to_remove = Some((id, *jid));
                                     }
                                 });
@@ -130,15 +127,15 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         });
 
     if !keep_open {
-        app.customer_page.pains_state.selected_pain_id = None;
+        app.customer_segment_page.pains_state.selected_pain_id = None;
     }
     if let Some(pair) = link_to_add {
-        if !app.customer_page.job_pain_links.contains(&pair) {
-            app.customer_page.job_pain_links.push(pair);
+        if !app.customer_segment_page.job_pain_links.contains(&pair) {
+            app.customer_segment_page.job_pain_links.push(pair);
         }
     }
     if let Some(pair) = link_to_remove {
-        app.customer_page.job_pain_links.retain(|l| l != &pair);
+        app.customer_segment_page.job_pain_links.retain(|l| l != &pair);
     }
     if let Some(job_id) = navigate_to_job_id {
         navigate_to_job(app, ctx, job_id);
@@ -149,9 +146,9 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
 /// Opens the Jobs window and ensures `job_id` is visible.
 pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
-    app.customer_page.customer_windows.jobs_open = true;
+    app.customer_segment_page.customer_windows.jobs_open = true;
     if let Some(job) = app
-        .customer_page
+        .customer_segment_page
         .jobs_state
         .jobs
         .iter_mut()
@@ -159,8 +156,8 @@ pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
     {
         job.expanded = true;
     }
-    app.customer_page.jobs_state.selected_job_id = Some(job_id);
-    app.customer_page.jobs_state.scroll_to_id = Some(job_id);
+    app.customer_segment_page.jobs_state.selected_job_id = Some(job_id);
+    app.customer_segment_page.jobs_state.scroll_to_id = Some(job_id);
     ctx.move_to_top(egui::LayerId::new(
         egui::Order::Middle,
         egui::Id::new("Jobs"),
@@ -170,9 +167,9 @@ pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
 /// Opens the Pains window and ensures `pain_id` is visible.
 #[allow(dead_code)]
 pub fn navigate_to_pain(app: &mut App, ctx: &egui::Context, pain_id: Uuid) {
-    app.customer_page.customer_windows.pains_open = true;
+    app.customer_segment_page.customer_windows.pains_open = true;
     if let Some(pain) = app
-        .customer_page
+        .customer_segment_page
         .pains_state
         .pains
         .iter_mut()
@@ -180,8 +177,8 @@ pub fn navigate_to_pain(app: &mut App, ctx: &egui::Context, pain_id: Uuid) {
     {
         pain.expanded = true;
     }
-    app.customer_page.pains_state.selected_pain_id = Some(pain_id);
-    app.customer_page.pains_state.scroll_to_id = Some(pain_id);
+    app.customer_segment_page.pains_state.selected_pain_id = Some(pain_id);
+    app.customer_segment_page.pains_state.scroll_to_id = Some(pain_id);
     ctx.move_to_top(egui::LayerId::new(
         egui::Order::Middle,
         egui::Id::new("Pains"),

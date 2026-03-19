@@ -1,8 +1,8 @@
 use std::str::FromStr as _;
 
 use crate::App;
-use crate::app::ProductPage;
 use crate::app::Tab;
+use crate::app::ValuePropPage;
 use crate::app::pages::CustomerSegment;
 use crate::app::pages::Gain;
 use crate::app::pages::Job;
@@ -21,9 +21,9 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         demo_app = App {
             label: String::new(),
             value: 0.0,
-            tab: Tab::Product,
-            product_page: ProductPage::default(),
-            customer_page: Default::default(),
+            tab: Tab::ValueProp,
+            valueprop_page: ValuePropPage::default(),
+            customer_segment_page: Default::default(),
         };
     }
 
@@ -36,19 +36,25 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let product_1 = Product {
         id: product_1_id,
         name: "Payment Rails API".to_owned(),
-        description: "Embedded payment processing covering card, ACH, and SWIFT via a single integration".to_owned(),
-        notes: "Primary revenue product; pricing is per-transaction with a monthly platform fee".to_owned(),
+        description:
+            "Embedded payment processing covering card, ACH, and SWIFT via a single integration"
+                .to_owned(),
+        notes: "Primary revenue product; pricing is per-transaction with a monthly platform fee"
+            .to_owned(),
         expanded: false,
     };
     let product_2 = Product {
         id: product_2_id,
         name: "KYC & Compliance Suite".to_owned(),
-        description: "Automated identity verification and AML screening with regulator-ready audit trails".to_owned(),
-        notes: "Sold standalone or bundled with Payment Rails API; banks require on-prem option".to_owned(),
+        description:
+            "Automated identity verification and AML screening with regulator-ready audit trails"
+                .to_owned(),
+        notes: "Sold standalone or bundled with Payment Rails API; banks require on-prem option"
+            .to_owned(),
         expanded: false,
     };
 
-    let prod_vec = &mut demo_app.product_page.products_state.products;
+    let prod_vec = &mut demo_app.valueprop_page.products_state.products;
     let demo_products = [product_1, product_2];
     for (i, product) in demo_products.into_iter().enumerate() {
         if let Some(slot) = prod_vec.get_mut(i) {
@@ -97,7 +103,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let feat_vec = &mut demo_app.product_page.features_state.features;
+    let feat_vec = &mut demo_app.valueprop_page.features_state.features;
     let demo_features = [feature_1, feature_2, feature_3];
     for (i, feature) in demo_features.into_iter().enumerate() {
         if let Some(slot) = feat_vec.get_mut(i) {
@@ -116,7 +122,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         (product_2_id, feature_2_id),
         (product_2_id, feature_3_id),
     ];
-    let existing_links = &mut demo_app.product_page.product_feature_links;
+    let existing_links = &mut demo_app.valueprop_page.product_feature_links;
     for link in demo_prod_feat_links {
         if !existing_links.contains(&link) {
             existing_links.push(link);
@@ -134,8 +140,12 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let pr_1 = PainRelief {
         id: pr_1_id,
         name: "Pre-built SDK & sandbox".to_owned(),
-        description: "Language SDKs and a realistic sandbox environment cut integration from weeks to hours".to_owned(),
-        notes: "SDKs available for Node, Python, Java, and Go; sandbox mirrors production data shapes".to_owned(),
+        description:
+            "Language SDKs and a realistic sandbox environment cut integration from weeks to hours"
+                .to_owned(),
+        notes:
+            "SDKs available for Node, Python, Java, and Go; sandbox mirrors production data shapes"
+                .to_owned(),
         expanded: false,
     };
     let pr_2 = PainRelief {
@@ -153,7 +163,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let pr_vec = &mut demo_app.product_page.pain_relief_state.pain_reliefs;
+    let pr_vec = &mut demo_app.valueprop_page.pain_relief_state.pain_reliefs;
     let demo_prs = [pr_1, pr_2, pr_3];
     for (i, pr) in demo_prs.into_iter().enumerate() {
         if let Some(slot) = pr_vec.get_mut(i) {
@@ -172,7 +182,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         (feature_2_id, pr_2_id),
         (feature_3_id, pr_3_id),
     ];
-    let existing_feat_pr = &mut demo_app.product_page.feature_pain_relief_links;
+    let existing_feat_pr = &mut demo_app.valueprop_page.feature_pain_relief_links;
     for link in demo_feat_pr_links {
         if !existing_feat_pr.contains(&link) {
             existing_feat_pr.push(link);
@@ -194,7 +204,8 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let segment_1 = CustomerSegment {
         id: segment_1_id,
         name: "Fintech Startups".to_owned(),
-        description: "Early-stage fintechs embedding financial services into their product".to_owned(),
+        description: "Early-stage fintechs embedding financial services into their product"
+            .to_owned(),
         notes: String::new(),
         characteristics: "Small dev teams, need fast API integration, cost-sensitive, move quickly"
             .to_owned(),
@@ -205,12 +216,13 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         name: "Regional Banks".to_owned(),
         description: "Mid-sized banks modernising their infrastructure via BaaS".to_owned(),
         notes: String::new(),
-        characteristics: "Strong compliance requirements, legacy system integration, risk-averse procurement"
-            .to_owned(),
+        characteristics:
+            "Strong compliance requirements, legacy system integration, risk-averse procurement"
+                .to_owned(),
         expanded: false,
     };
 
-    let seg_vec = &mut demo_app.customer_page.segments_state.segments;
+    let seg_vec = &mut demo_app.customer_segment_page.segments_state.segments;
     let demo_segments = [segment_1, segment_2];
     for (i, segment) in demo_segments.into_iter().enumerate() {
         if let Some(slot) = seg_vec.get_mut(i) {
@@ -232,13 +244,15 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         id: job_1_id,
         name: "Integrate payment rails".to_owned(),
         description: "Connect to card schemes, ACH, or SWIFT via a BaaS provider API".to_owned(),
-        notes: "Critical path for fintechs launching; compliance sign-off required for banks".to_owned(),
+        notes: "Critical path for fintechs launching; compliance sign-off required for banks"
+            .to_owned(),
         expanded: false,
     };
     let job_2 = Job {
         id: job_2_id,
         name: "Manage KYC & onboarding".to_owned(),
-        description: "Verify customer identities and satisfy AML obligations at account opening".to_owned(),
+        description: "Verify customer identities and satisfy AML obligations at account opening"
+            .to_owned(),
         notes: "Fintechs want automated flows; banks need audit trails for regulators".to_owned(),
         expanded: false,
     };
@@ -250,7 +264,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let job_vec = &mut demo_app.customer_page.jobs_state.jobs;
+    let job_vec = &mut demo_app.customer_segment_page.jobs_state.jobs;
     let demo_jobs = [job_1, job_2, job_3];
     for (i, job) in demo_jobs.into_iter().enumerate() {
         if let Some(slot) = job_vec.get_mut(i) {
@@ -270,7 +284,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         (job_2_id, segment_2_id),
         (job_3_id, segment_2_id),
     ];
-    let existing_seg_job_links = &mut demo_app.customer_page.segment_job_links;
+    let existing_seg_job_links = &mut demo_app.customer_segment_page.segment_job_links;
     for link in demo_seg_job_links {
         if !existing_seg_job_links.contains(&link) {
             existing_seg_job_links.push(link);
@@ -288,7 +302,8 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let pain_1 = Pain {
         id: pain_1_id,
         name: "Complex API integration".to_owned(),
-        description: "BaaS APIs are inconsistent across providers, slowing time-to-market".to_owned(),
+        description: "BaaS APIs are inconsistent across providers, slowing time-to-market"
+            .to_owned(),
         notes: "Fintechs cite this as the top bottleneck before launch".to_owned(),
         expanded: false,
     };
@@ -307,7 +322,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let pain_vec = &mut demo_app.customer_page.pains_state.pains;
+    let pain_vec = &mut demo_app.customer_segment_page.pains_state.pains;
     let demo_pains = [pain_1, pain_2, pain_3];
     for (i, pain) in demo_pains.into_iter().enumerate() {
         if let Some(slot) = pain_vec.get_mut(i) {
@@ -323,7 +338,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         (pain_2_id, job_2_id),
         (pain_3_id, job_3_id),
     ];
-    let existing_pain_job_links = &mut demo_app.customer_page.job_pain_links;
+    let existing_pain_job_links = &mut demo_app.customer_segment_page.job_pain_links;
     for link in demo_pain_job_links {
         if !existing_pain_job_links.contains(&link) {
             existing_pain_job_links.push(link);
@@ -336,7 +351,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         (pain_2_id, pr_2_id),
         (pain_3_id, pr_3_id),
     ];
-    let existing_pain_pr = &mut demo_app.product_page.pain_pain_relief_links;
+    let existing_pain_pr = &mut demo_app.valueprop_page.pain_pain_relief_links;
     for link in demo_pain_pr_links {
         if !existing_pain_pr.contains(&link) {
             existing_pain_pr.push(link);
@@ -354,7 +369,8 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let gain_1 = Gain {
         id: gain_1_id,
         name: "Fast API go-live".to_owned(),
-        description: "Launch payment capabilities in days with well-documented, consistent APIs".to_owned(),
+        description: "Launch payment capabilities in days with well-documented, consistent APIs"
+            .to_owned(),
         notes: "Top priority for fintechs racing to market".to_owned(),
         expanded: false,
     };
@@ -373,7 +389,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let gain_vec = &mut demo_app.customer_page.gains_state.gains;
+    let gain_vec = &mut demo_app.customer_segment_page.gains_state.gains;
     let demo_gains = [gain_1, gain_2, gain_3];
     for (i, gain) in demo_gains.into_iter().enumerate() {
         if let Some(slot) = gain_vec.get_mut(i) {
@@ -389,7 +405,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         (gain_2_id, job_2_id),
         (gain_3_id, job_3_id),
     ];
-    let existing_gain_job_links = &mut demo_app.customer_page.job_gain_links;
+    let existing_gain_job_links = &mut demo_app.customer_segment_page.job_gain_links;
     for link in demo_gain_job_links {
         if !existing_gain_job_links.contains(&link) {
             existing_gain_job_links.push(link);
@@ -414,7 +430,9 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let gc_2 = GainCreator {
         id: gc_2_id,
         name: "Frictionless onboarding flow".to_owned(),
-        description: "Pre-filled forms, progressive KYC steps, and instant auto-approval maximise conversion".to_owned(),
+        description:
+            "Pre-filled forms, progressive KYC steps, and instant auto-approval maximise conversion"
+                .to_owned(),
         notes: "Mobile-optimised flow reduces drop-off on smaller screens".to_owned(),
         expanded: false,
     };
@@ -426,7 +444,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let gc_vec = &mut demo_app.product_page.gain_creator_state.gain_creators;
+    let gc_vec = &mut demo_app.valueprop_page.gain_creator_state.gain_creators;
     let demo_gcs = [gc_1, gc_2, gc_3];
     for (i, gc) in demo_gcs.into_iter().enumerate() {
         if let Some(slot) = gc_vec.get_mut(i) {
@@ -445,7 +463,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         (feature_2_id, gc_2_id),
         (feature_3_id, gc_3_id),
     ];
-    let existing_feat_gc = &mut demo_app.product_page.feature_gain_creator_links;
+    let existing_feat_gc = &mut demo_app.valueprop_page.feature_gain_creator_links;
     for link in demo_feat_gc_links {
         if !existing_feat_gc.contains(&link) {
             existing_feat_gc.push(link);
@@ -461,7 +479,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         (gain_2_id, gc_2_id),
         (gain_3_id, gc_3_id),
     ];
-    let existing_gain_gc = &mut demo_app.product_page.gain_gain_creator_links;
+    let existing_gain_gc = &mut demo_app.valueprop_page.gain_gain_creator_links;
     for link in demo_gain_gc_links {
         if !existing_gain_gc.contains(&link) {
             existing_gain_gc.push(link);

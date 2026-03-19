@@ -4,13 +4,13 @@ use eframe::egui;
 // ── Delete confirmation dialog ────────────────────────────────────────────────
 
 pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.customer_page.segments_state.pending_delete else {
+    let Some(id) = app.customer_segment_page.segments_state.pending_delete else {
         return;
     };
 
     // Find the name before opening the window so we can display it.
     let segment_name = app
-        .customer_page
+        .customer_segment_page
         .segments_state
         .segments
         .iter()
@@ -54,15 +54,15 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         });
 
     if confirmed {
-        app.customer_page
+        app.customer_segment_page
             .segments_state
             .segments
             .retain(|s| s.id != id);
-        if app.customer_page.segments_state.selected_segment_id == Some(id) {
-            app.customer_page.segments_state.selected_segment_id = None;
+        if app.customer_segment_page.segments_state.selected_segment_id == Some(id) {
+            app.customer_segment_page.segments_state.selected_segment_id = None;
         }
     }
     if confirmed || dismiss {
-        app.customer_page.segments_state.pending_delete = None;
+        app.customer_segment_page.segments_state.pending_delete = None;
     }
 }

@@ -26,7 +26,7 @@ pub fn show_jobs_window(app: &mut App, ctx: &egui::Context) {
     let mut nav_to_seg: Option<Uuid> = None;
 
     egui::Window::new("Jobs")
-        .open(&mut app.customer_page.customer_windows.jobs_open)
+        .open(&mut app.customer_segment_page.customer_windows.jobs_open)
         .default_size([720.0, 380.0])
         .show(ctx, |ui| {
             ui.heading("Jobs");
@@ -34,7 +34,7 @@ pub fn show_jobs_window(app: &mut App, ctx: &egui::Context) {
             ui.add_space(4.0);
 
             if ui.button("➕ Add Job").clicked() {
-                app.customer_page.jobs_state.jobs.push(Job {
+                app.customer_segment_page.jobs_state.jobs.push(Job {
                     id: Uuid::new_v4(),
                     ..Default::default()
                 });
@@ -43,11 +43,11 @@ pub fn show_jobs_window(app: &mut App, ctx: &egui::Context) {
             ui.separator();
 
             // Split borrows across different CustomerPage fields.
-            let segments = &app.customer_page.segments_state.segments;
-            let links = &mut app.customer_page.segment_job_links;
+            let segments = &app.customer_segment_page.segments_state.segments;
+            let links = &mut app.customer_segment_page.segment_job_links;
             show_accordion(
                 ui,
-                &mut app.customer_page.jobs_state,
+                &mut app.customer_segment_page.jobs_state,
                 segments,
                 links,
                 &mut nav_to_seg,

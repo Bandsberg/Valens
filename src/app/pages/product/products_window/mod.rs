@@ -25,7 +25,7 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
     let mut nav_to_feat: Option<Uuid> = None;
 
     egui::Window::new("Products & Services")
-        .open(&mut app.product_page.product_windows.products_open)
+        .open(&mut app.valueprop_page.product_windows.products_open)
         .default_size([720.0, 380.0])
         .show(ctx, |ui| {
             ui.heading("Products & Services");
@@ -33,7 +33,7 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
             ui.add_space(4.0);
 
             if ui.button("➕ Add Product/Service").clicked() {
-                app.product_page.products_state.products.push(Product {
+                app.valueprop_page.products_state.products.push(Product {
                     id: Uuid::new_v4(),
                     ..Default::default()
                 });
@@ -42,11 +42,11 @@ pub fn show_products_window(app: &mut App, ctx: &egui::Context) {
             ui.separator();
 
             // Split borrows across different ProductPage fields.
-            let features = &app.product_page.features_state.features;
-            let links = &mut app.product_page.product_feature_links;
+            let features = &app.valueprop_page.features_state.features;
+            let links = &mut app.valueprop_page.product_feature_links;
             show_accordion(
                 ui,
-                &mut app.product_page.products_state,
+                &mut app.valueprop_page.products_state,
                 features,
                 links,
                 &mut nav_to_feat,
