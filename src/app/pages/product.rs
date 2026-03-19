@@ -141,12 +141,14 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     let highlighted = highlighted_ids(prev_hovered, app);
 
     ui.columns(2, |cols| {
+        let [left, right] = cols else { return };
+
         // ── Left column: Products & Services ─────────────────────────────────
-        cols[0].label(egui::RichText::new("Products & Services").strong());
-        cols[0].separator();
+        left.label(egui::RichText::new("Products & Services").strong());
+        left.separator();
         for product in &app.valueprop_page.products_state.products {
             label_with_hover_id(
-                &mut cols[0],
+                left,
                 accordion::display_name(&product.name, "Unnamed product"),
                 product.id,
                 accordion::color_job(),
@@ -156,11 +158,11 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
         }
 
         // ── Right column: Gain Creators + Pain Reliefs ────────────────────────
-        cols[1].label(egui::RichText::new("Gain Creators").strong());
-        cols[1].separator();
+        right.label(egui::RichText::new("Gain Creators").strong());
+        right.separator();
         for item in &app.valueprop_page.gain_creator_state.gain_creators {
             label_with_hover_id(
-                &mut cols[1],
+                right,
                 accordion::display_name(&item.name, "Unnamed gain creator"),
                 item.id,
                 accordion::color_gain(),
@@ -169,12 +171,12 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
             );
         }
 
-        cols[1].add_space(12.0);
-        cols[1].label(egui::RichText::new("Pain Reliefs").strong());
-        cols[1].separator();
+        right.add_space(12.0);
+        right.label(egui::RichText::new("Pain Reliefs").strong());
+        right.separator();
         for item in &app.valueprop_page.pain_relief_state.pain_reliefs {
             label_with_hover_id(
-                &mut cols[1],
+                right,
                 accordion::display_name(&item.name, "Unnamed pain relief"),
                 item.id,
                 accordion::color_pain(),

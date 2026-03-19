@@ -133,12 +133,14 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     let highlighted = highlighted_ids(prev_hovered, app);
 
     ui.columns(2, |cols| {
+        let [left, right] = cols else { return };
+
         // ── Left column: Gains + Pains ────────────────────────────────────────
-        cols[0].label(egui::RichText::new("Gains").strong());
-        cols[0].separator();
+        left.label(egui::RichText::new("Gains").strong());
+        left.separator();
         for item in &app.customer_segment_page.gains_state.gains {
             label_with_hover_id(
-                &mut cols[0],
+                left,
                 display_name(&item.name, "Unnamed gain"),
                 item.id,
                 color_gain(),
@@ -147,12 +149,12 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
             );
         }
 
-        cols[0].add_space(12.0);
-        cols[0].label(egui::RichText::new("Pains").strong());
-        cols[0].separator();
+        left.add_space(12.0);
+        left.label(egui::RichText::new("Pains").strong());
+        left.separator();
         for item in &app.customer_segment_page.pains_state.pains {
             label_with_hover_id(
-                &mut cols[0],
+                left,
                 display_name(&item.name, "Unnamed pain"),
                 item.id,
                 color_pain(),
@@ -162,11 +164,11 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
         }
 
         // ── Right column: Jobs ────────────────────────────────────────────────
-        cols[1].label(egui::RichText::new("Jobs").strong());
-        cols[1].separator();
+        right.label(egui::RichText::new("Jobs").strong());
+        right.separator();
         for item in &app.customer_segment_page.jobs_state.jobs {
             label_with_hover_id(
-                &mut cols[1],
+                right,
                 display_name(&item.name, "Unnamed job"),
                 item.id,
                 color_job(),
