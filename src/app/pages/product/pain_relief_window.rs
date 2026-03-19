@@ -5,6 +5,7 @@ use uuid::Uuid;
 use super::super::Pain;
 use super::super::accordion;
 use super::features_window::Feature;
+use super::products_window::navigate_to_feature;
 
 const MULTILINE_H: f32 = 58.0;
 
@@ -305,25 +306,6 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 }
 
 // ── Navigation helper ─────────────────────────────────────────────────────────
-
-fn navigate_to_feature(app: &mut App, ctx: &egui::Context, feat_id: Uuid) {
-    app.valueprop_page.product_windows.features_open = true;
-    if let Some(feat) = app
-        .valueprop_page
-        .features_state
-        .features
-        .iter_mut()
-        .find(|f| f.id == feat_id)
-    {
-        feat.expanded = true;
-    }
-    app.valueprop_page.features_state.selected_feature_id = Some(feat_id);
-    app.valueprop_page.features_state.scroll_to_id = Some(feat_id);
-    ctx.move_to_top(egui::LayerId::new(
-        egui::Order::Middle,
-        egui::Id::new("Features"),
-    ));
-}
 
 // ── Accordion table ───────────────────────────────────────────────────────────
 

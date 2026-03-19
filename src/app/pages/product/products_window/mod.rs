@@ -9,8 +9,9 @@ mod model;
 
 use accordion::show_accordion;
 use delete_dialog::show_delete_confirmation;
-use detail_panel::{navigate_to_feature, show_detail_panel};
+use detail_panel::show_detail_panel;
 
+pub use detail_panel::navigate_to_feature;
 pub use model::{Product, ProductsState};
 
 // ── Main entry point ──────────────────────────────────────────────────────────
