@@ -309,8 +309,6 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     }
 }
 
-// ── Navigation helper ─────────────────────────────────────────────────────────
-
 // ── Accordion table ───────────────────────────────────────────────────────────
 
 fn show_accordion(
