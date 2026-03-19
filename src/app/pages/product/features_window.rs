@@ -239,28 +239,21 @@ fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         if !available_products.is_empty() {
                             ui.add_space(4.0);
 
-                            // Use egui's per-id temp storage so the combo
-                            // selection survives across frames until we act on it.
                             let combo_key = egui::Id::new("feat_detail_link_prod").with(id);
-                            let mut sel: Uuid =
-                                ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
-
                             let avail_w = ui.available_width();
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a product…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for (pid, pname) in &available_products {
-                                        ui.selectable_value(&mut sel, *pid, pname);
-                                    }
-                                });
-
-                            if sel != Uuid::nil() {
-                                // A product was chosen — queue the link and reset.
+                            if let Some(sel) =
+                                accordion::link_combo_pick(ui, combo_key, |ui, sel| {
+                                    egui::ComboBox::from_id_salt(combo_key)
+                                        .selected_text("Add a product…")
+                                        .width(avail_w)
+                                        .show_ui(ui, |ui| {
+                                            for (pid, pname) in &available_products {
+                                                ui.selectable_value(sel, *pid, pname);
+                                            }
+                                        });
+                                })
+                            {
                                 link_to_add = Some((sel, id));
-                                ui.data_mut(|d| d.remove::<Uuid>(combo_key));
-                            } else {
-                                ui.data_mut(|d| d.insert_temp(combo_key, sel));
                             }
                         }
                     });
@@ -438,24 +431,18 @@ fn show_accordion(
 
                     if !available.is_empty() {
                         let combo_key = egui::Id::new("feat_acc_link_prod").with(id);
-                        let mut sel: Uuid =
-                            ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
-
                         let avail_w = ui.available_width();
-                        egui::ComboBox::from_id_salt(combo_key)
-                            .selected_text("Add a product…")
-                            .width(avail_w)
-                            .show_ui(ui, |ui| {
-                                for prod in &available {
-                                    ui.selectable_value(&mut sel, prod.id, &prod.name);
-                                }
-                            });
-
-                        if sel != Uuid::nil() {
+                        if let Some(sel) = accordion::link_combo_pick(ui, combo_key, |ui, sel| {
+                            egui::ComboBox::from_id_salt(combo_key)
+                                .selected_text("Add a product…")
+                                .width(avail_w)
+                                .show_ui(ui, |ui| {
+                                    for prod in &available {
+                                        ui.selectable_value(sel, prod.id, &prod.name);
+                                    }
+                                });
+                        }) {
                             link_to_add = Some((sel, id));
-                            ui.data_mut(|d| d.remove::<Uuid>(combo_key));
-                        } else {
-                            ui.data_mut(|d| d.insert_temp(combo_key, sel));
                         }
                     } else {
                         ui.add_enabled(
