@@ -71,7 +71,68 @@ pub fn customer_sidepanel(app: &mut App, ctx: &egui::Context) {
 
 pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     ui.heading("Customer Segment");
-    ui.label("Use the Tools panel to open the Customer Segments and Jobs windows.");
+    ui.add_space(8.0);
+
+    ui.columns(2, |cols| {
+        // ── Left column: Pains + Gains ────────────────────────────────────────
+        cols[0].label(egui::RichText::new("Pains").strong());
+        cols[0].separator();
+        for item in &app.customer_page.pains_state.pains {
+            let name = if item.name.is_empty() {
+                "Unnamed pain"
+            } else {
+                &item.name
+            };
+            let response = cols[0].label(name);
+            if response.hovered() {
+                cols[0].painter().rect_filled(
+                    response.rect,
+                    3.0,
+                    egui::Color32::from_rgba_unmultiplied(220, 80, 80, 40),
+                );
+            }
+        }
+
+        cols[0].add_space(12.0);
+        cols[0].label(egui::RichText::new("Gains").strong());
+        cols[0].separator();
+        for item in &app.customer_page.gains_state.gains {
+            let name = if item.name.is_empty() {
+                "Unnamed gain"
+            } else {
+                &item.name
+            };
+            let response = cols[0].label(name);
+            if response.hovered() {
+                cols[0].painter().rect_filled(
+                    response.rect,
+                    3.0,
+                    egui::Color32::from_rgba_unmultiplied(80, 140, 220, 40),
+                );
+            }
+        }
+
+        // ── Right column: Jobs ────────────────────────────────────────────────
+        cols[1].label(egui::RichText::new("Jobs").strong());
+        cols[1].separator();
+        for item in &app.customer_page.jobs_state.jobs {
+            let name = if item.name.is_empty() {
+                "Unnamed job"
+            } else {
+                &item.name
+            };
+            let response = cols[1].label(name);
+            if response.hovered() {
+                cols[1].painter().rect_filled(
+                    response.rect,
+                    3.0,
+                    egui::Color32::from_rgba_unmultiplied(160, 100, 220, 40),
+                );
+            }
+        }
+    });
+
+    ui.add_space(8.0);
 
     if app.customer_page.customer_windows.segments_open {
         show_segments_window(app, ctx);
