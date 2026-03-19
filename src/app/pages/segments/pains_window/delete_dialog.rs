@@ -1,6 +1,8 @@
 use crate::app::App;
 use eframe::egui;
 
+use super::super::super::accordion;
+
 pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_segment_page.pains_state.pending_delete else {
         return;
@@ -16,36 +18,7 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         .unwrap_or("this pain")
         .to_owned();
 
-    let mut confirmed = false;
-    let mut dismiss = false;
-
-    egui::Window::new("Delete Pain?")
-        .collapsible(false)
-        .resizable(false)
-        .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-        .show(ctx, |ui| {
-            ui.label(format!("Delete \"{pain_name}\"?"));
-            ui.label(
-                egui::RichText::new("This cannot be undone.").color(ui.visuals().warn_fg_color),
-            );
-            ui.add_space(8.0);
-            ui.horizontal(|ui| {
-                if ui
-                    .add(
-                        egui::Button::new(
-                            egui::RichText::new("Delete").color(egui::Color32::WHITE),
-                        )
-                        .fill(egui::Color32::from_rgb(180, 40, 40)),
-                    )
-                    .clicked()
-                {
-                    confirmed = true;
-                }
-                if ui.button("Cancel").clicked() {
-                    dismiss = true;
-                }
-            });
-        });
+    let (confirmed, dismissed) = accordion::delete_dialog(ctx, "Delete Pain?", &pain_name);
 
     if confirmed {
         app.customer_segment_page
@@ -56,7 +29,7 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             app.customer_segment_page.pains_state.selected_pain_id = None;
         }
     }
-    if confirmed || dismiss {
+    if confirmed || dismissed {
         app.customer_segment_page.pains_state.pending_delete = None;
     }
 }

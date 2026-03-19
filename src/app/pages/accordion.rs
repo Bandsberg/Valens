@@ -124,6 +124,44 @@ pub fn label_with_hover_id(
     }
 }
 
+/// Renders a centered delete-confirmation dialog.
+/// Returns `(confirmed, dismissed)` — the caller handles cleanup on `confirmed`
+/// and should clear `pending_delete` on either flag.
+pub fn delete_dialog(ctx: &egui::Context, title: &str, item_name: &str) -> (bool, bool) {
+    let mut confirmed = false;
+    let mut dismissed = false;
+
+    egui::Window::new(title)
+        .collapsible(false)
+        .resizable(false)
+        .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+        .show(ctx, |ui| {
+            ui.label(format!("Delete \"{item_name}\"?"));
+            ui.label(
+                egui::RichText::new("This cannot be undone.").color(ui.visuals().warn_fg_color),
+            );
+            ui.add_space(8.0);
+            ui.horizontal(|ui| {
+                if ui
+                    .add(
+                        egui::Button::new(
+                            egui::RichText::new("Delete").color(egui::Color32::WHITE),
+                        )
+                        .fill(egui::Color32::from_rgb(180, 40, 40)),
+                    )
+                    .clicked()
+                {
+                    confirmed = true;
+                }
+                if ui.button("Cancel").clicked() {
+                    dismissed = true;
+                }
+            });
+        });
+
+    (confirmed, dismissed)
+}
+
 /// Expand/collapse arrow button for accordion rows. Returns `true` if clicked.
 pub fn expand_button(ui: &mut egui::Ui, expanded: bool) -> bool {
     let arrow = if expanded { "▼" } else { "▶" };
