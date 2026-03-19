@@ -19,8 +19,6 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         demo_app = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
     } else {
         demo_app = App {
-            label: String::new(),
-            value: 0.0,
             tab: Tab::ValueProp,
             valueprop_page: ValuePropPage::default(),
             customer_segment_page: Default::default(),
