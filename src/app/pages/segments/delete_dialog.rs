@@ -20,7 +20,7 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         .to_owned();
 
     let mut confirmed = false;
-    let mut cancelled = false;
+    let mut dismiss = false;
 
     egui::Window::new("Delete Customer Segment?")
         .collapsible(false)
@@ -48,7 +48,7 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
                 }
 
                 if ui.button("Cancel").clicked() {
-                    cancelled = true;
+                    dismiss = true;
                 }
             });
         });
@@ -58,12 +58,11 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             .segments_state
             .segments
             .retain(|s| s.id != id);
-        // If the deleted segment's detail panel was open, close it.
         if app.customer_page.segments_state.selected_segment_id == Some(id) {
             app.customer_page.segments_state.selected_segment_id = None;
         }
-        app.customer_page.segments_state.pending_delete = None;
-    } else if cancelled {
+    }
+    if confirmed || dismiss {
         app.customer_page.segments_state.pending_delete = None;
     }
 }

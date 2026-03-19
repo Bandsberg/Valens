@@ -17,7 +17,7 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         .to_owned();
 
     let mut confirmed = false;
-    let mut cancelled = false;
+    let mut dismiss = false;
 
     egui::Window::new("Delete Gain?")
         .collapsible(false)
@@ -42,7 +42,7 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
                     confirmed = true;
                 }
                 if ui.button("Cancel").clicked() {
-                    cancelled = true;
+                    dismiss = true;
                 }
             });
         });
@@ -55,8 +55,8 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         if app.customer_page.gains_state.selected_gain_id == Some(id) {
             app.customer_page.gains_state.selected_gain_id = None;
         }
-        app.customer_page.gains_state.pending_delete = None;
-    } else if cancelled {
+    }
+    if confirmed || dismiss {
         app.customer_page.gains_state.pending_delete = None;
     }
 }
