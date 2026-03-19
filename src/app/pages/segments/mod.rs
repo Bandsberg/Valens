@@ -88,38 +88,24 @@ pub fn customer_sidepanel(app: &mut App, ctx: &egui::Context) {
 /// - `Gain` ↔ `Job` (`job_gain_links`: `(gain_id, job_id)`)
 /// - `Pain` ↔ `Job` (`job_pain_links`: `(pain_id, job_id)`)
 fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
-    let mut result = HashSet::new();
-    let Some(hovered_id) = hovered else { return result };
-
+    let Some(hovered_id) = hovered else { return HashSet::new() };
     let cs = &app.customer_segment_page;
 
-    // Hover Job → highlight linked Gains and Pains.
-    for (gain_id, job_id) in &cs.job_gain_links {
-        if *job_id == hovered_id {
-            result.insert(*gain_id);
-        }
-    }
-    for (pain_id, job_id) in &cs.job_pain_links {
-        if *job_id == hovered_id {
-            result.insert(*pain_id);
-        }
-    }
-
-    // Hover Gain → highlight linked Jobs.
-    for (gain_id, job_id) in &cs.job_gain_links {
-        if *gain_id == hovered_id {
-            result.insert(*job_id);
-        }
-    }
-
-    // Hover Pain → highlight linked Jobs.
-    for (pain_id, job_id) in &cs.job_pain_links {
-        if *pain_id == hovered_id {
-            result.insert(*job_id);
-        }
-    }
-
-    result
+    // Each link is (gain_or_pain_id, job_id). Both directions are symmetric:
+    // if either end matches the hovered entity, highlight the other end.
+    cs.job_gain_links
+        .iter()
+        .chain(&cs.job_pain_links)
+        .filter_map(|&(a, b)| {
+            if a == hovered_id {
+                Some(b)
+            } else if b == hovered_id {
+                Some(a)
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
