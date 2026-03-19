@@ -104,22 +104,20 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         if !available_jobs.is_empty() {
                             ui.add_space(4.0);
                             let combo_key = egui::Id::new("pain_detail_link_job").with(id);
-                            let mut sel: Uuid =
-                                ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
                             let avail_w = ui.available_width();
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a job…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for (jid, jname) in &available_jobs {
-                                        ui.selectable_value(&mut sel, *jid, jname);
-                                    }
-                                });
-                            if sel != Uuid::nil() {
+                            if let Some(sel) =
+                                accordion::link_combo_pick(ui, combo_key, |ui, sel| {
+                                    egui::ComboBox::from_id_salt(combo_key)
+                                        .selected_text("Add a job…")
+                                        .width(avail_w)
+                                        .show_ui(ui, |ui| {
+                                            for (jid, jname) in &available_jobs {
+                                                ui.selectable_value(sel, *jid, jname);
+                                            }
+                                        });
+                                })
+                            {
                                 link_to_add = Some((id, sel));
-                                ui.data_mut(|d| d.remove::<Uuid>(combo_key));
-                            } else {
-                                ui.data_mut(|d| d.insert_temp(combo_key, sel));
                             }
                         }
                     });
@@ -165,23 +163,3 @@ pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
     ));
 }
 
-/// Opens the Pains window and ensures `pain_id` is visible.
-#[expect(dead_code)]
-pub fn navigate_to_pain(app: &mut App, ctx: &egui::Context, pain_id: Uuid) {
-    app.customer_segment_page.customer_windows.pains_open = true;
-    if let Some(pain) = app
-        .customer_segment_page
-        .pains_state
-        .pains
-        .iter_mut()
-        .find(|p| p.id == pain_id)
-    {
-        pain.expanded = true;
-    }
-    app.customer_segment_page.pains_state.selected_pain_id = Some(pain_id);
-    app.customer_segment_page.pains_state.scroll_to_id = Some(pain_id);
-    ctx.move_to_top(egui::LayerId::new(
-        egui::Order::Middle,
-        egui::Id::new("Pains"),
-    ));
-}

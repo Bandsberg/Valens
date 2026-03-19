@@ -104,22 +104,20 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         if !available_jobs.is_empty() {
                             ui.add_space(4.0);
                             let combo_key = egui::Id::new("gain_detail_link_job").with(id);
-                            let mut sel: Uuid =
-                                ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
                             let avail_w = ui.available_width();
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a job…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for (jid, jname) in &available_jobs {
-                                        ui.selectable_value(&mut sel, *jid, jname);
-                                    }
-                                });
-                            if sel != Uuid::nil() {
+                            if let Some(sel) =
+                                accordion::link_combo_pick(ui, combo_key, |ui, sel| {
+                                    egui::ComboBox::from_id_salt(combo_key)
+                                        .selected_text("Add a job…")
+                                        .width(avail_w)
+                                        .show_ui(ui, |ui| {
+                                            for (jid, jname) in &available_jobs {
+                                                ui.selectable_value(sel, *jid, jname);
+                                            }
+                                        });
+                                })
+                            {
                                 link_to_add = Some((id, sel));
-                                ui.data_mut(|d| d.remove::<Uuid>(combo_key));
-                            } else {
-                                ui.data_mut(|d| d.insert_temp(combo_key, sel));
                             }
                         }
                     });
@@ -165,23 +163,3 @@ pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
     ));
 }
 
-/// Opens the Gains window and ensures `gain_id` is visible.
-#[expect(dead_code)]
-pub fn navigate_to_gain(app: &mut App, ctx: &egui::Context, gain_id: Uuid) {
-    app.customer_segment_page.customer_windows.gains_open = true;
-    if let Some(gain) = app
-        .customer_segment_page
-        .gains_state
-        .gains
-        .iter_mut()
-        .find(|g| g.id == gain_id)
-    {
-        gain.expanded = true;
-    }
-    app.customer_segment_page.gains_state.selected_gain_id = Some(gain_id);
-    app.customer_segment_page.gains_state.scroll_to_id = Some(gain_id);
-    ctx.move_to_top(egui::LayerId::new(
-        egui::Order::Middle,
-        egui::Id::new("Gains"),
-    ));
-}

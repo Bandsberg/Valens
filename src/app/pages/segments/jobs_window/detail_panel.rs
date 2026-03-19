@@ -112,28 +112,21 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         if !available_segments.is_empty() {
                             ui.add_space(4.0);
 
-                            // Use egui's per-id temp storage so the combo
-                            // selection survives across frames until we act on it.
                             let combo_key = egui::Id::new("job_detail_link_seg").with(id);
-                            let mut sel: Uuid =
-                                ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
-
                             let avail_w = ui.available_width();
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a segment…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for (sid, sname) in &available_segments {
-                                        ui.selectable_value(&mut sel, *sid, sname);
-                                    }
-                                });
-
-                            if sel != Uuid::nil() {
-                                // A segment was chosen — queue the link and reset.
+                            if let Some(sel) =
+                                accordion::link_combo_pick(ui, combo_key, |ui, sel| {
+                                    egui::ComboBox::from_id_salt(combo_key)
+                                        .selected_text("Add a segment…")
+                                        .width(avail_w)
+                                        .show_ui(ui, |ui| {
+                                            for (sid, sname) in &available_segments {
+                                                ui.selectable_value(sel, *sid, sname);
+                                            }
+                                        });
+                                })
+                            {
                                 link_to_add = Some((id, sel));
-                                ui.data_mut(|d| d.remove::<Uuid>(combo_key));
-                            } else {
-                                ui.data_mut(|d| d.insert_temp(combo_key, sel));
                             }
                         }
                     });

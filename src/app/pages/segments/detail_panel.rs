@@ -123,29 +123,22 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         if !available_jobs.is_empty() {
                             ui.add_space(4.0);
 
-                            // Use egui's per-id temp storage so the combo
-                            // selection survives across frames until we act on it.
+                            // Link tuple: (job_id, segment_id)
                             let combo_key = egui::Id::new("seg_detail_link_job").with(id);
-                            let mut sel: Uuid =
-                                ui.data(|d| d.get_temp(combo_key).unwrap_or(Uuid::nil()));
-
                             let avail_w = ui.available_width();
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a job…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for (jid, jname) in &available_jobs {
-                                        ui.selectable_value(&mut sel, *jid, jname);
-                                    }
-                                });
-
-                            if sel != Uuid::nil() {
-                                // A job was chosen — queue the link and reset.
-                                // Link tuple: (job_id, segment_id)
+                            if let Some(sel) =
+                                accordion::link_combo_pick(ui, combo_key, |ui, sel| {
+                                    egui::ComboBox::from_id_salt(combo_key)
+                                        .selected_text("Add a job…")
+                                        .width(avail_w)
+                                        .show_ui(ui, |ui| {
+                                            for (jid, jname) in &available_jobs {
+                                                ui.selectable_value(sel, *jid, jname);
+                                            }
+                                        });
+                                })
+                            {
                                 link_to_add = Some((sel, id));
-                                ui.data_mut(|d| d.remove::<Uuid>(combo_key));
-                            } else {
-                                ui.data_mut(|d| d.insert_temp(combo_key, sel));
                             }
                         }
                     });
