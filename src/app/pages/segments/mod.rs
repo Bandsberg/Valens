@@ -67,6 +67,16 @@ pub fn customer_sidepanel(app: &mut App, ctx: &egui::Context) {
         });
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+fn label_with_hover(ui: &mut egui::Ui, text: &str, color: egui::Color32) {
+    let response = ui.label(text);
+    if response.hovered() {
+        ui.painter()
+            .rect_filled(response.rect, 3.0, color);
+    }
+}
+
 // ── Central panel entry point ─────────────────────────────────────────────────
 
 pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
@@ -77,58 +87,28 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
         // ── Left column: Pains + Gains ────────────────────────────────────────
         cols[0].label(egui::RichText::new("Pains").strong());
         cols[0].separator();
+        let pain_color = egui::Color32::from_rgba_unmultiplied(220, 80, 80, 40);
         for item in &app.customer_page.pains_state.pains {
-            let name = if item.name.is_empty() {
-                "Unnamed pain"
-            } else {
-                &item.name
-            };
-            let response = cols[0].label(name);
-            if response.hovered() {
-                cols[0].painter().rect_filled(
-                    response.rect,
-                    3.0,
-                    egui::Color32::from_rgba_unmultiplied(220, 80, 80, 40),
-                );
-            }
+            let name = if item.name.is_empty() { "Unnamed pain" } else { &item.name };
+            label_with_hover(&mut cols[0], name, pain_color);
         }
 
         cols[0].add_space(12.0);
         cols[0].label(egui::RichText::new("Gains").strong());
         cols[0].separator();
+        let gain_color = egui::Color32::from_rgba_unmultiplied(80, 140, 220, 40);
         for item in &app.customer_page.gains_state.gains {
-            let name = if item.name.is_empty() {
-                "Unnamed gain"
-            } else {
-                &item.name
-            };
-            let response = cols[0].label(name);
-            if response.hovered() {
-                cols[0].painter().rect_filled(
-                    response.rect,
-                    3.0,
-                    egui::Color32::from_rgba_unmultiplied(80, 140, 220, 40),
-                );
-            }
+            let name = if item.name.is_empty() { "Unnamed gain" } else { &item.name };
+            label_with_hover(&mut cols[0], name, gain_color);
         }
 
         // ── Right column: Jobs ────────────────────────────────────────────────
         cols[1].label(egui::RichText::new("Jobs").strong());
         cols[1].separator();
+        let job_color = egui::Color32::from_rgba_unmultiplied(160, 100, 220, 40);
         for item in &app.customer_page.jobs_state.jobs {
-            let name = if item.name.is_empty() {
-                "Unnamed job"
-            } else {
-                &item.name
-            };
-            let response = cols[1].label(name);
-            if response.hovered() {
-                cols[1].painter().rect_filled(
-                    response.rect,
-                    3.0,
-                    egui::Color32::from_rgba_unmultiplied(160, 100, 220, 40),
-                );
-            }
+            let name = if item.name.is_empty() { "Unnamed job" } else { &item.name };
+            label_with_hover(&mut cols[1], name, job_color);
         }
     });
 
