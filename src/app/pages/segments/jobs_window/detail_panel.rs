@@ -6,6 +6,7 @@ use super::super::super::accordion;
 
 // ── Detail panel window ───────────────────────────────────────────────────────
 
+#[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_segment_page.jobs_state.selected_job_id else {
         return;

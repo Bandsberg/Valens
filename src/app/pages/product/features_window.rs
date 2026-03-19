@@ -106,6 +106,7 @@ fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
 
 // ── Detail panel window (Panel mode) ─────────────────────────────────────────
 
+#[expect(clippy::too_many_lines)]
 fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.valueprop_page.features_state.selected_feature_id else {
         return;
@@ -312,6 +313,7 @@ fn navigate_to_product(app: &mut App, ctx: &egui::Context, prod_id: Uuid) {
 
 // ── Accordion table ───────────────────────────────────────────────────────────
 
+#[expect(clippy::too_many_lines)]
 fn show_accordion(
     ui: &mut egui::Ui,
     state: &mut FeaturesState,

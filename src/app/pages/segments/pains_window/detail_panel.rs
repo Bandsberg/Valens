@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use super::super::super::accordion;
 
+#[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_segment_page.pains_state.selected_pain_id else {
         return;

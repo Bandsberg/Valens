@@ -8,6 +8,7 @@ use super::super::super::accordion;
 
 const MULTILINE_H: f32 = 60.0;
 
+#[expect(clippy::too_many_lines)]
 pub fn show_accordion(
     ui: &mut egui::Ui,
     state: &mut GainsState,

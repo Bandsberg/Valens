@@ -10,6 +10,7 @@ const MULTILINE_H: f32 = 60.0;
 
 // ── Accordion table ───────────────────────────────────────────────────────────
 
+#[expect(clippy::too_many_lines)]
 pub fn show_accordion(
     ui: &mut egui::Ui,
     state: &mut SegmentsState,

@@ -6,6 +6,7 @@ use super::super::super::accordion;
 
 // ── Detail panel window (Panel mode) ─────────────────────────────────────────
 
+#[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.valueprop_page.products_state.selected_product_id else {
         return;

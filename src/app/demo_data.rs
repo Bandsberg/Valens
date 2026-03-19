@@ -26,6 +26,7 @@ fn upsert_items<T>(vec: &mut Vec<T>, items: impl IntoIterator<Item = T>) {
     }
 }
 
+#[expect(clippy::too_many_lines)]
 pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let mut demo_app: App = if let Some(storage) = cc.storage {
         eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
