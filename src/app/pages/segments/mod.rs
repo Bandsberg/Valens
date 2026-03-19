@@ -14,7 +14,7 @@ mod pains_window;
 use super::accordion::{color_gain, color_job, color_pain, display_name, label_with_hover_id};
 use accordion::show_accordion;
 use delete_dialog::show_delete_confirmation;
-use detail_panel::{navigate_to_job_fn, show_detail_panel};
+use detail_panel::{navigate_to_job, show_detail_panel};
 use gains_window::show_gains_window;
 use jobs_window::show_jobs_window;
 use pains_window::show_pains_window;
@@ -239,6 +239,6 @@ fn show_segments_window(app: &mut App, ctx: &egui::Context) {
 
     // Apply navigation now that the window closure has released all borrows.
     if let Some(job_id) = nav_to_job {
-        navigate_to_job_fn(app, ctx, job_id);
+        navigate_to_job(app, ctx, job_id);
     }
 }

@@ -43,7 +43,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     // Collect mutations during the window; apply them afterwards.
     let mut link_to_add: Option<(Uuid, Uuid)> = None;
     let mut link_to_remove: Option<(Uuid, Uuid)> = None;
-    let mut navigate_to_job: Option<Uuid> = None;
+    let mut nav_job_id: Option<Uuid> = None;
 
     let mut keep_open = true;
     egui::Window::new("Customer Segment Details")
@@ -108,7 +108,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                             for (jid, jname) in &linked_jobs {
                                 ui.horizontal(|ui| {
                                     if ui.link(jname).on_hover_text("Open in Jobs").clicked() {
-                                        navigate_to_job = Some(*jid);
+                                        nav_job_id = Some(*jid);
                                     }
                                     if accordion::unlink_button(ui).clicked() {
                                         // Link tuple: (job_id, segment_id)
@@ -166,8 +166,8 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     if let Some(pair) = link_to_remove {
         app.customer_segment_page.segment_job_links.retain(|l| l != &pair);
     }
-    if let Some(job_id) = navigate_to_job {
-        navigate_to_job_fn(app, ctx, job_id);
+    if let Some(job_id) = nav_job_id {
+        navigate_to_job(app, ctx, job_id);
     }
 }
 
@@ -177,7 +177,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 ///   - Sets `expanded = true` on the target job row (accordion).
 ///   - Sets `selected_job_id` so the detail panel opens.
 ///   - Sets `scroll_to_id` so the table scrolls to the row.
-pub fn navigate_to_job_fn(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
+pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
     app.customer_segment_page.customer_windows.jobs_open = true;
     if let Some(job) = app
         .customer_segment_page
