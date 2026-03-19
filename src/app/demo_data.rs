@@ -13,6 +13,19 @@ use crate::app::pages::product::PainRelief;
 use crate::app::pages::product::products_window::Product;
 use uuid::Uuid;
 
+/// Merges `items` into `vec` positionally: overwrites index `i` if it exists,
+/// otherwise pushes. This lets demo data survive across restarts without
+/// accumulating duplicates when the user already has saved state.
+fn upsert_items<T>(vec: &mut Vec<T>, items: impl IntoIterator<Item = T>) {
+    for (i, item) in items.into_iter().enumerate() {
+        if let Some(slot) = vec.get_mut(i) {
+            *slot = item;
+        } else {
+            vec.push(item);
+        }
+    }
+}
+
 pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let mut demo_app: App = if let Some(storage) = cc.storage {
         eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
@@ -51,15 +64,10 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let prod_vec = &mut demo_app.valueprop_page.products_state.products;
-    let demo_products = [product_1, product_2];
-    for (i, product) in demo_products.into_iter().enumerate() {
-        if let Some(slot) = prod_vec.get_mut(i) {
-            *slot = product;
-        } else {
-            prod_vec.push(product);
-        }
-    }
+    upsert_items(
+        &mut demo_app.valueprop_page.products_state.products,
+        [product_1, product_2],
+    );
 
     // ── Demo features ─────────────────────────────────────────────────────────
     let feature_1_id =
@@ -100,15 +108,10 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let feat_vec = &mut demo_app.valueprop_page.features_state.features;
-    let demo_features = [feature_1, feature_2, feature_3];
-    for (i, feature) in demo_features.into_iter().enumerate() {
-        if let Some(slot) = feat_vec.get_mut(i) {
-            *slot = feature;
-        } else {
-            feat_vec.push(feature);
-        }
-    }
+    upsert_items(
+        &mut demo_app.valueprop_page.features_state.features,
+        [feature_1, feature_2, feature_3],
+    );
 
     // ── Demo product-feature links ────────────────────────────────────────────
     // Payment Rails API   → Unified payment API, Real-time fraud scoring
@@ -160,15 +163,10 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let pr_vec = &mut demo_app.valueprop_page.pain_relief_state.pain_reliefs;
-    let demo_prs = [pr_1, pr_2, pr_3];
-    for (i, pr) in demo_prs.into_iter().enumerate() {
-        if let Some(slot) = pr_vec.get_mut(i) {
-            *slot = pr;
-        } else {
-            pr_vec.push(pr);
-        }
-    }
+    upsert_items(
+        &mut demo_app.valueprop_page.pain_relief_state.pain_reliefs,
+        [pr_1, pr_2, pr_3],
+    );
 
     // ── Demo feature-pain-relief links ────────────────────────────────────────
     // Pre-built SDK         → Unified payment API
@@ -219,15 +217,10 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let seg_vec = &mut demo_app.customer_segment_page.segments_state.segments;
-    let demo_segments = [segment_1, segment_2];
-    for (i, segment) in demo_segments.into_iter().enumerate() {
-        if let Some(slot) = seg_vec.get_mut(i) {
-            *slot = segment;
-        } else {
-            seg_vec.push(segment);
-        }
-    }
+    upsert_items(
+        &mut demo_app.customer_segment_page.segments_state.segments,
+        [segment_1, segment_2],
+    );
 
     // ── Demo jobs ─────────────────────────────────────────────────────────────
     let job_1_id =
@@ -261,15 +254,10 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let job_vec = &mut demo_app.customer_segment_page.jobs_state.jobs;
-    let demo_jobs = [job_1, job_2, job_3];
-    for (i, job) in demo_jobs.into_iter().enumerate() {
-        if let Some(slot) = job_vec.get_mut(i) {
-            *slot = job;
-        } else {
-            job_vec.push(job);
-        }
-    }
+    upsert_items(
+        &mut demo_app.customer_segment_page.jobs_state.jobs,
+        [job_1, job_2, job_3],
+    );
 
     // ── Demo segment-job links ────────────────────────────────────────────────
     // Fintechs: payment rails + KYC + fraud
@@ -319,15 +307,10 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let pain_vec = &mut demo_app.customer_segment_page.pains_state.pains;
-    let demo_pains = [pain_1, pain_2, pain_3];
-    for (i, pain) in demo_pains.into_iter().enumerate() {
-        if let Some(slot) = pain_vec.get_mut(i) {
-            *slot = pain;
-        } else {
-            pain_vec.push(pain);
-        }
-    }
+    upsert_items(
+        &mut demo_app.customer_segment_page.pains_state.pains,
+        [pain_1, pain_2, pain_3],
+    );
 
     // ── Demo pain-job links ───────────────────────────────────────────────────
     let demo_pain_job_links = [
@@ -386,15 +369,10 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let gain_vec = &mut demo_app.customer_segment_page.gains_state.gains;
-    let demo_gains = [gain_1, gain_2, gain_3];
-    for (i, gain) in demo_gains.into_iter().enumerate() {
-        if let Some(slot) = gain_vec.get_mut(i) {
-            *slot = gain;
-        } else {
-            gain_vec.push(gain);
-        }
-    }
+    upsert_items(
+        &mut demo_app.customer_segment_page.gains_state.gains,
+        [gain_1, gain_2, gain_3],
+    );
 
     // ── Demo gain-job links ───────────────────────────────────────────────────
     let demo_gain_job_links = [
@@ -441,15 +419,10 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
-    let gc_vec = &mut demo_app.valueprop_page.gain_creator_state.gain_creators;
-    let demo_gcs = [gc_1, gc_2, gc_3];
-    for (i, gc) in demo_gcs.into_iter().enumerate() {
-        if let Some(slot) = gc_vec.get_mut(i) {
-            *slot = gc;
-        } else {
-            gc_vec.push(gc);
-        }
-    }
+    upsert_items(
+        &mut demo_app.valueprop_page.gain_creator_state.gain_creators,
+        [gc_1, gc_2, gc_3],
+    );
 
     // ── Demo feature-gain-creator links ───────────────────────────────────────
     // One-day API go-live       → Unified payment API
