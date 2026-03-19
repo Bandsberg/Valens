@@ -26,7 +26,7 @@ pub fn product_sidepanel(app: &mut App, ctx: &egui::Context) {
                 "Gain Creators",
             );
             ui.checkbox(
-                &mut app.product_page.product_windows.thoughtfull_execution_open,
+                &mut app.product_page.product_windows.thoughtful_execution_open,
                 "Thoughtfull Execution",
             );
         });

@@ -15,8 +15,8 @@ pub use pain_relief_window::{PainRelief, PainReliefState};
 mod gain_creators_window;
 use gain_creators_window::show_gain_creators_window;
 pub use gain_creators_window::{GainCreator, GainCreatorState};
-mod thoughtfull_execution_window;
-use thoughtfull_execution_window::show_thoughtfull_execution_window;
+mod thoughtful_execution_window;
+use thoughtful_execution_window::show_thoughtful_execution_window;
 
 // ── Page structs ──────────────────────────────────────────────────────────────
 
@@ -55,7 +55,7 @@ struct ProductWindows {
     features_open: bool,
     pain_relief_open: bool,
     gain_creators_open: bool,
-    thoughtfull_execution_open: bool,
+    thoughtful_execution_open: bool,
 }
 
 pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
@@ -111,7 +111,7 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     if app.product_page.product_windows.gain_creators_open {
         show_gain_creators_window(app, ctx);
     }
-    if app.product_page.product_windows.thoughtfull_execution_open {
-        show_thoughtfull_execution_window(app, ctx);
+    if app.product_page.product_windows.thoughtful_execution_open {
+        show_thoughtful_execution_window(app, ctx);
     }
 }
