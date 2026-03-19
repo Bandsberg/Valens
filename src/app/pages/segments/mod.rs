@@ -11,6 +11,7 @@ mod model;
 mod pains_window;
 
 use accordion::show_accordion;
+use super::accordion::display_name;
 use delete_dialog::show_delete_confirmation;
 use detail_panel::{navigate_to_job_fn, show_detail_panel};
 use gains_window::show_gains_window;
@@ -89,8 +90,7 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
         cols[0].separator();
         let pain_color = egui::Color32::from_rgba_unmultiplied(220, 80, 80, 40);
         for item in &app.customer_page.pains_state.pains {
-            let name = if item.name.is_empty() { "Unnamed pain" } else { &item.name };
-            label_with_hover(&mut cols[0], name, pain_color);
+            label_with_hover(&mut cols[0], display_name(&item.name, "Unnamed pain"), pain_color);
         }
 
         cols[0].add_space(12.0);
@@ -98,8 +98,7 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
         cols[0].separator();
         let gain_color = egui::Color32::from_rgba_unmultiplied(80, 140, 220, 40);
         for item in &app.customer_page.gains_state.gains {
-            let name = if item.name.is_empty() { "Unnamed gain" } else { &item.name };
-            label_with_hover(&mut cols[0], name, gain_color);
+            label_with_hover(&mut cols[0], display_name(&item.name, "Unnamed gain"), gain_color);
         }
 
         // ── Right column: Jobs ────────────────────────────────────────────────
@@ -107,8 +106,7 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
         cols[1].separator();
         let job_color = egui::Color32::from_rgba_unmultiplied(160, 100, 220, 40);
         for item in &app.customer_page.jobs_state.jobs {
-            let name = if item.name.is_empty() { "Unnamed job" } else { &item.name };
-            label_with_hover(&mut cols[1], name, job_color);
+            label_with_hover(&mut cols[1], display_name(&item.name, "Unnamed job"), job_color);
         }
     });
 

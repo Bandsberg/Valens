@@ -1,6 +1,7 @@
 use crate::app::App;
 use eframe::egui;
 use uuid::Uuid;
+use super::accordion;
 mod side_panel;
 pub use side_panel::product_sidepanel;
 pub mod products_window;
@@ -66,36 +67,21 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
         cols[0].label(egui::RichText::new("Products & Services").strong());
         cols[0].separator();
         for product in &app.product_page.products_state.products {
-            let name = if product.name.is_empty() {
-                "Unnamed product"
-            } else {
-                &product.name
-            };
-            cols[0].label(name);
+            cols[0].label(accordion::display_name(&product.name, "Unnamed product"));
         }
 
         // ── Right column: Pain Reliefs + Gain Creators ────────────────────────
         cols[1].label(egui::RichText::new("Pain Reliefs").strong());
         cols[1].separator();
         for item in &app.product_page.pain_relief_state.pain_reliefs {
-            let name = if item.name.is_empty() {
-                "Unnamed pain relief"
-            } else {
-                &item.name
-            };
-            cols[1].label(name);
+            cols[1].label(accordion::display_name(&item.name, "Unnamed pain relief"));
         }
 
         cols[1].add_space(12.0);
         cols[1].label(egui::RichText::new("Gain Creators").strong());
         cols[1].separator();
         for item in &app.product_page.gain_creator_state.gain_creators {
-            let name = if item.name.is_empty() {
-                "Unnamed gain creator"
-            } else {
-                &item.name
-            };
-            cols[1].label(name);
+            cols[1].label(accordion::display_name(&item.name, "Unnamed gain creator"));
         }
     });
 
