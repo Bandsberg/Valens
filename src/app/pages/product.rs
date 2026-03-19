@@ -1,7 +1,7 @@
 use crate::app::App;
 use eframe::egui;
 use uuid::Uuid;
-use super::accordion;
+use super::accordion::{self, label_with_hover};
 mod side_panel;
 pub use side_panel::product_sidepanel;
 pub mod products_window;
@@ -67,21 +67,33 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
         cols[0].label(egui::RichText::new("Products & Services").strong());
         cols[0].separator();
         for product in &app.product_page.products_state.products {
-            cols[0].label(accordion::display_name(&product.name, "Unnamed product"));
+            label_with_hover(
+                &mut cols[0],
+                accordion::display_name(&product.name, "Unnamed product"),
+                accordion::color_job(),
+            );
         }
 
-        // ── Right column: Pain Reliefs + Gain Creators ────────────────────────
-        cols[1].label(egui::RichText::new("Pain Reliefs").strong());
-        cols[1].separator();
-        for item in &app.product_page.pain_relief_state.pain_reliefs {
-            cols[1].label(accordion::display_name(&item.name, "Unnamed pain relief"));
-        }
-
-        cols[1].add_space(12.0);
+        // ── Right column: Gain Creators + Pain Reliefs ────────────────────────
         cols[1].label(egui::RichText::new("Gain Creators").strong());
         cols[1].separator();
         for item in &app.product_page.gain_creator_state.gain_creators {
-            cols[1].label(accordion::display_name(&item.name, "Unnamed gain creator"));
+            label_with_hover(
+                &mut cols[1],
+                accordion::display_name(&item.name, "Unnamed gain creator"),
+                accordion::color_gain(),
+            );
+        }
+
+        cols[1].add_space(12.0);
+        cols[1].label(egui::RichText::new("Pain Reliefs").strong());
+        cols[1].separator();
+        for item in &app.product_page.pain_relief_state.pain_reliefs {
+            label_with_hover(
+                &mut cols[1],
+                accordion::display_name(&item.name, "Unnamed pain relief"),
+                accordion::color_pain(),
+            );
         }
     });
 

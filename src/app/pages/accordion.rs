@@ -3,6 +3,11 @@ use uuid::Uuid;
 
 const DRAG_HANDLE_W: f32 = 6.0;
 
+/// Shared hover-highlight colours used across page views.
+pub fn color_pain() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(220, 80, 80, 40) }
+pub fn color_gain() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(80, 200, 120, 40) }
+pub fn color_job() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(160, 100, 220, 40) }
+
 fn col_id(name_label: &str) -> egui::Id {
     egui::Id::new("accordion_name_col_w").with(name_label)
 }
@@ -96,6 +101,14 @@ pub fn none_label(ui: &mut egui::Ui) {
 /// Used by delete dialogs to display a human-readable item name.
 pub fn display_name<'a>(name: &'a str, fallback: &'a str) -> &'a str {
     if name.is_empty() { fallback } else { name }
+}
+
+/// Renders a label and paints a coloured highlight behind it on hover.
+pub fn label_with_hover(ui: &mut egui::Ui, text: &str, color: egui::Color32) {
+    let response = ui.label(text);
+    if response.hovered() {
+        ui.painter().rect_filled(response.rect, 3.0, color);
+    }
 }
 
 /// Expand/collapse arrow button for accordion rows. Returns `true` if clicked.
