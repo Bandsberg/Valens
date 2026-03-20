@@ -1,134 +1,93 @@
 use crate::app::App;
 use eframe::egui;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet, VecDeque};
 use uuid::Uuid;
 
 use super::accordion::{
     color_gain, color_job, color_pain, color_segment, display_name, label_with_hover_id,
 };
 
-/// Computes the set of entity IDs that should be highlighted because they are
-/// linked (directly or transitively) to the currently hovered entity.
+/// The chain runs left-to-right across the overview columns:
+///   Products → Features → GainCreators/PainReliefs → Gains/Pains → Jobs → Segments
 ///
-/// Cross-page links:
-/// - `Gain` ↔ `GainCreator`  (`gain_gain_creator_links`: `(gain_id, gain_creator_id)`)
-/// - `Pain` ↔ `PainRelief`   (`pain_pain_relief_links`:  `(pain_id, pain_relief_id)`)
-///
-/// Within Value Proposition:
-/// - `Product` ↔ `Feature` ↔ `GainCreator`
-/// - `Product` ↔ `Feature` ↔ `PainRelief`
-///
-/// Within Customer Segment:
-/// - `Gain` ↔ `Job`  (`job_gain_links`: `(gain_id, job_id)`)
-/// - `Pain` ↔ `Job`  (`job_pain_links`: `(pain_id, job_id)`)
-/// - `Job`  ↔ `Segment` (`segment_job_links`: `(job_id, segment_id)`)
-fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
-    let Some(hovered_id) = hovered else {
-        return HashSet::new();
-    };
+/// Both a forward adjacency (following the chain) and a backward adjacency
+/// (reversing it) are built so that a single BFS in each direction can be run
+/// from the hovered entity without ever "crossing back" through a shared node
+/// to unrelated entities on the same side.
+fn build_directed_adj(app: &App) -> (HashMap<Uuid, Vec<Uuid>>, HashMap<Uuid, Vec<Uuid>>) {
     let vp = &app.valueprop_page;
     let cs = &app.customer_segment_page;
-    let mut result = HashSet::new();
+    let mut fwd: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
+    let mut bwd: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
 
-    // ── Value Proposition internal links ──────────────────────────────────────
+    let mut edge = |a: Uuid, b: Uuid| {
+        fwd.entry(a).or_default().push(b);
+        bwd.entry(b).or_default().push(a);
+    };
 
-    // Hovered is a Product → highlight linked GainCreators and PainReliefs.
-    let features_of_product: Vec<Uuid> = vp
-        .product_feature_links
-        .iter()
-        .filter(|(pid, _)| *pid == hovered_id)
-        .map(|(_, fid)| *fid)
-        .collect();
-    for fid in &features_of_product {
-        for (f, gc) in &vp.feature_gain_creator_links {
-            if f == fid {
-                result.insert(*gc);
-            }
-        }
-        for (f, pr) in &vp.feature_pain_relief_links {
-            if f == fid {
-                result.insert(*pr);
+    // Product → Feature
+    for &(pid, fid) in &vp.product_feature_links {
+        edge(pid, fid);
+    }
+    // Feature → GainCreator
+    for &(fid, gcid) in &vp.feature_gain_creator_links {
+        edge(fid, gcid);
+    }
+    // Feature → PainRelief
+    for &(fid, prid) in &vp.feature_pain_relief_links {
+        edge(fid, prid);
+    }
+    // GainCreator → Gain  (cross-page: value prop side → customer side)
+    for &(gain_id, gcid) in &vp.gain_gain_creator_links {
+        edge(gcid, gain_id);
+    }
+    // PainRelief → Pain
+    for &(pain_id, prid) in &vp.pain_pain_relief_links {
+        edge(prid, pain_id);
+    }
+    // Gain → Job
+    for &(gain_id, job_id) in &cs.job_gain_links {
+        edge(gain_id, job_id);
+    }
+    // Pain → Job
+    for &(pain_id, job_id) in &cs.job_pain_links {
+        edge(pain_id, job_id);
+    }
+    // Job → Segment
+    for &(job_id, seg_id) in &cs.segment_job_links {
+        edge(job_id, seg_id);
+    }
+
+    (fwd, bwd)
+}
+
+fn bfs(start: Uuid, adj: &HashMap<Uuid, Vec<Uuid>>) -> HashSet<Uuid> {
+    let mut visited = HashSet::from([start]);
+    let mut queue = VecDeque::from([start]);
+    while let Some(node) = queue.pop_front() {
+        for &next in adj.get(&node).into_iter().flatten() {
+            if visited.insert(next) {
+                queue.push_back(next);
             }
         }
     }
+    visited.remove(&start);
+    visited
+}
 
-    // Hovered is a GainCreator → highlight linked Products.
-    let features_of_gc: Vec<Uuid> = vp
-        .feature_gain_creator_links
-        .iter()
-        .filter(|(_, gcid)| *gcid == hovered_id)
-        .map(|(fid, _)| *fid)
-        .collect();
-    for fid in &features_of_gc {
-        for (pid, f) in &vp.product_feature_links {
-            if f == fid {
-                result.insert(*pid);
-            }
-        }
-    }
-
-    // Hovered is a PainRelief → highlight linked Products.
-    let features_of_pr: Vec<Uuid> = vp
-        .feature_pain_relief_links
-        .iter()
-        .filter(|(_, prid)| *prid == hovered_id)
-        .map(|(fid, _)| *fid)
-        .collect();
-    for fid in &features_of_pr {
-        for (pid, f) in &vp.product_feature_links {
-            if f == fid {
-                result.insert(*pid);
-            }
-        }
-    }
-
-    // ── Customer Segment internal links ───────────────────────────────────────
-
-    // Gain ↔ Job and Pain ↔ Job.
-    cs.job_gain_links
-        .iter()
-        .chain(&cs.job_pain_links)
-        .for_each(|&(a, b)| {
-            if a == hovered_id {
-                result.insert(b);
-            } else if b == hovered_id {
-                result.insert(a);
-            }
-        });
-
-    // Job ↔ Segment.
-    cs.segment_job_links.iter().for_each(|&(job_id, seg_id)| {
-        if job_id == hovered_id {
-            result.insert(seg_id);
-        } else if seg_id == hovered_id {
-            result.insert(job_id);
-        }
-    });
-
-    // ── Cross-page links ──────────────────────────────────────────────────────
-
-    // Gain ↔ GainCreator.
-    vp.gain_gain_creator_links
-        .iter()
-        .for_each(|&(gain_id, gc_id)| {
-            if gain_id == hovered_id {
-                result.insert(gc_id);
-            } else if gc_id == hovered_id {
-                result.insert(gain_id);
-            }
-        });
-
-    // Pain ↔ PainRelief.
-    vp.pain_pain_relief_links
-        .iter()
-        .for_each(|&(pain_id, pr_id)| {
-            if pain_id == hovered_id {
-                result.insert(pr_id);
-            } else if pr_id == hovered_id {
-                result.insert(pain_id);
-            }
-        });
-
+/// Returns every entity that should be highlighted when `hovered` is active.
+///
+/// One forward BFS follows the chain toward Segments; one backward BFS follows
+/// it toward Products. They never mix, so a shared Feature (or any other
+/// intermediate node) cannot "bleed" highlights across unrelated entities on
+/// the same side.
+fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
+    let Some(start) = hovered else {
+        return HashSet::new();
+    };
+    let (fwd, bwd) = build_directed_adj(app);
+    let mut result = bfs(start, &fwd);
+    result.extend(bfs(start, &bwd));
     result
 }
 
