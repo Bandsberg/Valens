@@ -101,8 +101,8 @@ pub fn show_overview(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
 
     let highlighted = highlighted_ids(prev_hovered, app);
 
-    ui.columns(4, |cols| {
-        let [c0, c1, c2, c3] = cols else { return };
+    ui.columns(5, |cols| {
+        let [c0, c1, c2, c3, c4] = cols else { return };
 
         // ── Col 0: Products & Services ────────────────────────────────────────
         c0.label(egui::RichText::new("Products & Services").strong());
@@ -174,7 +174,7 @@ pub fn show_overview(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
             );
         }
 
-        // ── Col 3: Jobs + Customer Segments ───────────────────────────────────
+        // ── Col 3: Jobs ───────────────────────────────────────────────────────
         c3.label(egui::RichText::new("Jobs").strong());
         c3.separator();
         for item in &app.customer_segment_page.jobs_state.jobs {
@@ -188,12 +188,12 @@ pub fn show_overview(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
             );
         }
 
-        c3.add_space(12.0);
-        c3.label(egui::RichText::new("Customer Segments").strong());
-        c3.separator();
+        // ── Col 4: Customer Segments ──────────────────────────────────────────
+        c4.label(egui::RichText::new("Customer Segments").strong());
+        c4.separator();
         for item in &app.customer_segment_page.segments_state.segments {
             label_with_hover_id(
-                c3,
+                c4,
                 display_name(&item.name, "Unnamed segment"),
                 item.id,
                 color_segment(),
