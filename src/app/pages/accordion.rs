@@ -105,7 +105,8 @@ pub fn display_name<'a>(name: &'a str, fallback: &'a str) -> &'a str {
 }
 
 /// Renders a label and paints a coloured highlight behind it on hover or when
-/// `highlighted` is true (i.e. this entity is linked to whatever is hovered).
+/// `highlight > 0.0` (i.e. this entity is linked to whatever is hovered).
+/// `highlight` is 0.0–1.0; the color's alpha is scaled proportionally.
 /// Stores the hovered entity UUID in egui temp storage under `hover_key` so
 /// the caller can read it next frame to compute cross-highlighted siblings.
 pub fn label_with_hover_id(
@@ -113,15 +114,27 @@ pub fn label_with_hover_id(
     text: &str,
     id: Uuid,
     color: egui::Color32,
-    highlighted: bool,
+    highlight: f32,
     hover_key: egui::Id,
 ) {
     let response = ui.label(text);
     if response.hovered() {
         ui.ctx().data_mut(|d| d.insert_temp(hover_key, id));
     }
-    if response.hovered() || highlighted {
-        ui.painter().rect_filled(response.rect, 3.0, color);
+    let effective = if response.hovered() { 1.0_f32 } else { highlight };
+    if effective > 0.0 {
+        // color.to_array() returns premultiplied (r*a/255, g*a/255, b*a/255, a).
+        // Scale all four components together to keep premultiplication correct.
+        let [r, g, b, a] = color.to_array();
+        let new_a = (a as f32 * effective).round() as u8;
+        let scale = if a > 0 { new_a as f32 / a as f32 } else { 0.0 };
+        let scaled = egui::Color32::from_rgba_premultiplied(
+            (r as f32 * scale).round() as u8,
+            (g as f32 * scale).round() as u8,
+            (b as f32 * scale).round() as u8,
+            new_a,
+        );
+        ui.painter().rect_filled(response.rect, 3.0, scaled);
     }
 }
 

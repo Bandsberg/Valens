@@ -130,7 +130,7 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 display_name(&item.name, "Unnamed gain"),
                 item.id,
                 color_gain(),
-                highlighted.contains(&item.id),
+                f32::from(highlighted.contains(&item.id)),
                 hovered_key,
             );
         }
@@ -144,7 +144,7 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 display_name(&item.name, "Unnamed pain"),
                 item.id,
                 color_pain(),
-                highlighted.contains(&item.id),
+                f32::from(highlighted.contains(&item.id)),
                 hovered_key,
             );
         }
@@ -158,7 +158,7 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 display_name(&item.name, "Unnamed job"),
                 item.id,
                 color_job(),
-                highlighted.contains(&item.id),
+                f32::from(highlighted.contains(&item.id)),
                 hovered_key,
             );
         }

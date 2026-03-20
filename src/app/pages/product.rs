@@ -152,7 +152,7 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 accordion::display_name(&product.name, "Unnamed product"),
                 product.id,
                 accordion::color_job(),
-                highlighted.contains(&product.id),
+                f32::from(highlighted.contains(&product.id)),
                 hovered_key,
             );
         }
@@ -166,7 +166,7 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 accordion::display_name(&item.name, "Unnamed gain creator"),
                 item.id,
                 accordion::color_gain(),
-                highlighted.contains(&item.id),
+                f32::from(highlighted.contains(&item.id)),
                 hovered_key,
             );
         }
@@ -180,7 +180,7 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 accordion::display_name(&item.name, "Unnamed pain relief"),
                 item.id,
                 accordion::color_pain(),
-                highlighted.contains(&item.id),
+                f32::from(highlighted.contains(&item.id)),
                 hovered_key,
             );
         }
