@@ -217,56 +217,198 @@ fn binary_scores(hovered: Option<Uuid>, app: &App) -> HashMap<Uuid, f32> {
         .collect()
 }
 
-fn show_columns(app: &App, cols: &mut [egui::Ui], scores: &HashMap<Uuid, f32>, hovered_key: egui::Id) {
+/// Computes which intermediate entities (gain creators, pain reliefs, gains, pains, jobs)
+/// are reachable from the visible (non-hidden) products and segments.
+/// Returns `None` when no filter is active (show everything).
+fn compute_visible_middle(
+    hidden_products: &HashSet<Uuid>,
+    hidden_segments: &HashSet<Uuid>,
+    app: &App,
+) -> Option<HashSet<Uuid>> {
+    if hidden_products.is_empty() && hidden_segments.is_empty() {
+        return None;
+    }
+    let (fwd, bwd) = build_directed_adj(app);
+    let mut visible = HashSet::new();
+    for p in &app.valueprop_page.products_state.products {
+        if !hidden_products.contains(&p.id) {
+            visible.extend(bfs(p.id, &fwd));
+        }
+    }
+    for s in &app.customer_segment_page.segments_state.segments {
+        if !hidden_segments.contains(&s.id) {
+            visible.extend(bfs(s.id, &bwd));
+        }
+    }
+    Some(visible)
+}
+
+fn show_columns(
+    app: &App,
+    cols: &mut [egui::Ui],
+    scores: &HashMap<Uuid, f32>,
+    hovered_key: egui::Id,
+    hidden_products: &mut HashSet<Uuid>,
+    hidden_segments: &mut HashSet<Uuid>,
+    visible_middle: &Option<HashSet<Uuid>>,
+) {
     let [c0, c1, c2, c3, c4] = cols else { return };
     let score = |id: Uuid| scores.get(&id).copied().unwrap_or(0.0);
+    let is_visible = |id: Uuid| visible_middle.as_ref().is_none_or(|v| v.contains(&id));
 
-    c0.label(egui::RichText::new("Products & Services").strong());
+    let all_products = &app.valueprop_page.products_state.products;
+    let prod_visible = all_products.iter().filter(|p| !hidden_products.contains(&p.id)).count();
+    let prod_label = if hidden_products.is_empty() {
+        "All".to_owned()
+    } else {
+        format!("{} / {}", prod_visible, all_products.len())
+    };
+    c0.horizontal(|ui| {
+        ui.label(egui::RichText::new("Products & Services").strong());
+        egui::ComboBox::from_id_salt("ov_prod_filter")
+            .selected_text(prod_label)
+            .width(60.0)
+            .show_ui(ui, |ui| {
+                for p in all_products {
+                    let mut checked = !hidden_products.contains(&p.id);
+                    if ui.checkbox(&mut checked, display_name(&p.name, "Unnamed product")).changed() {
+                        if checked { hidden_products.remove(&p.id); } else { hidden_products.insert(p.id); }
+                    }
+                }
+            });
+    });
     c0.separator();
-    for p in &app.valueprop_page.products_state.products {
-        label_with_hover_id(c0, display_name(&p.name, "Unnamed product"), p.id, color_job(), score(p.id), hovered_key);
+    for p in all_products {
+        if !hidden_products.contains(&p.id) {
+            label_with_hover_id(c0, display_name(&p.name, "Unnamed product"), p.id, color_job(), score(p.id), hovered_key);
+        }
     }
 
     c1.label(egui::RichText::new("Gain Creators").strong());
     c1.separator();
     for item in &app.valueprop_page.gain_creator_state.gain_creators {
-        label_with_hover_id(c1, display_name(&item.name, "Unnamed gain creator"), item.id, color_gain(), score(item.id), hovered_key);
+        if is_visible(item.id) {
+            label_with_hover_id(c1, display_name(&item.name, "Unnamed gain creator"), item.id, color_gain(), score(item.id), hovered_key);
+        }
     }
     c1.add_space(12.0);
     c1.label(egui::RichText::new("Pain Reliefs").strong());
     c1.separator();
     for item in &app.valueprop_page.pain_relief_state.pain_reliefs {
-        label_with_hover_id(c1, display_name(&item.name, "Unnamed pain relief"), item.id, color_pain(), score(item.id), hovered_key);
+        if is_visible(item.id) {
+            label_with_hover_id(c1, display_name(&item.name, "Unnamed pain relief"), item.id, color_pain(), score(item.id), hovered_key);
+        }
     }
 
     c2.label(egui::RichText::new("Gains").strong());
     c2.separator();
     for item in &app.customer_segment_page.gains_state.gains {
-        label_with_hover_id(c2, display_name(&item.name, "Unnamed gain"), item.id, color_gain(), score(item.id), hovered_key);
+        if is_visible(item.id) {
+            label_with_hover_id(c2, display_name(&item.name, "Unnamed gain"), item.id, color_gain(), score(item.id), hovered_key);
+        }
     }
     c2.add_space(12.0);
     c2.label(egui::RichText::new("Pains").strong());
     c2.separator();
     for item in &app.customer_segment_page.pains_state.pains {
-        label_with_hover_id(c2, display_name(&item.name, "Unnamed pain"), item.id, color_pain(), score(item.id), hovered_key);
+        if is_visible(item.id) {
+            label_with_hover_id(c2, display_name(&item.name, "Unnamed pain"), item.id, color_pain(), score(item.id), hovered_key);
+        }
     }
 
     c3.label(egui::RichText::new("Jobs").strong());
     c3.separator();
     for item in &app.customer_segment_page.jobs_state.jobs {
-        label_with_hover_id(c3, display_name(&item.name, "Unnamed job"), item.id, color_job(), score(item.id), hovered_key);
+        if is_visible(item.id) {
+            label_with_hover_id(c3, display_name(&item.name, "Unnamed job"), item.id, color_job(), score(item.id), hovered_key);
+        }
     }
 
-    c4.label(egui::RichText::new("Customer Segments").strong());
+    let all_segments = &app.customer_segment_page.segments_state.segments;
+    let seg_visible = all_segments.iter().filter(|s| !hidden_segments.contains(&s.id)).count();
+    let seg_label = if hidden_segments.is_empty() {
+        "All".to_owned()
+    } else {
+        format!("{} / {}", seg_visible, all_segments.len())
+    };
+    c4.horizontal(|ui| {
+        ui.label(egui::RichText::new("Customer Segments").strong());
+        egui::ComboBox::from_id_salt("ov_seg_filter")
+            .selected_text(seg_label)
+            .width(60.0)
+            .show_ui(ui, |ui| {
+                for s in all_segments {
+                    let mut checked = !hidden_segments.contains(&s.id);
+                    if ui.checkbox(&mut checked, display_name(&s.name, "Unnamed segment")).changed() {
+                        if checked { hidden_segments.remove(&s.id); } else { hidden_segments.insert(s.id); }
+                    }
+                }
+            });
+    });
     c4.separator();
-    for item in &app.customer_segment_page.segments_state.segments {
-        label_with_hover_id(c4, display_name(&item.name, "Unnamed segment"), item.id, color_segment(), score(item.id), hovered_key);
+    for item in all_segments {
+        if !hidden_segments.contains(&item.id) {
+            label_with_hover_id(c4, display_name(&item.name, "Unnamed segment"), item.id, color_segment(), score(item.id), hovered_key);
+        }
     }
+}
+
+fn show_fit_matrix(app: &App, ui: &mut egui::Ui) {
+    let products = &app.valueprop_page.products_state.products;
+    let segments = &app.customer_segment_page.segments_state.segments;
+
+    if products.is_empty() || segments.is_empty() {
+        ui.label(
+            egui::RichText::new("No products or segments to display.")
+                .italics()
+                .color(ui.visuals().weak_text_color()),
+        );
+        return;
+    }
+
+    egui::Grid::new("fit_score_matrix")
+        .striped(true)
+        .show(ui, |ui| {
+            ui.label("");
+            for seg in segments {
+                ui.label(egui::RichText::new(display_name(&seg.name, "Unnamed segment")).strong());
+            }
+            ui.end_row();
+
+            for prod in products {
+                ui.label(display_name(&prod.name, "Unnamed product"));
+                for seg in segments {
+                    let s = fit_score(prod.id, seg.id, app);
+                    let (text, score) = if s.is_nan() {
+                        ("—".to_owned(), 0.0_f32)
+                    } else {
+                        (format!("{:.0}%", s * 100.0), s)
+                    };
+                    let response = ui.label(&text);
+                    if score > 0.0 {
+                        let [r, g, b, a] = color_gain().to_array();
+                        let new_a = (a as f32 * score).round() as u8;
+                        let scale = if a > 0 { new_a as f32 / a as f32 } else { 0.0 };
+                        let cell_color = egui::Color32::from_rgba_premultiplied(
+                            (r as f32 * scale).round() as u8,
+                            (g as f32 * scale).round() as u8,
+                            (b as f32 * scale).round() as u8,
+                            new_a,
+                        );
+                        ui.painter().rect_filled(response.rect, 2.0, cell_color);
+                    }
+                }
+                ui.end_row();
+            }
+        });
 }
 
 pub fn show_overview(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     let mode_key = egui::Id::new("ov_highlight_mode");
     let mut mode: HighlightMode = ctx.data(|d| d.get_temp(mode_key).unwrap_or_default());
+
+    let matrix_key = egui::Id::new("ov_show_fit_matrix");
+    let mut show_matrix: bool = ctx.data(|d| d.get_temp(matrix_key).unwrap_or(false));
 
     ui.horizontal(|ui| {
         ui.heading("Overview");
@@ -283,8 +425,13 @@ pub fn show_overview(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 HighlightMode::FitScore => HighlightMode::Off,
             };
         }
+        let matrix_label = if show_matrix { "Product-Market Fit: On" } else { "Product-Market Fit: Off" };
+        if ui.button(matrix_label).clicked() {
+            show_matrix = !show_matrix;
+        }
     });
     ctx.data_mut(|d| d.insert_temp(mode_key, mode));
+    ctx.data_mut(|d| d.insert_temp(matrix_key, show_matrix));
     ui.add_space(8.0);
 
     let hovered_key = egui::Id::new("ov_hovered_entity");
@@ -297,5 +444,21 @@ pub fn show_overview(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
         HighlightMode::FitScore => highlighted_scores(prev_hovered, app),
     };
 
-    ui.columns(5, |cols| show_columns(app, cols, &scores, hovered_key));
+    let prod_hidden_key = egui::Id::new("ov_hidden_products");
+    let seg_hidden_key = egui::Id::new("ov_hidden_segments");
+    let mut hidden_products: HashSet<Uuid> = ctx.data(|d| d.get_temp(prod_hidden_key).unwrap_or_default());
+    let mut hidden_segments: HashSet<Uuid> = ctx.data(|d| d.get_temp(seg_hidden_key).unwrap_or_default());
+    let visible_middle = compute_visible_middle(&hidden_products, &hidden_segments, app);
+
+    ui.columns(5, |cols| show_columns(app, cols, &scores, hovered_key, &mut hidden_products, &mut hidden_segments, &visible_middle));
+
+    ctx.data_mut(|d| d.insert_temp(prod_hidden_key, hidden_products));
+    ctx.data_mut(|d| d.insert_temp(seg_hidden_key, hidden_segments));
+
+    if show_matrix {
+        ui.add_space(12.0);
+        ui.label(egui::RichText::new("Fit Score Matrix").strong());
+        ui.separator();
+        show_fit_matrix(app, ui);
+    }
 }
