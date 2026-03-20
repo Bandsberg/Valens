@@ -1,7 +1,7 @@
 mod pages;
 use pages::{
     CustomerSegmentPage, ValuePropPage, customer_sidepanel, product_sidepanel, show_customer,
-    show_product,
+    show_overview, show_product,
 };
 mod demo_data;
 use demo_data::load_demo_data;
@@ -16,6 +16,7 @@ pub enum Mode {
 enum Tab {
     ValueProp,
     Customer,
+    Overview,
 }
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -78,6 +79,7 @@ impl eframe::App for App {
                 ui.separator();
                 ui.selectable_value(&mut self.tab, Tab::ValueProp, "Value Proposition");
                 ui.selectable_value(&mut self.tab, Tab::Customer, "Customer segment");
+                ui.selectable_value(&mut self.tab, Tab::Overview, "Overview");
             });
         });
 
@@ -95,6 +97,9 @@ impl eframe::App for App {
                 }
                 Tab::Customer => {
                     show_customer(self, ctx, ui);
+                }
+                Tab::Overview => {
+                    show_overview(self, ctx, ui);
                 }
             }
         });

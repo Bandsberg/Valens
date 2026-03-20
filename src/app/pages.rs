@@ -1,4 +1,6 @@
 pub mod accordion;
+mod overview;
+pub use overview::show_overview;
 mod segments;
 pub use segments::{
     CustomerSegment, CustomerSegmentPage, Gain, Job, Pain, customer_sidepanel, show_customer,

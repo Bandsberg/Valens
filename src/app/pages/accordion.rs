@@ -7,6 +7,7 @@ const DRAG_HANDLE_W: f32 = 6.0;
 pub fn color_pain() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(220, 80, 80, 40) }
 pub fn color_gain() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(80, 200, 120, 40) }
 pub fn color_job() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(160, 100, 220, 40) }
+pub fn color_segment() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(60, 140, 220, 40) }
 
 fn col_id(name_label: &str) -> egui::Id {
     egui::Id::new("accordion_name_col_w").with(name_label)
