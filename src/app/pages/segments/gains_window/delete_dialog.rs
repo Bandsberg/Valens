@@ -8,17 +8,16 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         return;
     };
 
-    let gain_name = app
+    let item_name = app
         .customer_segment_page
         .gains_state
         .gains
         .iter()
         .find(|g| g.id == id)
-        .map(|g| g.name.as_str())
-        .unwrap_or("this gain")
-        .to_owned();
+        .map(|g| accordion::display_name(&g.name, "Unnamed gain").to_owned())
+        .unwrap_or_default();
 
-    let (confirmed, dismissed) = accordion::delete_dialog(ctx, "Delete Gain?", &gain_name);
+    let (confirmed, dismissed) = accordion::delete_dialog(ctx, "Delete Gain?", &item_name);
 
     if confirmed {
         app.customer_segment_page

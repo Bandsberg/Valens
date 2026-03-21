@@ -30,6 +30,9 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             .gain_creator_state
             .gain_creators
             .retain(|r| r.id != id);
+        if app.valueprop_page.gain_creator_state.selected_id == Some(id) {
+            app.valueprop_page.gain_creator_state.selected_id = None;
+        }
     }
     if confirmed || dismissed {
         app.valueprop_page.gain_creator_state.pending_delete = None;

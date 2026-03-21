@@ -27,6 +27,9 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             .products_state
             .products
             .retain(|p| p.id != id);
+        if app.valueprop_page.products_state.selected_id == Some(id) {
+            app.valueprop_page.products_state.selected_id = None;
+        }
     }
     if confirmed || dismissed {
         app.valueprop_page.products_state.pending_delete = None;

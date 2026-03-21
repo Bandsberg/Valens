@@ -8,17 +8,16 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         return;
     };
 
-    let pain_name = app
+    let item_name = app
         .customer_segment_page
         .pains_state
         .pains
         .iter()
         .find(|p| p.id == id)
-        .map(|p| p.name.as_str())
-        .unwrap_or("this pain")
-        .to_owned();
+        .map(|p| accordion::display_name(&p.name, "Unnamed pain").to_owned())
+        .unwrap_or_default();
 
-    let (confirmed, dismissed) = accordion::delete_dialog(ctx, "Delete Pain?", &pain_name);
+    let (confirmed, dismissed) = accordion::delete_dialog(ctx, "Delete Pain?", &item_name);
 
     if confirmed {
         app.customer_segment_page

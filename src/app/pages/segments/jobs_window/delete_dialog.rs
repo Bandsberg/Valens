@@ -8,17 +8,16 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         return;
     };
 
-    let job_name = app
+    let item_name = app
         .customer_segment_page
         .jobs_state
         .jobs
         .iter()
         .find(|j| j.id == id)
-        .map(|j| j.name.as_str())
-        .unwrap_or("this job")
-        .to_owned();
+        .map(|j| accordion::display_name(&j.name, "Unnamed job").to_owned())
+        .unwrap_or_default();
 
-    let (confirmed, dismissed) = accordion::delete_dialog(ctx, "Delete Job?", &job_name);
+    let (confirmed, dismissed) = accordion::delete_dialog(ctx, "Delete Job?", &item_name);
 
     if confirmed {
         app.customer_segment_page

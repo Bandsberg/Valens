@@ -8,18 +8,17 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         return;
     };
 
-    let segment_name = app
+    let item_name = app
         .customer_segment_page
         .segments_state
         .segments
         .iter()
         .find(|s| s.id == id)
-        .map(|s| s.name.as_str())
-        .unwrap_or("this segment")
-        .to_owned();
+        .map(|s| accordion::display_name(&s.name, "Unnamed segment").to_owned())
+        .unwrap_or_default();
 
     let (confirmed, dismissed) =
-        accordion::delete_dialog(ctx, "Delete Customer Segment?", &segment_name);
+        accordion::delete_dialog(ctx, "Delete Customer Segment?", &item_name);
 
     if confirmed {
         app.customer_segment_page

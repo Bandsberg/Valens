@@ -33,6 +33,9 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             .features_state
             .features
             .retain(|f| f.id != id);
+        if app.valueprop_page.features_state.selected_id == Some(id) {
+            app.valueprop_page.features_state.selected_id = None;
+        }
     }
     if confirmed || dismissed {
         app.valueprop_page.features_state.pending_delete = None;

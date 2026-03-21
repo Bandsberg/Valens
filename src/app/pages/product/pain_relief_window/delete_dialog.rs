@@ -30,6 +30,9 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             .pain_relief_state
             .pain_reliefs
             .retain(|r| r.id != id);
+        if app.valueprop_page.pain_relief_state.selected_id == Some(id) {
+            app.valueprop_page.pain_relief_state.selected_id = None;
+        }
     }
     if confirmed || dismissed {
         app.valueprop_page.pain_relief_state.pending_delete = None;
