@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 use super::accordion::{
     color_gain, color_job, color_pain, color_segment, display_name, label_with_hover_id,
+    scale_color,
 };
 
 /// The chain runs left-to-right across the overview columns:
@@ -81,31 +82,41 @@ fn product_covered_gains_pains(product_id: Uuid, app: &App) -> (HashSet<Uuid>, H
     let vp = &app.valueprop_page;
 
     // Features linked to this product
-    let features: HashSet<Uuid> = vp.product_feature_links.iter()
+    let features: HashSet<Uuid> = vp
+        .product_feature_links
+        .iter()
         .filter(|(pid, _)| *pid == product_id)
         .map(|(_, fid)| *fid)
         .collect();
 
     // GainCreators reachable via those features
-    let gain_creators: HashSet<Uuid> = vp.feature_gain_creator_links.iter()
+    let gain_creators: HashSet<Uuid> = vp
+        .feature_gain_creator_links
+        .iter()
         .filter(|(fid, _)| features.contains(fid))
         .map(|(_, gcid)| *gcid)
         .collect();
 
     // PainReliefs reachable via those features
-    let pain_reliefs: HashSet<Uuid> = vp.feature_pain_relief_links.iter()
+    let pain_reliefs: HashSet<Uuid> = vp
+        .feature_pain_relief_links
+        .iter()
         .filter(|(fid, _)| features.contains(fid))
         .map(|(_, prid)| *prid)
         .collect();
 
     // Gains linked to those GainCreators (gain_gain_creator_links: (gain_id, gc_id))
-    let gains: HashSet<Uuid> = vp.gain_gain_creator_links.iter()
+    let gains: HashSet<Uuid> = vp
+        .gain_gain_creator_links
+        .iter()
         .filter(|(_, gcid)| gain_creators.contains(gcid))
         .map(|(gain_id, _)| *gain_id)
         .collect();
 
     // Pains linked to those PainReliefs (pain_pain_relief_links: (pain_id, pr_id))
-    let pains: HashSet<Uuid> = vp.pain_pain_relief_links.iter()
+    let pains: HashSet<Uuid> = vp
+        .pain_pain_relief_links
+        .iter()
         .filter(|(_, prid)| pain_reliefs.contains(prid))
         .map(|(pain_id, _)| *pain_id)
         .collect();
@@ -118,19 +129,25 @@ fn segment_needs(segment_id: Uuid, app: &App) -> (HashSet<Uuid>, HashSet<Uuid>) 
     let cs = &app.customer_segment_page;
 
     // Jobs linked to this segment (segment_job_links: (job_id, segment_id))
-    let jobs: HashSet<Uuid> = cs.segment_job_links.iter()
+    let jobs: HashSet<Uuid> = cs
+        .segment_job_links
+        .iter()
         .filter(|(_, sid)| *sid == segment_id)
         .map(|(job_id, _)| *job_id)
         .collect();
 
     // Gains linked to those jobs (job_gain_links: (gain_id, job_id))
-    let gains: HashSet<Uuid> = cs.job_gain_links.iter()
+    let gains: HashSet<Uuid> = cs
+        .job_gain_links
+        .iter()
         .filter(|(_, job_id)| jobs.contains(job_id))
         .map(|(gain_id, _)| *gain_id)
         .collect();
 
     // Pains linked to those jobs (job_pain_links: (pain_id, job_id))
-    let pains: HashSet<Uuid> = cs.job_pain_links.iter()
+    let pains: HashSet<Uuid> = cs
+        .job_pain_links
+        .iter()
         .filter(|(_, job_id)| jobs.contains(job_id))
         .map(|(pain_id, _)| *pain_id)
         .collect();
@@ -150,8 +167,8 @@ fn fit_score(product_id: Uuid, segment_id: Uuid, app: &App) -> f32 {
         return f32::NAN;
     }
 
-    let addressed = prod_gains.intersection(&seg_gains).count()
-        + prod_pains.intersection(&seg_pains).count();
+    let addressed =
+        prod_gains.intersection(&seg_gains).count() + prod_pains.intersection(&seg_pains).count();
 
     addressed as f32 / total_needs as f32
 }
@@ -209,7 +226,9 @@ enum HighlightMode {
 }
 
 fn binary_scores(hovered: Option<Uuid>, app: &App) -> HashMap<Uuid, f32> {
-    let Some(start) = hovered else { return HashMap::new(); };
+    let Some(start) = hovered else {
+        return HashMap::new();
+    };
     let (fwd, bwd) = build_directed_adj(app);
     bfs(start, &fwd)
         .union(&bfs(start, &bwd))
@@ -243,6 +262,40 @@ fn compute_visible_middle(
     Some(visible)
 }
 
+fn filter_heading(
+    ui: &mut egui::Ui,
+    heading: &str,
+    id_salt: &str,
+    items: &[(Uuid, String)],
+    hidden: &mut HashSet<Uuid>,
+) {
+    let visible = items.iter().filter(|(id, _)| !hidden.contains(id)).count();
+    let label = if hidden.is_empty() {
+        "All".to_owned()
+    } else {
+        format!("{} / {}", visible, items.len())
+    };
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new(heading).strong());
+        egui::ComboBox::from_id_salt(id_salt)
+            .selected_text(label)
+            .width(60.0)
+            .show_ui(ui, |ui| {
+                for (id, name) in items {
+                    let mut checked = !hidden.contains(id);
+                    if ui.checkbox(&mut checked, name.as_str()).changed() {
+                        if checked {
+                            hidden.remove(id);
+                        } else {
+                            hidden.insert(*id);
+                        }
+                    }
+                }
+            });
+    });
+    ui.separator();
+}
+
 fn show_columns(
     app: &App,
     cols: &mut [egui::Ui],
@@ -257,30 +310,20 @@ fn show_columns(
     let is_visible = |id: Uuid| visible_middle.as_ref().is_none_or(|v| v.contains(&id));
 
     let all_products = &app.valueprop_page.products_state.products;
-    let prod_visible = all_products.iter().filter(|p| !hidden_products.contains(&p.id)).count();
-    let prod_label = if hidden_products.is_empty() {
-        "All".to_owned()
-    } else {
-        format!("{} / {}", prod_visible, all_products.len())
-    };
-    c0.horizontal(|ui| {
-        ui.label(egui::RichText::new("Products & Services").strong());
-        egui::ComboBox::from_id_salt("ov_prod_filter")
-            .selected_text(prod_label)
-            .width(60.0)
-            .show_ui(ui, |ui| {
-                for p in all_products {
-                    let mut checked = !hidden_products.contains(&p.id);
-                    if ui.checkbox(&mut checked, display_name(&p.name, "Unnamed product")).changed() {
-                        if checked { hidden_products.remove(&p.id); } else { hidden_products.insert(p.id); }
-                    }
-                }
-            });
-    });
-    c0.separator();
-    for p in all_products {
-        if !hidden_products.contains(&p.id) {
-            label_with_hover_id(c0, display_name(&p.name, "Unnamed product"), p.id, color_job(), score(p.id), hovered_key);
+    let prod_items: Vec<(Uuid, String)> = all_products
+        .iter()
+        .map(|p| (p.id, display_name(&p.name, "Unnamed product").to_owned()))
+        .collect();
+    filter_heading(
+        c0,
+        "Products & Services",
+        "ov_prod_filter",
+        &prod_items,
+        hidden_products,
+    );
+    for (id, name) in &prod_items {
+        if !hidden_products.contains(id) {
+            label_with_hover_id(c0, name, *id, color_job(), score(*id), hovered_key);
         }
     }
 
@@ -288,7 +331,14 @@ fn show_columns(
     c1.separator();
     for item in &app.valueprop_page.gain_creator_state.gain_creators {
         if is_visible(item.id) {
-            label_with_hover_id(c1, display_name(&item.name, "Unnamed gain creator"), item.id, color_gain(), score(item.id), hovered_key);
+            label_with_hover_id(
+                c1,
+                display_name(&item.name, "Unnamed gain creator"),
+                item.id,
+                color_gain(),
+                score(item.id),
+                hovered_key,
+            );
         }
     }
     c1.add_space(12.0);
@@ -296,7 +346,14 @@ fn show_columns(
     c1.separator();
     for item in &app.valueprop_page.pain_relief_state.pain_reliefs {
         if is_visible(item.id) {
-            label_with_hover_id(c1, display_name(&item.name, "Unnamed pain relief"), item.id, color_pain(), score(item.id), hovered_key);
+            label_with_hover_id(
+                c1,
+                display_name(&item.name, "Unnamed pain relief"),
+                item.id,
+                color_pain(),
+                score(item.id),
+                hovered_key,
+            );
         }
     }
 
@@ -304,7 +361,14 @@ fn show_columns(
     c2.separator();
     for item in &app.customer_segment_page.gains_state.gains {
         if is_visible(item.id) {
-            label_with_hover_id(c2, display_name(&item.name, "Unnamed gain"), item.id, color_gain(), score(item.id), hovered_key);
+            label_with_hover_id(
+                c2,
+                display_name(&item.name, "Unnamed gain"),
+                item.id,
+                color_gain(),
+                score(item.id),
+                hovered_key,
+            );
         }
     }
     c2.add_space(12.0);
@@ -312,7 +376,14 @@ fn show_columns(
     c2.separator();
     for item in &app.customer_segment_page.pains_state.pains {
         if is_visible(item.id) {
-            label_with_hover_id(c2, display_name(&item.name, "Unnamed pain"), item.id, color_pain(), score(item.id), hovered_key);
+            label_with_hover_id(
+                c2,
+                display_name(&item.name, "Unnamed pain"),
+                item.id,
+                color_pain(),
+                score(item.id),
+                hovered_key,
+            );
         }
     }
 
@@ -320,35 +391,32 @@ fn show_columns(
     c3.separator();
     for item in &app.customer_segment_page.jobs_state.jobs {
         if is_visible(item.id) {
-            label_with_hover_id(c3, display_name(&item.name, "Unnamed job"), item.id, color_job(), score(item.id), hovered_key);
+            label_with_hover_id(
+                c3,
+                display_name(&item.name, "Unnamed job"),
+                item.id,
+                color_job(),
+                score(item.id),
+                hovered_key,
+            );
         }
     }
 
     let all_segments = &app.customer_segment_page.segments_state.segments;
-    let seg_visible = all_segments.iter().filter(|s| !hidden_segments.contains(&s.id)).count();
-    let seg_label = if hidden_segments.is_empty() {
-        "All".to_owned()
-    } else {
-        format!("{} / {}", seg_visible, all_segments.len())
-    };
-    c4.horizontal(|ui| {
-        ui.label(egui::RichText::new("Customer Segments").strong());
-        egui::ComboBox::from_id_salt("ov_seg_filter")
-            .selected_text(seg_label)
-            .width(60.0)
-            .show_ui(ui, |ui| {
-                for s in all_segments {
-                    let mut checked = !hidden_segments.contains(&s.id);
-                    if ui.checkbox(&mut checked, display_name(&s.name, "Unnamed segment")).changed() {
-                        if checked { hidden_segments.remove(&s.id); } else { hidden_segments.insert(s.id); }
-                    }
-                }
-            });
-    });
-    c4.separator();
-    for item in all_segments {
-        if !hidden_segments.contains(&item.id) {
-            label_with_hover_id(c4, display_name(&item.name, "Unnamed segment"), item.id, color_segment(), score(item.id), hovered_key);
+    let seg_items: Vec<(Uuid, String)> = all_segments
+        .iter()
+        .map(|s| (s.id, display_name(&s.name, "Unnamed segment").to_owned()))
+        .collect();
+    filter_heading(
+        c4,
+        "Customer Segments",
+        "ov_seg_filter",
+        &seg_items,
+        hidden_segments,
+    );
+    for (id, name) in &seg_items {
+        if !hidden_segments.contains(id) {
+            label_with_hover_id(c4, name, *id, color_segment(), score(*id), hovered_key);
         }
     }
 }
@@ -386,15 +454,7 @@ fn show_fit_matrix(app: &App, ui: &mut egui::Ui) {
                     };
                     let response = ui.label(&text);
                     if score > 0.0 {
-                        let [r, g, b, a] = color_gain().to_array();
-                        let new_a = (a as f32 * score).round() as u8;
-                        let scale = if a > 0 { new_a as f32 / a as f32 } else { 0.0 };
-                        let cell_color = egui::Color32::from_rgba_premultiplied(
-                            (r as f32 * scale).round() as u8,
-                            (g as f32 * scale).round() as u8,
-                            (b as f32 * scale).round() as u8,
-                            new_a,
-                        );
+                        let cell_color = scale_color(color_gain(), score);
                         ui.painter().rect_filled(response.rect, 2.0, cell_color);
                     }
                 }
@@ -414,18 +474,22 @@ pub fn show_overview(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.heading("Overview");
         ui.add_space(8.0);
         let label = match mode {
-            HighlightMode::Off      => "Highlights: Off",
-            HighlightMode::Binary   => "Highlights: Binary",
+            HighlightMode::Off => "Highlights: Off",
+            HighlightMode::Binary => "Highlights: Binary",
             HighlightMode::FitScore => "Highlights: Fit Score",
         };
         if ui.button(label).clicked() {
             mode = match mode {
-                HighlightMode::Off      => HighlightMode::Binary,
-                HighlightMode::Binary   => HighlightMode::FitScore,
+                HighlightMode::Off => HighlightMode::Binary,
+                HighlightMode::Binary => HighlightMode::FitScore,
                 HighlightMode::FitScore => HighlightMode::Off,
             };
         }
-        let matrix_label = if show_matrix { "Product-Market Fit: On" } else { "Product-Market Fit: Off" };
+        let matrix_label = if show_matrix {
+            "Product-Market Fit: On"
+        } else {
+            "Product-Market Fit: Off"
+        };
         if ui.button(matrix_label).clicked() {
             show_matrix = !show_matrix;
         }
@@ -439,18 +503,30 @@ pub fn show_overview(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     ctx.data_mut(|d| d.remove::<Uuid>(hovered_key));
 
     let scores = match mode {
-        HighlightMode::Off      => HashMap::new(),
-        HighlightMode::Binary   => binary_scores(prev_hovered, app),
+        HighlightMode::Off => HashMap::new(),
+        HighlightMode::Binary => binary_scores(prev_hovered, app),
         HighlightMode::FitScore => highlighted_scores(prev_hovered, app),
     };
 
     let prod_hidden_key = egui::Id::new("ov_hidden_products");
     let seg_hidden_key = egui::Id::new("ov_hidden_segments");
-    let mut hidden_products: HashSet<Uuid> = ctx.data(|d| d.get_temp(prod_hidden_key).unwrap_or_default());
-    let mut hidden_segments: HashSet<Uuid> = ctx.data(|d| d.get_temp(seg_hidden_key).unwrap_or_default());
+    let mut hidden_products: HashSet<Uuid> =
+        ctx.data(|d| d.get_temp(prod_hidden_key).unwrap_or_default());
+    let mut hidden_segments: HashSet<Uuid> =
+        ctx.data(|d| d.get_temp(seg_hidden_key).unwrap_or_default());
     let visible_middle = compute_visible_middle(&hidden_products, &hidden_segments, app);
 
-    ui.columns(5, |cols| show_columns(app, cols, &scores, hovered_key, &mut hidden_products, &mut hidden_segments, &visible_middle));
+    ui.columns(5, |cols| {
+        show_columns(
+            app,
+            cols,
+            &scores,
+            hovered_key,
+            &mut hidden_products,
+            &mut hidden_segments,
+            &visible_middle,
+        )
+    });
 
     ctx.data_mut(|d| d.insert_temp(prod_hidden_key, hidden_products));
     ctx.data_mut(|d| d.insert_temp(seg_hidden_key, hidden_segments));

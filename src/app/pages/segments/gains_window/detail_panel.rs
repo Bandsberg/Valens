@@ -134,7 +134,9 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         app.customer_segment_page.job_gain_links.push(pair);
     }
     if let Some(pair) = link_to_remove {
-        app.customer_segment_page.job_gain_links.retain(|l| l != &pair);
+        app.customer_segment_page
+            .job_gain_links
+            .retain(|l| l != &pair);
     }
     if let Some(job_id) = navigate_to_job_id {
         navigate_to_job(app, ctx, job_id);
@@ -162,4 +164,3 @@ pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
         egui::Id::new("Jobs"),
     ));
 }
-

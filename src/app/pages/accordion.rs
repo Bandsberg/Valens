@@ -4,10 +4,18 @@ use uuid::Uuid;
 const DRAG_HANDLE_W: f32 = 6.0;
 
 /// Shared hover-highlight colours used across page views.
-pub fn color_pain() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(220, 80, 80, 40) }
-pub fn color_gain() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(80, 200, 120, 40) }
-pub fn color_job() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(160, 100, 220, 40) }
-pub fn color_segment() -> egui::Color32 { egui::Color32::from_rgba_unmultiplied(60, 140, 220, 40) }
+pub fn color_pain() -> egui::Color32 {
+    egui::Color32::from_rgba_unmultiplied(220, 80, 80, 40)
+}
+pub fn color_gain() -> egui::Color32 {
+    egui::Color32::from_rgba_unmultiplied(80, 200, 120, 40)
+}
+pub fn color_job() -> egui::Color32 {
+    egui::Color32::from_rgba_unmultiplied(160, 100, 220, 40)
+}
+pub fn color_segment() -> egui::Color32 {
+    egui::Color32::from_rgba_unmultiplied(60, 140, 220, 40)
+}
 
 fn col_id(name_label: &str) -> egui::Id {
     egui::Id::new("accordion_name_col_w").with(name_label)
@@ -15,7 +23,12 @@ fn col_id(name_label: &str) -> egui::Id {
 
 fn heading_text_width(ui: &egui::Ui, text: &str) -> f32 {
     let wt = egui::WidgetText::from(egui::RichText::new(text).heading());
-    let galley = wt.into_galley(ui, Some(egui::TextWrapMode::Extend), f32::INFINITY, egui::TextStyle::Heading);
+    let galley = wt.into_galley(
+        ui,
+        Some(egui::TextWrapMode::Extend),
+        f32::INFINITY,
+        egui::TextStyle::Heading,
+    );
     galley.size().x
 }
 
@@ -104,6 +117,19 @@ pub fn display_name<'a>(name: &'a str, fallback: &'a str) -> &'a str {
     if name.is_empty() { fallback } else { name }
 }
 
+/// Scales the alpha of a premultiplied `Color32` by `factor` (0.0–1.0).
+pub fn scale_color(color: egui::Color32, factor: f32) -> egui::Color32 {
+    let [r, g, b, a] = color.to_array();
+    let new_a = (a as f32 * factor).round() as u8;
+    let scale = if a > 0 { new_a as f32 / a as f32 } else { 0.0 };
+    egui::Color32::from_rgba_premultiplied(
+        (r as f32 * scale).round() as u8,
+        (g as f32 * scale).round() as u8,
+        (b as f32 * scale).round() as u8,
+        new_a,
+    )
+}
+
 /// Renders a label and paints a coloured highlight behind it on hover or when
 /// `highlight > 0.0` (i.e. this entity is linked to whatever is hovered).
 /// `highlight` is 0.0–1.0; the color's alpha is scaled proportionally.
@@ -121,19 +147,13 @@ pub fn label_with_hover_id(
     if response.hovered() {
         ui.ctx().data_mut(|d| d.insert_temp(hover_key, id));
     }
-    let effective = if response.hovered() { 1.0_f32 } else { highlight };
+    let effective = if response.hovered() {
+        1.0_f32
+    } else {
+        highlight
+    };
     if effective > 0.0 {
-        // color.to_array() returns premultiplied (r*a/255, g*a/255, b*a/255, a).
-        // Scale all four components together to keep premultiplication correct.
-        let [r, g, b, a] = color.to_array();
-        let new_a = (a as f32 * effective).round() as u8;
-        let scale = if a > 0 { new_a as f32 / a as f32 } else { 0.0 };
-        let scaled = egui::Color32::from_rgba_premultiplied(
-            (r as f32 * scale).round() as u8,
-            (g as f32 * scale).round() as u8,
-            (b as f32 * scale).round() as u8,
-            new_a,
-        );
+        let scaled = scale_color(color, effective);
         ui.painter().rect_filled(response.rect, 3.0, scaled);
     }
 }
@@ -188,7 +208,11 @@ pub fn expand_button(ui: &mut egui::Ui, expanded: bool) -> bool {
 /// Detail-panel toggle button (⊞/⊟). Returns `true` if clicked.
 pub fn panel_toggle_button(ui: &mut egui::Ui, is_open: bool) -> bool {
     let icon = if is_open { "⊟" } else { "⊞" };
-    let hover = if is_open { "Close detail panel" } else { "Open detail panel" };
+    let hover = if is_open {
+        "Close detail panel"
+    } else {
+        "Open detail panel"
+    };
     ui.add(egui::Button::new(icon).fill(egui::Color32::TRANSPARENT))
         .on_hover_text(hover)
         .clicked()

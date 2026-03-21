@@ -88,7 +88,9 @@ pub fn customer_sidepanel(app: &mut App, ctx: &egui::Context) {
 /// - `Gain` ↔ `Job` (`job_gain_links`: `(gain_id, job_id)`)
 /// - `Pain` ↔ `Job` (`job_pain_links`: `(pain_id, job_id)`)
 fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
-    let Some(hovered_id) = hovered else { return HashSet::new() };
+    let Some(hovered_id) = hovered else {
+        return HashSet::new();
+    };
     let cs = &app.customer_segment_page;
 
     // Each link is (gain_or_pain_id, job_id). Both directions are symmetric:

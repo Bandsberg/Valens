@@ -1,9 +1,9 @@
 use eframe::egui;
 use uuid::Uuid;
 
-use super::model::FeaturesState;
-use super::super::products_window::Product;
 use super::super::super::accordion;
+use super::super::products_window::Product;
+use super::model::FeaturesState;
 
 const MULTILINE_H: f32 = 58.0;
 

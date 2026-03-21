@@ -158,7 +158,9 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         app.customer_segment_page.segment_job_links.push(pair);
     }
     if let Some(pair) = link_to_remove {
-        app.customer_segment_page.segment_job_links.retain(|l| l != &pair);
+        app.customer_segment_page
+            .segment_job_links
+            .retain(|l| l != &pair);
     }
     if let Some(job_id) = nav_job_id {
         navigate_to_job(app, ctx, job_id);

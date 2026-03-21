@@ -24,7 +24,10 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         app.customer_segment_page
             .segment_job_links
             .retain(|(jid, _)| *jid != id);
-        app.customer_segment_page.jobs_state.jobs.retain(|j| j.id != id);
+        app.customer_segment_page
+            .jobs_state
+            .jobs
+            .retain(|j| j.id != id);
         if app.customer_segment_page.jobs_state.selected_job_id == Some(id) {
             app.customer_segment_page.jobs_state.selected_job_id = None;
         }

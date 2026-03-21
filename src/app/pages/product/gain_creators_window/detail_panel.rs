@@ -198,7 +198,10 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     }
 
     if let Some(pair) = feat_link_to_add
-        && !app.valueprop_page.feature_gain_creator_links.contains(&pair)
+        && !app
+            .valueprop_page
+            .feature_gain_creator_links
+            .contains(&pair)
     {
         app.valueprop_page.feature_gain_creator_links.push(pair);
     }

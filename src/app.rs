@@ -90,17 +90,15 @@ impl eframe::App for App {
             customer_sidepanel(self, ctx);
         }
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            match self.tab {
-                Tab::ValueProp => {
-                    show_product(self, ctx, ui);
-                }
-                Tab::Customer => {
-                    show_customer(self, ctx, ui);
-                }
-                Tab::Overview => {
-                    show_overview(self, ctx, ui);
-                }
+        egui::CentralPanel::default().show(ctx, |ui| match self.tab {
+            Tab::ValueProp => {
+                show_product(self, ctx, ui);
+            }
+            Tab::Customer => {
+                show_customer(self, ctx, ui);
+            }
+            Tab::Overview => {
+                show_overview(self, ctx, ui);
             }
         });
     }

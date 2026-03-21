@@ -1,10 +1,10 @@
 use eframe::egui;
 use uuid::Uuid;
 
-use super::model::PainReliefState;
-use super::super::features_window::Feature;
 use super::super::super::Pain;
 use super::super::super::accordion;
+use super::super::features_window::Feature;
+use super::model::PainReliefState;
 
 const MULTILINE_H: f32 = 58.0;
 

@@ -68,7 +68,9 @@ struct ProductWindows {
 /// - `Product` ↔ `Feature` ↔ `PainRelief`
 fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
     let mut result = HashSet::new();
-    let Some(hovered_id) = hovered else { return result };
+    let Some(hovered_id) = hovered else {
+        return result;
+    };
 
     let vp = &app.valueprop_page;
 

@@ -135,8 +135,7 @@ pub fn show_accordion(
                                     {
                                         *navigate_to = Some(*fid);
                                     }
-                                    if accordion::unlink_button(ui).clicked()
-                                    {
+                                    if accordion::unlink_button(ui).clicked() {
                                         link_to_remove = Some((id, *fid));
                                     }
                                 });

@@ -123,15 +123,10 @@ pub fn show_accordion(
                         for jid in &linked_jids {
                             if let Some(job) = jobs.iter().find(|j| j.id == *jid) {
                                 ui.horizontal(|ui| {
-                                    if ui
-                                        .link(&job.name)
-                                        .on_hover_text("Open in Jobs")
-                                        .clicked()
-                                    {
+                                    if ui.link(&job.name).on_hover_text("Open in Jobs").clicked() {
                                         *navigate_to = Some(*jid);
                                     }
-                                    if accordion::unlink_button(ui).clicked()
-                                    {
+                                    if accordion::unlink_button(ui).clicked() {
                                         link_to_remove = Some((id, *jid));
                                     }
                                 });
