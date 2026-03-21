@@ -67,64 +67,57 @@ struct ProductWindows {
 /// - `Product` ↔ `Feature` ↔ `GainCreator`
 /// - `Product` ↔ `Feature` ↔ `PainRelief`
 fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
-    let mut result = HashSet::new();
     let Some(hovered_id) = hovered else {
-        return result;
+        return HashSet::new();
     };
-
     let vp = &app.valueprop_page;
+    let mut result = HashSet::new();
 
-    // Features linked to the hovered entity when it is a Product.
+    // Case: hovered entity is a Product → Product → Feature → GainCreator / PainRelief.
     let features_of_product: Vec<Uuid> = vp
         .product_feature_links
         .iter()
-        .filter(|(pid, _)| *pid == hovered_id)
-        .map(|(_, fid)| *fid)
+        .filter_map(|(product_id, feature_id)| (*product_id == hovered_id).then_some(*feature_id))
         .collect();
-
-    for fid in &features_of_product {
-        for (f, gc) in &vp.feature_gain_creator_links {
-            if f == fid {
-                result.insert(*gc);
-            }
-        }
-        for (f, pr) in &vp.feature_pain_relief_links {
-            if f == fid {
-                result.insert(*pr);
-            }
-        }
+    for &feature_id in &features_of_product {
+        result.extend(
+            vp.feature_gain_creator_links
+                .iter()
+                .filter_map(|(fid, gc_id)| (*fid == feature_id).then_some(*gc_id)),
+        );
+        result.extend(
+            vp.feature_pain_relief_links
+                .iter()
+                .filter_map(|(fid, pr_id)| (*fid == feature_id).then_some(*pr_id)),
+        );
     }
 
-    // Products linked to the hovered entity when it is a GainCreator.
-    let features_of_gc: Vec<Uuid> = vp
+    // Case: hovered entity is a GainCreator → GainCreator → Feature → Product.
+    let features_of_gain_creator: Vec<Uuid> = vp
         .feature_gain_creator_links
         .iter()
-        .filter(|(_, gcid)| *gcid == hovered_id)
-        .map(|(fid, _)| *fid)
+        .filter_map(|(feature_id, gc_id)| (*gc_id == hovered_id).then_some(*feature_id))
         .collect();
-
-    for fid in &features_of_gc {
-        for (pid, f) in &vp.product_feature_links {
-            if f == fid {
-                result.insert(*pid);
-            }
-        }
+    for &feature_id in &features_of_gain_creator {
+        result.extend(
+            vp.product_feature_links
+                .iter()
+                .filter_map(|(product_id, fid)| (*fid == feature_id).then_some(*product_id)),
+        );
     }
 
-    // Products linked to the hovered entity when it is a PainRelief.
-    let features_of_pr: Vec<Uuid> = vp
+    // Case: hovered entity is a PainRelief → PainRelief → Feature → Product.
+    let features_of_pain_relief: Vec<Uuid> = vp
         .feature_pain_relief_links
         .iter()
-        .filter(|(_, prid)| *prid == hovered_id)
-        .map(|(fid, _)| *fid)
+        .filter_map(|(feature_id, pr_id)| (*pr_id == hovered_id).then_some(*feature_id))
         .collect();
-
-    for fid in &features_of_pr {
-        for (pid, f) in &vp.product_feature_links {
-            if f == fid {
-                result.insert(*pid);
-            }
-        }
+    for &feature_id in &features_of_pain_relief {
+        result.extend(
+            vp.product_feature_links
+                .iter()
+                .filter_map(|(product_id, fid)| (*fid == feature_id).then_some(*product_id)),
+        );
     }
 
     result
