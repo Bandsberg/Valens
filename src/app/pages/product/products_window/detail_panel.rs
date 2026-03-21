@@ -6,7 +6,6 @@ use super::super::super::accordion;
 
 // ── Detail panel window (Panel mode) ─────────────────────────────────────────
 
-#[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.valueprop_page.products_state.selected_id else {
         return;
@@ -14,31 +13,14 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
     // Snapshot linked / available features before entering the window closure
     // so we can borrow `products_state.products` mutably inside without conflict.
-    let linked_fids: Vec<Uuid> = app
-        .valueprop_page
-        .product_feature_links
-        .iter()
-        .filter(|(pid, _)| *pid == id)
-        .map(|(_, fid)| *fid)
-        .collect();
-
-    let linked_features: Vec<(Uuid, String)> = app
-        .valueprop_page
-        .features_state
-        .features
-        .iter()
-        .filter(|f| linked_fids.contains(&f.id))
-        .map(|f| (f.id, f.name.clone()))
-        .collect();
-
-    let available_features: Vec<(Uuid, String)> = app
-        .valueprop_page
-        .features_state
-        .features
-        .iter()
-        .filter(|f| !linked_fids.contains(&f.id))
-        .map(|f| (f.id, f.name.clone()))
-        .collect();
+    // Link tuple: (product_id, feature_id) — product is in first position.
+    let (linked_features, available_features) = accordion::partition_linked(
+        &app.valueprop_page.product_feature_links,
+        |(pid, fid)| (*pid == id).then_some(*fid),
+        &app.valueprop_page.features_state.features,
+        |f| f.id,
+        |f| f.name.as_str(),
+    );
 
     // Collect mutations during the window; apply them afterwards.
     let mut link_to_add: Option<(Uuid, Uuid)> = None;

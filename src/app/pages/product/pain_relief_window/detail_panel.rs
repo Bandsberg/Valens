@@ -13,59 +13,23 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         return;
     };
 
-    // Snapshot linked features before the window closure.
-    let linked_fids: Vec<Uuid> = app
-        .valueprop_page
-        .feature_pain_relief_links
-        .iter()
-        .filter(|(_, rid)| *rid == id)
-        .map(|(fid, _)| *fid)
-        .collect();
-
-    let linked_features: Vec<(Uuid, String)> = app
-        .valueprop_page
-        .features_state
-        .features
-        .iter()
-        .filter(|f| linked_fids.contains(&f.id))
-        .map(|f| (f.id, f.name.clone()))
-        .collect();
-
-    let available_features: Vec<(Uuid, String)> = app
-        .valueprop_page
-        .features_state
-        .features
-        .iter()
-        .filter(|f| !linked_fids.contains(&f.id))
-        .map(|f| (f.id, f.name.clone()))
-        .collect();
-
-    // Snapshot linked pains before the window closure.
-    let linked_pids: Vec<Uuid> = app
-        .valueprop_page
-        .pain_pain_relief_links
-        .iter()
-        .filter(|(_, rid)| *rid == id)
-        .map(|(pid, _)| *pid)
-        .collect();
-
-    let linked_pains: Vec<(Uuid, String)> = app
-        .customer_segment_page
-        .pains_state
-        .pains
-        .iter()
-        .filter(|p| linked_pids.contains(&p.id))
-        .map(|p| (p.id, p.name.clone()))
-        .collect();
-
-    let available_pains: Vec<(Uuid, String)> = app
-        .customer_segment_page
-        .pains_state
-        .pains
-        .iter()
-        .filter(|p| !linked_pids.contains(&p.id))
-        .map(|p| (p.id, p.name.clone()))
-        .collect();
+    // Snapshot linked features and pains before the window closure.
+    // Link tuple: (feature_id, pain_relief_id) — pain_relief is in second position.
+    let (linked_features, available_features) = accordion::partition_linked(
+        &app.valueprop_page.feature_pain_relief_links,
+        |(fid, rid)| (*rid == id).then_some(*fid),
+        &app.valueprop_page.features_state.features,
+        |f| f.id,
+        |f| f.name.as_str(),
+    );
+    // Link tuple: (pain_id, pain_relief_id) — pain_relief is in second position.
+    let (linked_pains, available_pains) = accordion::partition_linked(
+        &app.valueprop_page.pain_pain_relief_links,
+        |(pid, rid)| (*rid == id).then_some(*pid),
+        &app.customer_segment_page.pains_state.pains,
+        |p| p.id,
+        |p| p.name.as_str(),
+    );
 
     let mut feat_link_to_add: Option<(Uuid, Uuid)> = None;
     let mut feat_link_to_remove: Option<(Uuid, Uuid)> = None;

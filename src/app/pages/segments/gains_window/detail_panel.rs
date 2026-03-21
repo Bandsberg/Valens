@@ -5,38 +5,19 @@ use uuid::Uuid;
 use super::super::super::accordion;
 use super::super::detail_panel::navigate_to_job;
 
-#[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_segment_page.gains_state.selected_id else {
         return;
     };
 
-    // Link tuple: (gain_id, job_id)
-    let linked_jids: Vec<Uuid> = app
-        .customer_segment_page
-        .job_gain_links
-        .iter()
-        .filter(|(gid, _)| *gid == id)
-        .map(|(_, jid)| *jid)
-        .collect();
-
-    let linked_jobs: Vec<(Uuid, String)> = app
-        .customer_segment_page
-        .jobs_state
-        .jobs
-        .iter()
-        .filter(|j| linked_jids.contains(&j.id))
-        .map(|j| (j.id, j.name.clone()))
-        .collect();
-
-    let available_jobs: Vec<(Uuid, String)> = app
-        .customer_segment_page
-        .jobs_state
-        .jobs
-        .iter()
-        .filter(|j| !linked_jids.contains(&j.id))
-        .map(|j| (j.id, j.name.clone()))
-        .collect();
+    // Link tuple: (gain_id, job_id) — gain is in first position.
+    let (linked_jobs, available_jobs) = accordion::partition_linked(
+        &app.customer_segment_page.job_gain_links,
+        |(gid, jid)| (*gid == id).then_some(*jid),
+        &app.customer_segment_page.jobs_state.jobs,
+        |j| j.id,
+        |j| j.name.as_str(),
+    );
 
     let mut link_to_add: Option<(Uuid, Uuid)> = None;
     let mut link_to_remove: Option<(Uuid, Uuid)> = None;

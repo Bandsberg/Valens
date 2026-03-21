@@ -360,6 +360,56 @@ pub fn detail_link_row(
     (link_to_add, link_to_remove)
 }
 
+/// Splits `items` into `(linked, available)` lists for a detail panel snapshot.
+///
+/// `links` is a `[(a_id, b_id)]` link table. `extract_other_id` receives each
+/// link tuple and returns `Some(foreign_id)` when the tuple belongs to this
+/// entity, or `None` to skip it — the closure encodes which position holds
+/// `self_id` and which holds the foreign key.
+///
+/// Both returned vecs are `(id, name)` pairs ready to pass to
+/// [`detail_link_row`] or [`acc_link_section`].
+///
+/// # Example
+/// ```rust,ignore
+/// // Link table stores (job_id, segment_id). Self is a segment, so filter on
+/// // the second position and return the first (the job id).
+/// let (linked_jobs, available_jobs) = accordion::partition_linked(
+///     &app.segment_job_links,
+///     |(jid, sid)| (*sid == self_id).then_some(*jid),
+///     &app.jobs,
+///     |j| j.id,
+///     |j| j.name.as_str(),
+/// );
+/// ```
+#[expect(clippy::type_complexity)]
+pub fn partition_linked<T>(
+    links: &[(Uuid, Uuid)],
+    extract_other_id: impl Fn(&(Uuid, Uuid)) -> Option<Uuid>,
+    items: &[T],
+    get_id: impl Fn(&T) -> Uuid,
+    get_name: impl Fn(&T) -> &str,
+) -> (Vec<(Uuid, String)>, Vec<(Uuid, String)>) {
+    let linked_ids: Vec<Uuid> = links.iter().filter_map(extract_other_id).collect();
+    let linked = items
+        .iter()
+        .filter_map(|item| {
+            let id = get_id(item);
+            linked_ids
+                .contains(&id)
+                .then(|| (id, get_name(item).to_owned()))
+        })
+        .collect();
+    let available = items
+        .iter()
+        .filter_map(|item| {
+            let id = get_id(item);
+            (!linked_ids.contains(&id)).then(|| (id, get_name(item).to_owned()))
+        })
+        .collect();
+    (linked, available)
+}
+
 /// Returns `(name_width, description_width)` for a collapsed accordion row,
 /// reserving space for two 36 px action buttons on the right.
 /// `name_label` must match the label passed to [`header`].

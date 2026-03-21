@@ -13,59 +13,23 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         return;
     };
 
-    // Snapshot linked features before the window closure.
-    let linked_fids: Vec<Uuid> = app
-        .valueprop_page
-        .feature_gain_creator_links
-        .iter()
-        .filter(|(_, rid)| *rid == id)
-        .map(|(fid, _)| *fid)
-        .collect();
-
-    let linked_features: Vec<(Uuid, String)> = app
-        .valueprop_page
-        .features_state
-        .features
-        .iter()
-        .filter(|f| linked_fids.contains(&f.id))
-        .map(|f| (f.id, f.name.clone()))
-        .collect();
-
-    let available_features: Vec<(Uuid, String)> = app
-        .valueprop_page
-        .features_state
-        .features
-        .iter()
-        .filter(|f| !linked_fids.contains(&f.id))
-        .map(|f| (f.id, f.name.clone()))
-        .collect();
-
-    // Snapshot linked gains before the window closure.
-    let linked_gids: Vec<Uuid> = app
-        .valueprop_page
-        .gain_gain_creator_links
-        .iter()
-        .filter(|(_, rid)| *rid == id)
-        .map(|(gid, _)| *gid)
-        .collect();
-
-    let linked_gains: Vec<(Uuid, String)> = app
-        .customer_segment_page
-        .gains_state
-        .gains
-        .iter()
-        .filter(|g| linked_gids.contains(&g.id))
-        .map(|g| (g.id, g.name.clone()))
-        .collect();
-
-    let available_gains: Vec<(Uuid, String)> = app
-        .customer_segment_page
-        .gains_state
-        .gains
-        .iter()
-        .filter(|g| !linked_gids.contains(&g.id))
-        .map(|g| (g.id, g.name.clone()))
-        .collect();
+    // Snapshot linked features and gains before the window closure.
+    // Link tuple: (feature_id, gain_creator_id) — gain_creator is in second position.
+    let (linked_features, available_features) = accordion::partition_linked(
+        &app.valueprop_page.feature_gain_creator_links,
+        |(fid, rid)| (*rid == id).then_some(*fid),
+        &app.valueprop_page.features_state.features,
+        |f| f.id,
+        |f| f.name.as_str(),
+    );
+    // Link tuple: (gain_id, gain_creator_id) — gain_creator is in second position.
+    let (linked_gains, available_gains) = accordion::partition_linked(
+        &app.valueprop_page.gain_gain_creator_links,
+        |(gid, rid)| (*rid == id).then_some(*gid),
+        &app.customer_segment_page.gains_state.gains,
+        |g| g.id,
+        |g| g.name.as_str(),
+    );
 
     let mut feat_link_to_add: Option<(Uuid, Uuid)> = None;
     let mut feat_link_to_remove: Option<(Uuid, Uuid)> = None;

@@ -13,31 +13,14 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
     // Snapshot linked / available products before the window closure to avoid
     // borrow conflicts with the mutable borrow of features_state.features inside.
-    let linked_pids: Vec<Uuid> = app
-        .valueprop_page
-        .product_feature_links
-        .iter()
-        .filter(|(_, fid)| *fid == id)
-        .map(|(pid, _)| *pid)
-        .collect();
-
-    let linked_products: Vec<(Uuid, String)> = app
-        .valueprop_page
-        .products_state
-        .products
-        .iter()
-        .filter(|p| linked_pids.contains(&p.id))
-        .map(|p| (p.id, p.name.clone()))
-        .collect();
-
-    let available_products: Vec<(Uuid, String)> = app
-        .valueprop_page
-        .products_state
-        .products
-        .iter()
-        .filter(|p| !linked_pids.contains(&p.id))
-        .map(|p| (p.id, p.name.clone()))
-        .collect();
+    // Link tuple: (product_id, feature_id) — feature is in second position.
+    let (linked_products, available_products) = accordion::partition_linked(
+        &app.valueprop_page.product_feature_links,
+        |(pid, fid)| (*fid == id).then_some(*pid),
+        &app.valueprop_page.products_state.products,
+        |p| p.id,
+        |p| p.name.as_str(),
+    );
 
     // Collect mutations during the window; apply them afterwards.
     let mut link_to_add: Option<(Uuid, Uuid)> = None;

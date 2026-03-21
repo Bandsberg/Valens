@@ -6,7 +6,6 @@ use super::super::accordion;
 
 // ── Detail panel window ───────────────────────────────────────────────────────
 
-#[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_segment_page.segments_state.selected_id else {
         return;
@@ -14,32 +13,14 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
     // Snapshot linked / available jobs before entering the window closure so we
     // can borrow `segments_state.segments` mutably inside without conflict.
-    // Link tuple: (job_id, segment_id)
-    let linked_jids: Vec<Uuid> = app
-        .customer_segment_page
-        .segment_job_links
-        .iter()
-        .filter(|(_, sid)| *sid == id)
-        .map(|(jid, _)| *jid)
-        .collect();
-
-    let linked_jobs: Vec<(Uuid, String)> = app
-        .customer_segment_page
-        .jobs_state
-        .jobs
-        .iter()
-        .filter(|j| linked_jids.contains(&j.id))
-        .map(|j| (j.id, j.name.clone()))
-        .collect();
-
-    let available_jobs: Vec<(Uuid, String)> = app
-        .customer_segment_page
-        .jobs_state
-        .jobs
-        .iter()
-        .filter(|j| !linked_jids.contains(&j.id))
-        .map(|j| (j.id, j.name.clone()))
-        .collect();
+    // Link tuple: (job_id, segment_id) — segment is in second position.
+    let (linked_jobs, available_jobs) = accordion::partition_linked(
+        &app.customer_segment_page.segment_job_links,
+        |(jid, sid)| (*sid == id).then_some(*jid),
+        &app.customer_segment_page.jobs_state.jobs,
+        |j| j.id,
+        |j| j.name.as_str(),
+    );
 
     // Collect mutations during the window; apply them afterwards.
     let mut link_to_add: Option<(Uuid, Uuid)> = None;
