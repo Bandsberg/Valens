@@ -95,47 +95,33 @@ pub fn show_accordion(
 
                     // ── Used by Jobs ──────────────────────────────────────────
                     ui.separator();
-                    ui.label("Used by Jobs:");
-
-                    let available: Vec<&Job> = jobs
+                    let avail_jobs: Vec<(Uuid, String)> = jobs
                         .iter()
                         .filter(|j| !linked_jids.contains(&j.id))
+                        .map(|j| (j.id, j.name.clone()))
                         .collect();
-
-                    if !available.is_empty() {
-                        let combo_key = egui::Id::new("pain_acc_link_job").with(id);
-                        let avail_w = ui.available_width();
-                        if let Some(sel) = accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a job…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for job in &available {
-                                        ui.selectable_value(sel, job.id, &job.name);
-                                    }
-                                });
-                        }) {
-                            link_to_add = Some((id, sel));
-                        }
-                    } else {
-                        ui.add_enabled(false, egui::Button::new("All jobs linked"));
+                    let linked_jobs: Vec<(Uuid, String)> = jobs
+                        .iter()
+                        .filter(|j| linked_jids.contains(&j.id))
+                        .map(|j| (j.id, j.name.clone()))
+                        .collect();
+                    let (add, rem) = accordion::acc_link_section(
+                        ui,
+                        "Used by Jobs:",
+                        egui::Id::new("pain_acc_link_job").with(id),
+                        "Add a job…",
+                        "All jobs linked",
+                        &avail_jobs,
+                        &linked_jobs,
+                        navigate_to,
+                        Some("Open in Jobs"),
+                    );
+                    // Link tuple is (pain_id, job_id).
+                    if let Some(jid) = add {
+                        link_to_add = Some((id, jid));
                     }
-
-                    if !linked_jids.is_empty() {
-                        for jid in &linked_jids {
-                            if let Some(job) = jobs.iter().find(|j| j.id == *jid) {
-                                ui.horizontal(|ui| {
-                                    if ui.link(&job.name).on_hover_text("Open in Jobs").clicked() {
-                                        *navigate_to = Some(*jid);
-                                    }
-                                    if accordion::unlink_button(ui).clicked() {
-                                        link_to_remove = Some((id, *jid));
-                                    }
-                                });
-                            }
-                        }
-                    } else {
-                        accordion::none_label(ui);
+                    if let Some(jid) = rem {
+                        link_to_remove = Some((id, jid));
                     }
                     ui.add_space(4.0);
                 });

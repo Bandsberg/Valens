@@ -98,51 +98,33 @@ pub fn show_accordion(
 
                     // ── Linked Features ───────────────────────────────────────
                     ui.separator();
-                    ui.label("Linked Features:");
-
-                    let available: Vec<&Feature> = features
+                    let avail_feats: Vec<(Uuid, String)> = features
                         .iter()
                         .filter(|f| !linked_fids.contains(&f.id))
+                        .map(|f| (f.id, f.name.clone()))
                         .collect();
-
-                    if !available.is_empty() {
-                        let combo_key = egui::Id::new("prod_acc_link_feat").with(id);
-                        let avail_w = ui.available_width();
-                        if let Some(sel) = accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a feature…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for feat in &available {
-                                        ui.selectable_value(sel, feat.id, &feat.name);
-                                    }
-                                });
-                        }) {
-                            link_to_add = Some((id, sel));
-                        }
-                    } else {
-                        ui.add_enabled(false, egui::Button::new("All features linked"));
+                    let linked_feats: Vec<(Uuid, String)> = features
+                        .iter()
+                        .filter(|f| linked_fids.contains(&f.id))
+                        .map(|f| (f.id, f.name.clone()))
+                        .collect();
+                    let (add, rem) = accordion::acc_link_section(
+                        ui,
+                        "Linked Features:",
+                        egui::Id::new("prod_acc_link_feat").with(id),
+                        "Add a feature…",
+                        "All features linked",
+                        &avail_feats,
+                        &linked_feats,
+                        navigate_to,
+                        Some("Open in Features"),
+                    );
+                    // Link tuple is (product_id, feature_id).
+                    if let Some(fid) = add {
+                        link_to_add = Some((id, fid));
                     }
-
-                    if !linked_fids.is_empty() {
-                        for fid in &linked_fids {
-                            if let Some(feat) = features.iter().find(|f| f.id == *fid) {
-                                ui.horizontal(|ui| {
-                                    if ui
-                                        .link(&feat.name)
-                                        .on_hover_text("Open in Features")
-                                        .clicked()
-                                    {
-                                        *navigate_to = Some(*fid);
-                                    }
-                                    if accordion::unlink_button(ui).clicked() {
-                                        link_to_remove = Some((id, *fid));
-                                    }
-                                });
-                            }
-                        }
-                    } else {
-                        accordion::none_label(ui);
+                    if let Some(fid) = rem {
+                        link_to_remove = Some((id, fid));
                     }
                     ui.add_space(4.0);
                 });
