@@ -39,13 +39,6 @@ pub fn show_accordion(
             let expanded = job.expanded;
             let is_panel_open = selected_id == Some(id);
 
-            // Link tuple: (job_id, segment_id)
-            let linked_sids: Vec<Uuid> = links_snap
-                .iter()
-                .filter(|(jid, _)| *jid == id)
-                .map(|(_, sid)| *sid)
-                .collect();
-
             if scroll_to == Some(id) {
                 ui.scroll_to_cursor(Some(egui::Align::Center));
                 did_scroll = true;
@@ -98,17 +91,15 @@ pub fn show_accordion(
                     );
 
                     // ── Used by Segments ──────────────────────────────────────
+                    // Link tuple: (job_id, segment_id) — job is first.
                     ui.separator();
-                    let avail_segs: Vec<(Uuid, String)> = segments
-                        .iter()
-                        .filter(|s| !linked_sids.contains(&s.id))
-                        .map(|s| (s.id, s.name.clone()))
-                        .collect();
-                    let linked_segs: Vec<(Uuid, String)> = segments
-                        .iter()
-                        .filter(|s| linked_sids.contains(&s.id))
-                        .map(|s| (s.id, s.name.clone()))
-                        .collect();
+                    let (linked_segs, avail_segs) = accordion::partition_linked(
+                        &links_snap,
+                        |(jid, sid)| (*jid == id).then_some(*sid),
+                        segments,
+                        |s| s.id,
+                        |s| s.name.as_str(),
+                    );
                     let (add, rem) = accordion::acc_link_section(
                         ui,
                         "Used by Segments:",

@@ -42,18 +42,6 @@ pub fn show_accordion(
             let expanded = item.expanded;
             let is_panel_open = selected_id == Some(id);
 
-            let linked_fids: Vec<Uuid> = feat_links_snap
-                .iter()
-                .filter(|(_, rid)| *rid == id)
-                .map(|(fid, _)| *fid)
-                .collect();
-
-            let linked_pids: Vec<Uuid> = pain_links_snap
-                .iter()
-                .filter(|(_, rid)| *rid == id)
-                .map(|(pid, _)| *pid)
-                .collect();
-
             if scroll_to == Some(id) {
                 ui.scroll_to_cursor(Some(egui::Align::Center));
                 did_scroll = true;
@@ -106,17 +94,15 @@ pub fn show_accordion(
                     );
 
                     // ── Linked Features ───────────────────────────────────────
+                    // Link tuple: (feature_id, pain_relief_id) — pain_relief is second.
                     ui.separator();
-                    let avail_feats: Vec<(Uuid, String)> = features
-                        .iter()
-                        .filter(|f| !linked_fids.contains(&f.id))
-                        .map(|f| (f.id, f.name.clone()))
-                        .collect();
-                    let linked_feats: Vec<(Uuid, String)> = features
-                        .iter()
-                        .filter(|f| linked_fids.contains(&f.id))
-                        .map(|f| (f.id, f.name.clone()))
-                        .collect();
+                    let (linked_feats, avail_feats) = accordion::partition_linked(
+                        &feat_links_snap,
+                        |(fid, rid)| (*rid == id).then_some(*fid),
+                        features,
+                        |f| f.id,
+                        |f| f.name.as_str(),
+                    );
                     let (add, rem) = accordion::acc_link_section(
                         ui,
                         "Linked Features:",
@@ -136,17 +122,15 @@ pub fn show_accordion(
                     }
 
                     // ── Relieves Pains ────────────────────────────────────────
+                    // Link tuple: (pain_id, pain_relief_id) — pain_relief is second.
                     ui.separator();
-                    let avail_pains: Vec<(Uuid, String)> = pains
-                        .iter()
-                        .filter(|p| !linked_pids.contains(&p.id))
-                        .map(|p| (p.id, p.name.clone()))
-                        .collect();
-                    let linked_pains: Vec<(Uuid, String)> = pains
-                        .iter()
-                        .filter(|p| linked_pids.contains(&p.id))
-                        .map(|p| (p.id, p.name.clone()))
-                        .collect();
+                    let (linked_pains, avail_pains) = accordion::partition_linked(
+                        &pain_links_snap,
+                        |(pid, rid)| (*rid == id).then_some(*pid),
+                        pains,
+                        |p| p.id,
+                        |p| p.name.as_str(),
+                    );
                     let (add, rem) = accordion::acc_link_section(
                         ui,
                         "Relieves Pains:",

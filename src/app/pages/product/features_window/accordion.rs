@@ -38,12 +38,6 @@ pub fn show_accordion(
             let expanded = feature.expanded;
             let is_panel_open = selected_id == Some(id);
 
-            let linked_pids: Vec<Uuid> = links_snap
-                .iter()
-                .filter(|(_, fid)| *fid == id)
-                .map(|(pid, _)| *pid)
-                .collect();
-
             if scroll_to == Some(id) {
                 ui.scroll_to_cursor(Some(egui::Align::Center));
                 did_scroll = true;
@@ -119,17 +113,15 @@ pub fn show_accordion(
                     );
 
                     // ── Used by Products ──────────────────────────────────────
+                    // Link tuple: (product_id, feature_id) — feature is second.
                     ui.separator();
-                    let avail_prods: Vec<(Uuid, String)> = products
-                        .iter()
-                        .filter(|p| !linked_pids.contains(&p.id))
-                        .map(|p| (p.id, p.name.clone()))
-                        .collect();
-                    let linked_prods: Vec<(Uuid, String)> = products
-                        .iter()
-                        .filter(|p| linked_pids.contains(&p.id))
-                        .map(|p| (p.id, p.name.clone()))
-                        .collect();
+                    let (linked_prods, avail_prods) = accordion::partition_linked(
+                        &links_snap,
+                        |(pid, fid)| (*fid == id).then_some(*pid),
+                        products,
+                        |p| p.id,
+                        |p| p.name.as_str(),
+                    );
                     let (add, rem) = accordion::acc_link_section(
                         ui,
                         "Used by Products & Services:",

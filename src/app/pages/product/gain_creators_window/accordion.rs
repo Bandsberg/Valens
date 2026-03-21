@@ -42,18 +42,6 @@ pub fn show_accordion(
             let expanded = item.expanded;
             let is_panel_open = selected_id == Some(id);
 
-            let linked_fids: Vec<Uuid> = feat_links_snap
-                .iter()
-                .filter(|(_, rid)| *rid == id)
-                .map(|(fid, _)| *fid)
-                .collect();
-
-            let linked_gids: Vec<Uuid> = gain_links_snap
-                .iter()
-                .filter(|(_, rid)| *rid == id)
-                .map(|(gid, _)| *gid)
-                .collect();
-
             if scroll_to == Some(id) {
                 ui.scroll_to_cursor(Some(egui::Align::Center));
                 did_scroll = true;
@@ -106,17 +94,15 @@ pub fn show_accordion(
                     );
 
                     // ── Linked Features ───────────────────────────────────────
+                    // Link tuple: (feature_id, gain_creator_id) — gain_creator is second.
                     ui.separator();
-                    let avail_feats: Vec<(Uuid, String)> = features
-                        .iter()
-                        .filter(|f| !linked_fids.contains(&f.id))
-                        .map(|f| (f.id, f.name.clone()))
-                        .collect();
-                    let linked_feats: Vec<(Uuid, String)> = features
-                        .iter()
-                        .filter(|f| linked_fids.contains(&f.id))
-                        .map(|f| (f.id, f.name.clone()))
-                        .collect();
+                    let (linked_feats, avail_feats) = accordion::partition_linked(
+                        &feat_links_snap,
+                        |(fid, rid)| (*rid == id).then_some(*fid),
+                        features,
+                        |f| f.id,
+                        |f| f.name.as_str(),
+                    );
                     let (add, rem) = accordion::acc_link_section(
                         ui,
                         "Linked Features:",
@@ -136,17 +122,15 @@ pub fn show_accordion(
                     }
 
                     // ── Creates Gains ─────────────────────────────────────────
+                    // Link tuple: (gain_id, gain_creator_id) — gain_creator is second.
                     ui.separator();
-                    let avail_gains: Vec<(Uuid, String)> = gains
-                        .iter()
-                        .filter(|g| !linked_gids.contains(&g.id))
-                        .map(|g| (g.id, g.name.clone()))
-                        .collect();
-                    let linked_gains: Vec<(Uuid, String)> = gains
-                        .iter()
-                        .filter(|g| linked_gids.contains(&g.id))
-                        .map(|g| (g.id, g.name.clone()))
-                        .collect();
+                    let (linked_gains, avail_gains) = accordion::partition_linked(
+                        &gain_links_snap,
+                        |(gid, rid)| (*rid == id).then_some(*gid),
+                        gains,
+                        |g| g.id,
+                        |g| g.name.as_str(),
+                    );
                     let (add, rem) = accordion::acc_link_section(
                         ui,
                         "Creates Gains:",

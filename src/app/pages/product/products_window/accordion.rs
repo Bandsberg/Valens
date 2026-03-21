@@ -39,12 +39,6 @@ pub fn show_accordion(
             let expanded = product.expanded;
             let is_panel_open = selected_id == Some(id);
 
-            let linked_fids: Vec<Uuid> = links_snap
-                .iter()
-                .filter(|(pid, _)| *pid == id)
-                .map(|(_, fid)| *fid)
-                .collect();
-
             if scroll_to == Some(id) {
                 ui.scroll_to_cursor(Some(egui::Align::Center));
                 did_scroll = true;
@@ -97,17 +91,15 @@ pub fn show_accordion(
                     );
 
                     // ── Linked Features ───────────────────────────────────────
+                    // Link tuple: (product_id, feature_id) — product is first.
                     ui.separator();
-                    let avail_feats: Vec<(Uuid, String)> = features
-                        .iter()
-                        .filter(|f| !linked_fids.contains(&f.id))
-                        .map(|f| (f.id, f.name.clone()))
-                        .collect();
-                    let linked_feats: Vec<(Uuid, String)> = features
-                        .iter()
-                        .filter(|f| linked_fids.contains(&f.id))
-                        .map(|f| (f.id, f.name.clone()))
-                        .collect();
+                    let (linked_feats, avail_feats) = accordion::partition_linked(
+                        &links_snap,
+                        |(pid, fid)| (*pid == id).then_some(*fid),
+                        features,
+                        |f| f.id,
+                        |f| f.name.as_str(),
+                    );
                     let (add, rem) = accordion::acc_link_section(
                         ui,
                         "Linked Features:",
