@@ -99,49 +99,23 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                     ui.end_row();
 
                     // ── Linked Jobs ──────────────────────────────────────────
-                    ui.label("Linked\nJobs:");
-                    ui.vertical(|ui| {
-                        // List of linked jobs — name is a navigation link,
-                        // ✕ button removes the link.
-                        if linked_jobs.is_empty() {
-                            accordion::none_label(ui);
-                        } else {
-                            for (jid, jname) in &linked_jobs {
-                                ui.horizontal(|ui| {
-                                    if ui.link(jname).on_hover_text("Open in Jobs").clicked() {
-                                        nav_job_id = Some(*jid);
-                                    }
-                                    if accordion::unlink_button(ui).clicked() {
-                                        // Link tuple: (job_id, segment_id)
-                                        link_to_remove = Some((*jid, id));
-                                    }
-                                });
-                            }
-                        }
-
-                        // Dropdown to add a new link.
-                        if !available_jobs.is_empty() {
-                            ui.add_space(4.0);
-
-                            // Link tuple: (job_id, segment_id)
-                            let combo_key = egui::Id::new("seg_detail_link_job").with(id);
-                            let avail_w = ui.available_width();
-                            if let Some(sel) =
-                                accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                                    egui::ComboBox::from_id_salt(combo_key)
-                                        .selected_text("Add a job…")
-                                        .width(avail_w)
-                                        .show_ui(ui, |ui| {
-                                            for (jid, jname) in &available_jobs {
-                                                ui.selectable_value(sel, *jid, jname);
-                                            }
-                                        });
-                                })
-                            {
-                                link_to_add = Some((sel, id));
-                            }
-                        }
-                    });
+                    let (add, rem) = accordion::detail_link_row(
+                        ui,
+                        "Linked\nJobs:",
+                        egui::Id::new("seg_detail_link_job").with(id),
+                        "Add a job…",
+                        &available_jobs,
+                        &linked_jobs,
+                        &mut nav_job_id,
+                        Some("Open in Jobs"),
+                    );
+                    // Link tuple: (job_id, segment_id).
+                    if let Some(jid) = add {
+                        link_to_add = Some((jid, id));
+                    }
+                    if let Some(jid) = rem {
+                        link_to_remove = Some((jid, id));
+                    }
                     ui.end_row();
                 });
         });

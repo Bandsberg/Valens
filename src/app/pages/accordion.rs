@@ -296,6 +296,70 @@ pub fn acc_link_section(
     (link_to_add, link_to_remove)
 }
 
+/// Renders one linked-items grid row inside a detail-panel window: the label
+/// in the left cell, then the linked list + add-combo in the right cell.
+///
+/// `linked` and `available` are pre-computed `(id, display_name)` pairs.
+/// When `navigate_hover` is `Some("…")`, linked items render as clickable links
+/// that set `navigate_to`; when `None`, items render as plain labels.
+///
+/// Returns `(link_to_add_id, link_to_remove_id)`. The caller builds the full
+/// link tuple and calls `ui.end_row()` afterwards.
+#[expect(clippy::too_many_arguments)]
+pub fn detail_link_row(
+    ui: &mut egui::Ui,
+    label: &str,
+    combo_key: egui::Id,
+    add_prompt: &str,
+    available: &[(Uuid, String)],
+    linked: &[(Uuid, String)],
+    navigate_to: &mut Option<Uuid>,
+    navigate_hover: Option<&str>,
+) -> (Option<Uuid>, Option<Uuid>) {
+    let mut link_to_add: Option<Uuid> = None;
+    let mut link_to_remove: Option<Uuid> = None;
+
+    ui.label(label);
+    ui.vertical(|ui| {
+        if linked.is_empty() {
+            none_label(ui);
+        } else {
+            for (item_id, item_name) in linked {
+                ui.horizontal(|ui| {
+                    if let Some(hover) = navigate_hover {
+                        if ui.link(item_name).on_hover_text(hover).clicked() {
+                            *navigate_to = Some(*item_id);
+                        }
+                    } else {
+                        ui.label(item_name);
+                    }
+                    if unlink_button(ui).clicked() {
+                        link_to_remove = Some(*item_id);
+                    }
+                });
+            }
+        }
+        if !available.is_empty() {
+            ui.add_space(4.0);
+            let avail_w = ui.available_width();
+            if let Some(sel) = link_combo_pick(ui, combo_key, |ui, sel| {
+                egui::ComboBox::from_id_salt(combo_key)
+                    .selected_text(add_prompt)
+                    .width(avail_w)
+                    .show_ui(ui, |ui| {
+                        for (item_id, item_name) in available {
+                            ui.selectable_value(sel, *item_id, item_name);
+                        }
+                    });
+            }) {
+                link_to_add = Some(sel);
+            }
+        }
+    });
+
+    (link_to_add, link_to_remove)
+}
+
 /// Returns `(name_width, description_width)` for a collapsed accordion row,
 /// reserving space for two 36 px action buttons on the right.
 /// `name_label` must match the label passed to [`header`].

@@ -116,79 +116,44 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                     ui.end_row();
 
                     // ── Linked Features ───────────────────────────────────────
-                    ui.label("Linked\nFeatures:");
-                    ui.vertical(|ui| {
-                        if linked_features.is_empty() {
-                            accordion::none_label(ui);
-                        } else {
-                            for (fid, fname) in &linked_features {
-                                ui.horizontal(|ui| {
-                                    if ui.link(fname).on_hover_text("Open in Features").clicked() {
-                                        navigate_to_feat = Some(*fid);
-                                    }
-                                    if accordion::unlink_button(ui).clicked() {
-                                        feat_link_to_remove = Some((*fid, id));
-                                    }
-                                });
-                            }
-                        }
-                        if !available_features.is_empty() {
-                            ui.add_space(4.0);
-                            let combo_key = egui::Id::new("gc_detail_link_feat").with(id);
-                            let avail_w = ui.available_width();
-                            if let Some(sel) =
-                                accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                                    egui::ComboBox::from_id_salt(combo_key)
-                                        .selected_text("Add a feature…")
-                                        .width(avail_w)
-                                        .show_ui(ui, |ui| {
-                                            for (fid, fname) in &available_features {
-                                                ui.selectable_value(sel, *fid, fname);
-                                            }
-                                        });
-                                })
-                            {
-                                feat_link_to_add = Some((sel, id));
-                            }
-                        }
-                    });
+                    let (add, rem) = accordion::detail_link_row(
+                        ui,
+                        "Linked\nFeatures:",
+                        egui::Id::new("gc_detail_link_feat").with(id),
+                        "Add a feature…",
+                        &available_features,
+                        &linked_features,
+                        &mut navigate_to_feat,
+                        Some("Open in Features"),
+                    );
+                    // Link tuple: (feature_id, gain_creator_id).
+                    if let Some(fid) = add {
+                        feat_link_to_add = Some((fid, id));
+                    }
+                    if let Some(fid) = rem {
+                        feat_link_to_remove = Some((fid, id));
+                    }
                     ui.end_row();
 
                     // ── Creates Gains ─────────────────────────────────────────
-                    ui.label("Creates\nGains:");
-                    ui.vertical(|ui| {
-                        if linked_gains.is_empty() {
-                            accordion::none_label(ui);
-                        } else {
-                            for (gid, gname) in &linked_gains {
-                                ui.horizontal(|ui| {
-                                    ui.label(gname);
-                                    if accordion::unlink_button(ui).clicked() {
-                                        gain_link_to_remove = Some((*gid, id));
-                                    }
-                                });
-                            }
-                        }
-                        if !available_gains.is_empty() {
-                            ui.add_space(4.0);
-                            let combo_key = egui::Id::new("gc_detail_link_gain").with(id);
-                            let avail_w = ui.available_width();
-                            if let Some(sel) =
-                                accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                                    egui::ComboBox::from_id_salt(combo_key)
-                                        .selected_text("Add a gain…")
-                                        .width(avail_w)
-                                        .show_ui(ui, |ui| {
-                                            for (gid, gname) in &available_gains {
-                                                ui.selectable_value(sel, *gid, gname);
-                                            }
-                                        });
-                                })
-                            {
-                                gain_link_to_add = Some((sel, id));
-                            }
-                        }
-                    });
+                    let mut _nav_unused: Option<Uuid> = None;
+                    let (add, rem) = accordion::detail_link_row(
+                        ui,
+                        "Creates\nGains:",
+                        egui::Id::new("gc_detail_link_gain").with(id),
+                        "Add a gain…",
+                        &available_gains,
+                        &linked_gains,
+                        &mut _nav_unused,
+                        None,
+                    );
+                    // Link tuple: (gain_id, gain_creator_id).
+                    if let Some(gid) = add {
+                        gain_link_to_add = Some((gid, id));
+                    }
+                    if let Some(gid) = rem {
+                        gain_link_to_remove = Some((gid, id));
+                    }
                     ui.end_row();
                 });
         });

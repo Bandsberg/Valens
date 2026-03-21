@@ -89,47 +89,23 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                     ui.end_row();
 
                     // ── Used by Segments ─────────────────────────────────────
-                    ui.label("Used by\nSegments:");
-                    ui.vertical(|ui| {
-                        // List of linked segments — name is a navigation link,
-                        // ✕ button removes the link.
-                        if linked_segments.is_empty() {
-                            accordion::none_label(ui);
-                        } else {
-                            for (sid, sname) in &linked_segments {
-                                ui.horizontal(|ui| {
-                                    if ui.link(sname).on_hover_text("Open in Segments").clicked() {
-                                        navigate_to_seg = Some(*sid);
-                                    }
-                                    if accordion::unlink_button(ui).clicked() {
-                                        link_to_remove = Some((id, *sid));
-                                    }
-                                });
-                            }
-                        }
-
-                        // Dropdown to add a new link.
-                        if !available_segments.is_empty() {
-                            ui.add_space(4.0);
-
-                            let combo_key = egui::Id::new("job_detail_link_seg").with(id);
-                            let avail_w = ui.available_width();
-                            if let Some(sel) =
-                                accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                                    egui::ComboBox::from_id_salt(combo_key)
-                                        .selected_text("Add a segment…")
-                                        .width(avail_w)
-                                        .show_ui(ui, |ui| {
-                                            for (sid, sname) in &available_segments {
-                                                ui.selectable_value(sel, *sid, sname);
-                                            }
-                                        });
-                                })
-                            {
-                                link_to_add = Some((id, sel));
-                            }
-                        }
-                    });
+                    let (add, rem) = accordion::detail_link_row(
+                        ui,
+                        "Used by\nSegments:",
+                        egui::Id::new("job_detail_link_seg").with(id),
+                        "Add a segment…",
+                        &available_segments,
+                        &linked_segments,
+                        &mut navigate_to_seg,
+                        Some("Open in Segments"),
+                    );
+                    // Link tuple: (job_id, segment_id).
+                    if let Some(sid) = add {
+                        link_to_add = Some((id, sid));
+                    }
+                    if let Some(sid) = rem {
+                        link_to_remove = Some((id, sid));
+                    }
                     ui.end_row();
                 });
         });

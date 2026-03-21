@@ -112,51 +112,23 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                     ui.end_row();
 
                     // ── Used by Products ─────────────────────────────────────
-                    ui.label("Used by\nProducts &\nServices:");
-                    ui.vertical(|ui| {
-                        // List of linked products — name is a navigation link,
-                        // ✕ button removes the link.
-                        if linked_products.is_empty() {
-                            accordion::none_label(ui);
-                        } else {
-                            for (pid, pname) in &linked_products {
-                                ui.horizontal(|ui| {
-                                    if ui
-                                        .link(pname)
-                                        .on_hover_text("Open in Products & Services")
-                                        .clicked()
-                                    {
-                                        navigate_to_prod = Some(*pid);
-                                    }
-                                    if accordion::unlink_button(ui).clicked() {
-                                        link_to_remove = Some((*pid, id));
-                                    }
-                                });
-                            }
-                        }
-
-                        // Dropdown to add a new link.
-                        if !available_products.is_empty() {
-                            ui.add_space(4.0);
-
-                            let combo_key = egui::Id::new("feat_detail_link_prod").with(id);
-                            let avail_w = ui.available_width();
-                            if let Some(sel) =
-                                accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                                    egui::ComboBox::from_id_salt(combo_key)
-                                        .selected_text("Add a product…")
-                                        .width(avail_w)
-                                        .show_ui(ui, |ui| {
-                                            for (pid, pname) in &available_products {
-                                                ui.selectable_value(sel, *pid, pname);
-                                            }
-                                        });
-                                })
-                            {
-                                link_to_add = Some((sel, id));
-                            }
-                        }
-                    });
+                    let (add, rem) = accordion::detail_link_row(
+                        ui,
+                        "Used by\nProducts &\nServices:",
+                        egui::Id::new("feat_detail_link_prod").with(id),
+                        "Add a product…",
+                        &available_products,
+                        &linked_products,
+                        &mut navigate_to_prod,
+                        Some("Open in Products & Services"),
+                    );
+                    // Link tuple: (product_id, feature_id).
+                    if let Some(pid) = add {
+                        link_to_add = Some((pid, id));
+                    }
+                    if let Some(pid) = rem {
+                        link_to_remove = Some((pid, id));
+                    }
                     ui.end_row();
                 });
         });
