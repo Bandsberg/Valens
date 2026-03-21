@@ -11,6 +11,8 @@ use accordion::show_accordion;
 use delete_dialog::show_delete_confirmation;
 use detail_panel::show_detail_panel;
 
+use super::detail_panel::navigate_to_job;
+
 pub use model::{Gain, GainsState};
 
 // ── Main entry point ──────────────────────────────────────────────────────────
@@ -48,6 +50,6 @@ pub fn show_gains_window(app: &mut App, ctx: &egui::Context) {
         });
 
     if let Some(job_id) = nav_to_job {
-        detail_panel::navigate_to_job(app, ctx, job_id);
+        navigate_to_job(app, ctx, job_id);
     }
 }

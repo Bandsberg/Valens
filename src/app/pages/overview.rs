@@ -173,6 +173,32 @@ fn fit_score(product_id: Uuid, segment_id: Uuid, app: &App) -> f32 {
     addressed as f32 / total_needs as f32
 }
 
+/// Iterates `candidate_ids` and updates `scores` using the fit score returned
+/// by `fit`. Three outcomes are possible for each candidate:
+/// - `NaN` — no gains/pains defined on that side → leave any existing BFS
+///   score unchanged (binary fallback stays intact).
+/// - `> 0` — partial or full match → replace the BFS score with the exact
+///   fit percentage so the highlight intensity is proportional.
+/// - `0` — explicitly zero match → remove from scores entirely so the
+///   candidate shows no highlight at all.
+fn apply_fit_scores(
+    scores: &mut HashMap<Uuid, f32>,
+    candidate_ids: impl Iterator<Item = Uuid>,
+    fit: impl Fn(Uuid) -> f32,
+) {
+    for id in candidate_ids {
+        let s = fit(id);
+        if s.is_nan() {
+            // No needs/outputs defined on this side — keep BFS binary score.
+        } else if s > 0.0 {
+            scores.insert(id, s);
+        } else {
+            // Score is exactly 0: explicitly remove so no highlight appears.
+            scores.remove(&id);
+        }
+    }
+}
+
 /// Returns a score map: every reachable entity gets 1.0 (binary BFS), but when
 /// hovering a Product or Segment the opposite column uses VP-Design fit scores.
 fn highlighted_scores(hovered: Option<Uuid>, app: &App) -> HashMap<Uuid, f32> {
@@ -190,28 +216,13 @@ fn highlighted_scores(hovered: Option<Uuid>, app: &App) -> HashMap<Uuid, f32> {
     let is_segment = segments.iter().any(|s| s.id == start);
 
     if is_product {
-        for seg in segments {
-            let s = fit_score(start, seg.id, app);
-            if s.is_nan() {
-                // Segment has no needs: keep BFS binary (already in scores if connected)
-            } else if s > 0.0 {
-                scores.insert(seg.id, s);
-            } else {
-                // Score is 0 but might be BFS-connected; remove so it shows no highlight
-                scores.remove(&seg.id);
-            }
-        }
+        apply_fit_scores(&mut scores, segments.iter().map(|s| s.id), |sid| {
+            fit_score(start, sid, app)
+        });
     } else if is_segment {
-        for prod in products {
-            let s = fit_score(prod.id, start, app);
-            if s.is_nan() {
-                // No needs defined: keep BFS binary
-            } else if s > 0.0 {
-                scores.insert(prod.id, s);
-            } else {
-                scores.remove(&prod.id);
-            }
-        }
+        apply_fit_scores(&mut scores, products.iter().map(|p| p.id), |pid| {
+            fit_score(pid, start, app)
+        });
     }
 
     scores

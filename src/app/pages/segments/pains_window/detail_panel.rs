@@ -3,6 +3,7 @@ use eframe::egui;
 use uuid::Uuid;
 
 use super::super::super::accordion;
+use super::super::detail_panel::navigate_to_job;
 
 #[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
@@ -121,26 +122,4 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     if let Some(job_id) = navigate_to_job_id {
         navigate_to_job(app, ctx, job_id);
     }
-}
-
-// ── Navigation helpers ────────────────────────────────────────────────────────
-
-/// Opens the Jobs window and ensures `job_id` is visible.
-pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
-    app.customer_segment_page.customer_windows.jobs_open = true;
-    if let Some(job) = app
-        .customer_segment_page
-        .jobs_state
-        .jobs
-        .iter_mut()
-        .find(|j| j.id == job_id)
-    {
-        job.expanded = true;
-    }
-    app.customer_segment_page.jobs_state.selected_id = Some(job_id);
-    app.customer_segment_page.jobs_state.scroll_to_id = Some(job_id);
-    ctx.move_to_top(egui::LayerId::new(
-        egui::Order::Middle,
-        egui::Id::new("Jobs"),
-    ));
 }
