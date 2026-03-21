@@ -231,6 +231,71 @@ pub fn unlink_button(ui: &mut egui::Ui) -> egui::Response {
     .on_hover_text("Remove link")
 }
 
+/// Renders a linked-items section inside an expanded accordion row.
+///
+/// `available` and `linked` are pre-computed `(id, display_name)` pairs where
+/// `available` contains items not yet linked and `linked` contains items already linked.
+/// When `navigate_hover` is `Some("…")`, linked items render as clickable links and
+/// `navigate_to` is set to the clicked ID; when `None`, items render as plain labels.
+///
+/// Returns `(link_to_add_id, link_to_remove_id)`. The caller is responsible for
+/// forming the full link tuple from the returned ID and the owning entity's ID.
+#[expect(clippy::too_many_arguments)]
+pub fn acc_link_section(
+    ui: &mut egui::Ui,
+    label: &str,
+    combo_key: egui::Id,
+    add_prompt: &str,
+    all_linked_text: &str,
+    available: &[(Uuid, String)],
+    linked: &[(Uuid, String)],
+    navigate_to: &mut Option<Uuid>,
+    navigate_hover: Option<&str>,
+) -> (Option<Uuid>, Option<Uuid>) {
+    ui.label(label);
+    let mut link_to_add = None;
+    let mut link_to_remove = None;
+
+    if !available.is_empty() {
+        let avail_w = ui.available_width();
+        if let Some(sel) = link_combo_pick(ui, combo_key, |ui, sel| {
+            egui::ComboBox::from_id_salt(combo_key)
+                .selected_text(add_prompt)
+                .width(avail_w)
+                .show_ui(ui, |ui| {
+                    for (id, name) in available {
+                        ui.selectable_value(sel, *id, name);
+                    }
+                });
+        }) {
+            link_to_add = Some(sel);
+        }
+    } else {
+        ui.add_enabled(false, egui::Button::new(all_linked_text));
+    }
+
+    if linked.is_empty() {
+        none_label(ui);
+    } else {
+        for (linked_id, name) in linked {
+            ui.horizontal(|ui| {
+                if let Some(hover) = navigate_hover {
+                    if ui.link(name).on_hover_text(hover).clicked() {
+                        *navigate_to = Some(*linked_id);
+                    }
+                } else {
+                    ui.label(name);
+                }
+                if unlink_button(ui).clicked() {
+                    link_to_remove = Some(*linked_id);
+                }
+            });
+        }
+    }
+
+    (link_to_add, link_to_remove)
+}
+
 /// Returns `(name_width, description_width)` for a collapsed accordion row,
 /// reserving space for two 36 px action buttons on the right.
 /// `name_label` must match the label passed to [`header`].

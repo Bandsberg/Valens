@@ -107,94 +107,62 @@ pub fn show_accordion(
 
                     // ── Linked Features ───────────────────────────────────────
                     ui.separator();
-                    ui.label("Linked Features:");
-
-                    let available_feats: Vec<&Feature> = features
+                    let avail_feats: Vec<(Uuid, String)> = features
                         .iter()
                         .filter(|f| !linked_fids.contains(&f.id))
+                        .map(|f| (f.id, f.name.clone()))
                         .collect();
-
-                    if !available_feats.is_empty() {
-                        let combo_key = egui::Id::new("pr_acc_link_feat").with(id);
-                        let avail_w = ui.available_width();
-                        if let Some(sel) = accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a feature…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for feat in &available_feats {
-                                        ui.selectable_value(sel, feat.id, &feat.name);
-                                    }
-                                });
-                        }) {
-                            feat_link_to_add = Some((sel, id));
-                        }
-                    } else {
-                        ui.add_enabled(false, egui::Button::new("All features linked"));
+                    let linked_feats: Vec<(Uuid, String)> = features
+                        .iter()
+                        .filter(|f| linked_fids.contains(&f.id))
+                        .map(|f| (f.id, f.name.clone()))
+                        .collect();
+                    let (add, rem) = accordion::acc_link_section(
+                        ui,
+                        "Linked Features:",
+                        egui::Id::new("pr_acc_link_feat").with(id),
+                        "Add a feature…",
+                        "All features linked",
+                        &avail_feats,
+                        &linked_feats,
+                        navigate_to,
+                        Some("Open in Features"),
+                    );
+                    if let Some(fid) = add {
+                        feat_link_to_add = Some((fid, id));
+                    }
+                    if let Some(fid) = rem {
+                        feat_link_to_remove = Some((fid, id));
                     }
 
-                    if !linked_fids.is_empty() {
-                        for fid in &linked_fids {
-                            if let Some(feat) = features.iter().find(|f| f.id == *fid) {
-                                ui.horizontal(|ui| {
-                                    if ui
-                                        .link(&feat.name)
-                                        .on_hover_text("Open in Features")
-                                        .clicked()
-                                    {
-                                        *navigate_to = Some(*fid);
-                                    }
-                                    if accordion::unlink_button(ui).clicked() {
-                                        feat_link_to_remove = Some((*fid, id));
-                                    }
-                                });
-                            }
-                        }
-                    } else {
-                        accordion::none_label(ui);
-                    }
-
-                    // ── Linked Pains ──────────────────────────────────────────
+                    // ── Relieves Pains ────────────────────────────────────────
                     ui.separator();
-                    ui.label("Relieves Pains:");
-
-                    let available_pains: Vec<&Pain> = pains
+                    let avail_pains: Vec<(Uuid, String)> = pains
                         .iter()
                         .filter(|p| !linked_pids.contains(&p.id))
+                        .map(|p| (p.id, p.name.clone()))
                         .collect();
-
-                    if !available_pains.is_empty() {
-                        let combo_key = egui::Id::new("pr_acc_link_pain").with(id);
-                        let avail_w = ui.available_width();
-                        if let Some(sel) = accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a pain…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for pain in &available_pains {
-                                        ui.selectable_value(sel, pain.id, &pain.name);
-                                    }
-                                });
-                        }) {
-                            pain_link_to_add = Some((sel, id));
-                        }
-                    } else {
-                        ui.add_enabled(false, egui::Button::new("All pains linked"));
+                    let linked_pains: Vec<(Uuid, String)> = pains
+                        .iter()
+                        .filter(|p| linked_pids.contains(&p.id))
+                        .map(|p| (p.id, p.name.clone()))
+                        .collect();
+                    let (add, rem) = accordion::acc_link_section(
+                        ui,
+                        "Relieves Pains:",
+                        egui::Id::new("pr_acc_link_pain").with(id),
+                        "Add a pain…",
+                        "All pains linked",
+                        &avail_pains,
+                        &linked_pains,
+                        navigate_to,
+                        None,
+                    );
+                    if let Some(pid) = add {
+                        pain_link_to_add = Some((pid, id));
                     }
-
-                    if !linked_pids.is_empty() {
-                        for pid in &linked_pids {
-                            if let Some(pain) = pains.iter().find(|p| p.id == *pid) {
-                                ui.horizontal(|ui| {
-                                    ui.label(&pain.name);
-                                    if accordion::unlink_button(ui).clicked() {
-                                        pain_link_to_remove = Some((*pid, id));
-                                    }
-                                });
-                            }
-                        }
-                    } else {
-                        accordion::none_label(ui);
+                    if let Some(pid) = rem {
+                        pain_link_to_remove = Some((pid, id));
                     }
 
                     ui.add_space(4.0);

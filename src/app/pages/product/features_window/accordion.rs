@@ -120,58 +120,32 @@ pub fn show_accordion(
 
                     // ── Used by Products ──────────────────────────────────────
                     ui.separator();
-                    ui.label("Used by Products & Services:");
-
-                    let available: Vec<&Product> = products
+                    let avail_prods: Vec<(Uuid, String)> = products
                         .iter()
                         .filter(|p| !linked_pids.contains(&p.id))
+                        .map(|p| (p.id, p.name.clone()))
                         .collect();
-
-                    if !available.is_empty() {
-                        let combo_key = egui::Id::new("feat_acc_link_prod").with(id);
-                        let avail_w = ui.available_width();
-                        if let Some(sel) = accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a product…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for prod in &available {
-                                        ui.selectable_value(sel, prod.id, &prod.name);
-                                    }
-                                });
-                        }) {
-                            link_to_add = Some((sel, id));
-                        }
-                    } else {
-                        ui.add_enabled(
-                            false,
-                            egui::Button::new("All products and services linked"),
-                        );
+                    let linked_prods: Vec<(Uuid, String)> = products
+                        .iter()
+                        .filter(|p| linked_pids.contains(&p.id))
+                        .map(|p| (p.id, p.name.clone()))
+                        .collect();
+                    let (add, rem) = accordion::acc_link_section(
+                        ui,
+                        "Used by Products & Services:",
+                        egui::Id::new("feat_acc_link_prod").with(id),
+                        "Add a product…",
+                        "All products and services linked",
+                        &avail_prods,
+                        &linked_prods,
+                        navigate_to,
+                        Some("Open in Products & Services"),
+                    );
+                    if let Some(pid) = add {
+                        link_to_add = Some((pid, id));
                     }
-
-                    if !linked_pids.is_empty() {
-                        for pid in &linked_pids {
-                            if let Some(prod) = products.iter().find(|p| p.id == *pid) {
-                                ui.horizontal(|ui| {
-                                    if ui
-                                        .link(&prod.name)
-                                        .on_hover_text("Open in Products & Services")
-                                        .clicked()
-                                    {
-                                        *navigate_to = Some(*pid);
-                                    }
-                                    if accordion::unlink_button(ui).clicked() {
-                                        link_to_remove = Some((*pid, id));
-                                    }
-                                });
-                            }
-                        }
-                    } else {
-                        ui.label(
-                            egui::RichText::new("None")
-                                .italics()
-                                .color(ui.visuals().weak_text_color()),
-                        );
+                    if let Some(pid) = rem {
+                        link_to_remove = Some((pid, id));
                     }
                     ui.add_space(4.0);
                 });

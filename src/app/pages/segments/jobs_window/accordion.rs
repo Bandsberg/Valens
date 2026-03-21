@@ -99,51 +99,33 @@ pub fn show_accordion(
 
                     // ── Used by Segments ──────────────────────────────────────
                     ui.separator();
-                    ui.label("Used by Segments:");
-
-                    let available: Vec<&CustomerSegment> = segments
+                    let avail_segs: Vec<(Uuid, String)> = segments
                         .iter()
                         .filter(|s| !linked_sids.contains(&s.id))
+                        .map(|s| (s.id, s.name.clone()))
                         .collect();
-
-                    if !available.is_empty() {
-                        let combo_key = egui::Id::new("job_acc_link_seg").with(id);
-                        let avail_w = ui.available_width();
-                        if let Some(sel) = accordion::link_combo_pick(ui, combo_key, |ui, sel| {
-                            egui::ComboBox::from_id_salt(combo_key)
-                                .selected_text("Add a segment…")
-                                .width(avail_w)
-                                .show_ui(ui, |ui| {
-                                    for seg in &available {
-                                        ui.selectable_value(sel, seg.id, &seg.name);
-                                    }
-                                });
-                        }) {
-                            link_to_add = Some((id, sel));
-                        }
-                    } else {
-                        ui.add_enabled(false, egui::Button::new("All segments linked"));
+                    let linked_segs: Vec<(Uuid, String)> = segments
+                        .iter()
+                        .filter(|s| linked_sids.contains(&s.id))
+                        .map(|s| (s.id, s.name.clone()))
+                        .collect();
+                    let (add, rem) = accordion::acc_link_section(
+                        ui,
+                        "Used by Segments:",
+                        egui::Id::new("job_acc_link_seg").with(id),
+                        "Add a segment…",
+                        "All segments linked",
+                        &avail_segs,
+                        &linked_segs,
+                        navigate_to,
+                        Some("Open in Segments"),
+                    );
+                    // Link tuple is (job_id, segment_id) — note reversed order.
+                    if let Some(sid) = add {
+                        link_to_add = Some((id, sid));
                     }
-
-                    if !linked_sids.is_empty() {
-                        for sid in &linked_sids {
-                            if let Some(seg) = segments.iter().find(|s| s.id == *sid) {
-                                ui.horizontal(|ui| {
-                                    if ui
-                                        .link(&seg.name)
-                                        .on_hover_text("Open in Segments")
-                                        .clicked()
-                                    {
-                                        *navigate_to = Some(*sid);
-                                    }
-                                    if accordion::unlink_button(ui).clicked() {
-                                        link_to_remove = Some((id, *sid));
-                                    }
-                                });
-                            }
-                        }
-                    } else {
-                        accordion::none_label(ui);
+                    if let Some(sid) = rem {
+                        link_to_remove = Some((id, sid));
                     }
                     ui.add_space(4.0);
                 });
