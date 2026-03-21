@@ -12,7 +12,7 @@ pub struct PainsState {
     pub pending_delete: Option<Uuid>,
     /// ID of the pain whose detail window is open (not persisted).
     #[serde(skip)]
-    pub selected_pain_id: Option<Uuid>,
+    pub selected_id: Option<Uuid>,
     /// ID of the pain the table should scroll to on the next frame.
     #[serde(skip)]
     pub scroll_to_id: Option<Uuid>,

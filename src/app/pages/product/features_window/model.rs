@@ -12,7 +12,7 @@ pub struct FeaturesState {
     pub pending_delete: Option<Uuid>,
     /// ID of the feature whose detail window is open (not persisted).
     #[serde(skip)]
-    pub selected_feature_id: Option<Uuid>,
+    pub selected_id: Option<Uuid>,
     /// ID of the feature the table should scroll to on the next frame.
     #[serde(skip)]
     pub scroll_to_id: Option<Uuid>,

@@ -26,8 +26,8 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             .segments_state
             .segments
             .retain(|s| s.id != id);
-        if app.customer_segment_page.segments_state.selected_segment_id == Some(id) {
-            app.customer_segment_page.segments_state.selected_segment_id = None;
+        if app.customer_segment_page.segments_state.selected_id == Some(id) {
+            app.customer_segment_page.segments_state.selected_id = None;
         }
     }
     if confirmed || dismissed {

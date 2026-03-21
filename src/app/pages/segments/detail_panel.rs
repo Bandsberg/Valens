@@ -8,7 +8,7 @@ use super::super::accordion;
 
 #[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.customer_segment_page.segments_state.selected_segment_id else {
+    let Some(id) = app.customer_segment_page.segments_state.selected_id else {
         return;
     };
 
@@ -148,7 +148,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
     // User dismissed with ✕ → deselect.
     if !keep_open {
-        app.customer_segment_page.segments_state.selected_segment_id = None;
+        app.customer_segment_page.segments_state.selected_id = None;
     }
 
     // Apply mutations now that the closure has released all borrows.
@@ -171,7 +171,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
 /// Opens the Jobs window and ensures `job_id` is visible:
 ///   - Sets `expanded = true` on the target job row (accordion).
-///   - Sets `selected_job_id` so the detail panel opens.
+///   - Sets `selected_id` so the detail panel opens.
 ///   - Sets `scroll_to_id` so the table scrolls to the row.
 pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
     app.customer_segment_page.customer_windows.jobs_open = true;
@@ -184,7 +184,7 @@ pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
     {
         job.expanded = true;
     }
-    app.customer_segment_page.jobs_state.selected_job_id = Some(job_id);
+    app.customer_segment_page.jobs_state.selected_id = Some(job_id);
     app.customer_segment_page.jobs_state.scroll_to_id = Some(job_id);
     // Bring the Jobs window in front of all other windows.
     ctx.move_to_top(egui::LayerId::new(

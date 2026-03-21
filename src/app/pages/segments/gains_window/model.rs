@@ -12,7 +12,7 @@ pub struct GainsState {
     pub pending_delete: Option<Uuid>,
     /// ID of the gain whose detail window is open (not persisted).
     #[serde(skip)]
-    pub selected_gain_id: Option<Uuid>,
+    pub selected_id: Option<Uuid>,
     /// ID of the gain the table should scroll to on the next frame.
     #[serde(skip)]
     pub scroll_to_id: Option<Uuid>,

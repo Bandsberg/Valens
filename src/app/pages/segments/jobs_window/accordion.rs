@@ -29,7 +29,7 @@ pub fn show_accordion(
     // with the mutable `links` we need to update afterwards).
     let links_snap = links.clone();
     let scroll_to = state.scroll_to_id;
-    let selected_id = state.selected_job_id;
+    let selected_id = state.selected_id;
 
     accordion::header(ui, "Job name");
 
@@ -169,8 +169,8 @@ pub fn show_accordion(
         links.retain(|l| l != &pair);
     }
     if do_panel_deselect {
-        state.selected_job_id = None;
+        state.selected_id = None;
     } else if let Some(id) = do_panel_select {
-        state.selected_job_id = Some(id);
+        state.selected_id = Some(id);
     }
 }

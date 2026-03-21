@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 #[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.valueprop_page.features_state.selected_feature_id else {
+    let Some(id) = app.valueprop_page.features_state.selected_id else {
         return;
     };
 
@@ -163,7 +163,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
     // User dismissed with ✕ → deselect.
     if !keep_open {
-        app.valueprop_page.features_state.selected_feature_id = None;
+        app.valueprop_page.features_state.selected_id = None;
     }
 
     // Apply mutations now that the closure has released all borrows.
@@ -187,7 +187,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 /// Opens the Products window and ensures `prod_id` is visible regardless of
 /// which expand mode is currently active:
 /// - Accordion → sets `expanded = true` on the target product row.
-/// - Panel → sets `selected_product_id` so the detail window opens.
+/// - Panel → sets `selected_id` so the detail window opens.
 ///
 /// Both are applied so switching modes also works correctly.
 pub(super) fn navigate_to_product(app: &mut App, ctx: &egui::Context, prod_id: Uuid) {
@@ -201,7 +201,7 @@ pub(super) fn navigate_to_product(app: &mut App, ctx: &egui::Context, prod_id: U
     {
         prod.expanded = true;
     }
-    app.valueprop_page.products_state.selected_product_id = Some(prod_id);
+    app.valueprop_page.products_state.selected_id = Some(prod_id);
     app.valueprop_page.products_state.scroll_to_id = Some(prod_id);
     // Bring the Products window in front of all other windows.
     ctx.move_to_top(egui::LayerId::new(

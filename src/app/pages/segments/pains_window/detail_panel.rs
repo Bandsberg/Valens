@@ -6,7 +6,7 @@ use super::super::super::accordion;
 
 #[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
-    let Some(id) = app.customer_segment_page.pains_state.selected_pain_id else {
+    let Some(id) = app.customer_segment_page.pains_state.selected_id else {
         return;
     };
 
@@ -126,7 +126,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         });
 
     if !keep_open {
-        app.customer_segment_page.pains_state.selected_pain_id = None;
+        app.customer_segment_page.pains_state.selected_id = None;
     }
     if let Some(pair) = link_to_add
         && !app.customer_segment_page.job_pain_links.contains(&pair)
@@ -157,7 +157,7 @@ pub fn navigate_to_job(app: &mut App, ctx: &egui::Context, job_id: Uuid) {
     {
         job.expanded = true;
     }
-    app.customer_segment_page.jobs_state.selected_job_id = Some(job_id);
+    app.customer_segment_page.jobs_state.selected_id = Some(job_id);
     app.customer_segment_page.jobs_state.scroll_to_id = Some(job_id);
     ctx.move_to_top(egui::LayerId::new(
         egui::Order::Middle,

@@ -28,8 +28,8 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             .jobs_state
             .jobs
             .retain(|j| j.id != id);
-        if app.customer_segment_page.jobs_state.selected_job_id == Some(id) {
-            app.customer_segment_page.jobs_state.selected_job_id = None;
+        if app.customer_segment_page.jobs_state.selected_id == Some(id) {
+            app.customer_segment_page.jobs_state.selected_id = None;
         }
     }
     if confirmed || dismissed {
