@@ -373,7 +373,14 @@ fn render_column(
             );
             for (id, name) in &seg_items {
                 if !hidden_segments.contains(id) {
-                    label_with_hover_id(ui, name, *id, color_segment(), get_score(*id), hovered_key);
+                    label_with_hover_id(
+                        ui,
+                        name,
+                        *id,
+                        color_segment(),
+                        get_score(*id),
+                        hovered_key,
+                    );
                 }
             }
         }

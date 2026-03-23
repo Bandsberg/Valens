@@ -21,8 +21,7 @@ pub fn show_value_quadrant_window(app: &App, ctx: &egui::Context, open: &mut boo
 #[expect(clippy::too_many_lines)]
 fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     // ── Selectors (shared state with gap window) ──────────────────────────────
-    let (selected_product, selected_segment) =
-        show_product_segment_selectors(app, ctx, ui, "vq");
+    let (selected_product, selected_segment) = show_product_segment_selectors(app, ctx, ui, "vq");
 
     let (Some(prod_id), Some(seg_id)) = (selected_product, selected_segment) else {
         show_placeholder_msg(ui, "Select a product and segment to see the quadrant.");

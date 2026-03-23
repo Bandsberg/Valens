@@ -107,8 +107,7 @@ pub fn show_value_gap_window(app: &App, ctx: &egui::Context, open: &mut bool) {
 
 fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     // ── Selectors ─────────────────────────────────────────────────────────────
-    let (selected_product, selected_segment) =
-        show_product_segment_selectors(app, ctx, ui, "vg");
+    let (selected_product, selected_segment) = show_product_segment_selectors(app, ctx, ui, "vg");
 
     let (Some(prod_id), Some(seg_id)) = (selected_product, selected_segment) else {
         show_placeholder_msg(ui, "Select a product and segment to see the gap analysis.");
