@@ -105,7 +105,6 @@ pub fn show_value_gap_window(app: &App, ctx: &egui::Context, open: &mut bool) {
         });
 }
 
-#[expect(clippy::too_many_lines)]
 fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     // ── Selectors ─────────────────────────────────────────────────────────────
     let (selected_product, selected_segment) =

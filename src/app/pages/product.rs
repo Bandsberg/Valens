@@ -119,7 +119,7 @@ struct ProductWindows {
 /// **Why three cases?** Features are an invisible intermediate layer — they
 /// are not rendered on this page but all links flow through them. To highlight
 /// related entities across the page, we must hop through Features in both
-/// directions. GainCreators and PainReliefs need separate cases because they
+/// directions. `GainCreators` and `PainReliefs` need separate cases because they
 /// are connected to Features via different link tables and must each be
 /// traversed independently.
 fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
