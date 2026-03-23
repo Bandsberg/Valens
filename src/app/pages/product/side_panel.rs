@@ -29,5 +29,14 @@ pub fn product_sidepanel(app: &mut App, ctx: &egui::Context) {
                 &mut app.valueprop_page.product_windows.thoughtful_execution_open,
                 "Thoughtfull Execution",
             );
+            ui.separator();
+            ui.checkbox(
+                &mut app.valueprop_page.product_windows.value_gap_open,
+                "Value Gap Analysis",
+            );
+            ui.checkbox(
+                &mut app.valueprop_page.product_windows.value_quadrant_open,
+                "Value Quadrant",
+            );
         });
 }

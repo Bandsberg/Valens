@@ -76,101 +76,11 @@ fn bfs(start: Uuid, adj: &HashMap<Uuid, Vec<Uuid>>) -> HashSet<Uuid> {
     visited
 }
 
-/// Returns the set of gain IDs and pain IDs reachable from a product
-/// via its features → `gain_creators`/`pain_reliefs` → cross-canvas links.
-fn product_covered_gains_pains(product_id: Uuid, app: &App) -> (HashSet<Uuid>, HashSet<Uuid>) {
-    let vp = &app.valueprop_page;
-
-    // Features linked to this product
-    let features: HashSet<Uuid> = vp
-        .product_feature_links
-        .iter()
-        .filter(|(pid, _)| *pid == product_id)
-        .map(|(_, fid)| *fid)
-        .collect();
-
-    // GainCreators reachable via those features
-    let gain_creators: HashSet<Uuid> = vp
-        .feature_gain_creator_links
-        .iter()
-        .filter(|(fid, _)| features.contains(fid))
-        .map(|(_, gcid)| *gcid)
-        .collect();
-
-    // PainReliefs reachable via those features
-    let pain_reliefs: HashSet<Uuid> = vp
-        .feature_pain_relief_links
-        .iter()
-        .filter(|(fid, _)| features.contains(fid))
-        .map(|(_, prid)| *prid)
-        .collect();
-
-    // Gains linked to those GainCreators
-    let gains: HashSet<Uuid> = vp
-        .gain_creator_annotations
-        .iter()
-        .filter(|ann| gain_creators.contains(&ann.reliever_or_creator_id))
-        .map(|ann| ann.pain_or_gain_id)
-        .collect();
-
-    // Pains linked to those PainReliefs
-    let pains: HashSet<Uuid> = vp
-        .pain_relief_annotations
-        .iter()
-        .filter(|ann| pain_reliefs.contains(&ann.reliever_or_creator_id))
-        .map(|ann| ann.pain_or_gain_id)
-        .collect();
-
-    (gains, pains)
-}
-
-/// Returns the set of gain IDs and pain IDs linked to a segment's jobs.
-fn segment_needs(segment_id: Uuid, app: &App) -> (HashSet<Uuid>, HashSet<Uuid>) {
-    let cs = &app.customer_segment_page;
-
-    // Jobs linked to this segment (segment_job_links: (job_id, segment_id))
-    let jobs: HashSet<Uuid> = cs
-        .segment_job_links
-        .iter()
-        .filter(|(_, sid)| *sid == segment_id)
-        .map(|(job_id, _)| *job_id)
-        .collect();
-
-    // Gains linked to those jobs (job_gain_links: (gain_id, job_id))
-    let gains: HashSet<Uuid> = cs
-        .job_gain_links
-        .iter()
-        .filter(|(_, job_id)| jobs.contains(job_id))
-        .map(|(gain_id, _)| *gain_id)
-        .collect();
-
-    // Pains linked to those jobs (job_pain_links: (pain_id, job_id))
-    let pains: HashSet<Uuid> = cs
-        .job_pain_links
-        .iter()
-        .filter(|(_, job_id)| jobs.contains(job_id))
-        .map(|(pain_id, _)| *pain_id)
-        .collect();
-
-    (gains, pains)
-}
-
-/// VP-Design fit score: fraction of a segment's needs addressed by a product.
-/// Falls back to binary BFS if the segment has no needs defined.
+/// VP-Design fit score: importance-weighted fraction of a segment's needs
+/// addressed by a product. Falls back to `NaN` if the segment has no needs,
+/// preserving the existing binary-BFS fallback in `apply_fit_scores`.
 fn fit_score(product_id: Uuid, segment_id: Uuid, app: &App) -> f32 {
-    let (prod_gains, prod_pains) = product_covered_gains_pains(product_id, app);
-    let (seg_gains, seg_pains) = segment_needs(segment_id, app);
-
-    let total_needs = seg_gains.len() + seg_pains.len();
-    if total_needs == 0 {
-        // Fallback: BFS binary — caller handles this
-        return f32::NAN;
-    }
-
-    let addressed =
-        prod_gains.intersection(&seg_gains).count() + prod_pains.intersection(&seg_pains).count();
-
-    addressed as f32 / total_needs as f32
+    super::value_analytics::weighted_fit_score(product_id, segment_id, app)
 }
 
 /// Iterates `candidate_ids` and updates `scores` using the fit score returned
@@ -468,15 +378,35 @@ fn show_fit_matrix(app: &App, ui: &mut egui::Ui) {
                 ui.label(display_name(&prod.name, "Unnamed product"));
                 for seg in segments {
                     let s = fit_score(prod.id, seg.id, app);
-                    let (text, score) = if s.is_nan() {
+                    let (fit_text, score) = if s.is_nan() {
                         ("—".to_owned(), 0.0_f32)
                     } else {
                         (format!("{:.0}%", s * 100.0), s)
                     };
-                    let response = ui.label(&text);
+                    let (ts_met, ts_total) = super::value_analytics::table_stake_completeness(
+                        prod.id,
+                        Some(seg.id),
+                        app,
+                    );
+                    let response = ui.vertical(|ui| {
+                        ui.label(&fit_text);
+                        if ts_total > 0 {
+                            let ts_color = if ts_met == ts_total {
+                                egui::Color32::from_rgb(80, 160, 80)
+                            } else {
+                                egui::Color32::from_rgb(200, 60, 60)
+                            };
+                            ui.label(
+                                egui::RichText::new(format!("TS: {ts_met}/{ts_total}"))
+                                    .small()
+                                    .color(ts_color),
+                            );
+                        }
+                    });
                     if score > 0.0 {
                         let cell_color = scale_color(color_gain(), score);
-                        ui.painter().rect_filled(response.rect, 2.0, cell_color);
+                        ui.painter()
+                            .rect_filled(response.response.rect, 2.0, cell_color);
                     }
                 }
                 ui.end_row();

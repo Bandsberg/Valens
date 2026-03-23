@@ -1,5 +1,6 @@
 pub mod accordion;
 mod overview;
+pub mod value_analytics;
 pub use overview::show_overview;
 mod segments;
 pub use segments::{

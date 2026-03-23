@@ -50,6 +50,10 @@ use gain_creators_window::show_gain_creators_window;
 pub use gain_creators_window::{GainCreator, GainCreatorState};
 mod thoughtful_execution_window;
 use thoughtful_execution_window::show_thoughtful_execution_window;
+mod value_gap_window;
+use value_gap_window::show_value_gap_window;
+mod value_quadrant_window;
+use value_quadrant_window::show_value_quadrant_window;
 
 // ── Page structs ──────────────────────────────────────────────────────────────
 
@@ -89,6 +93,8 @@ struct ProductWindows {
     pain_relief_open: bool,
     gain_creators_open: bool,
     thoughtful_execution_open: bool,
+    value_gap_open: bool,
+    value_quadrant_open: bool,
 }
 
 /// Computes the set of entity IDs that should be highlighted because they are
@@ -229,5 +235,18 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     }
     if app.valueprop_page.product_windows.thoughtful_execution_open {
         show_thoughtful_execution_window(app, ctx);
+    }
+
+    // Value Gap and Quadrant windows take &App (read-only), so split the borrow
+    // by copying the open flags into temporaries.
+    let mut gap_open = app.valueprop_page.product_windows.value_gap_open;
+    let mut quadrant_open = app.valueprop_page.product_windows.value_quadrant_open;
+    if gap_open {
+        show_value_gap_window(app, ctx, &mut gap_open);
+        app.valueprop_page.product_windows.value_gap_open = gap_open;
+    }
+    if quadrant_open {
+        show_value_quadrant_window(app, ctx, &mut quadrant_open);
+        app.valueprop_page.product_windows.value_quadrant_open = quadrant_open;
     }
 }
