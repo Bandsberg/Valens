@@ -27,8 +27,10 @@ fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     let prod_key = egui::Id::new(SELECTED_PRODUCT_KEY);
     let seg_key = egui::Id::new(SELECTED_SEGMENT_KEY);
 
-    let mut selected_product: Option<Uuid> = ctx.data(|d| d.get_temp(prod_key));
-    let mut selected_segment: Option<Uuid> = ctx.data(|d| d.get_temp(seg_key));
+    let mut selected_product: Option<Uuid> =
+        ctx.data(|d| d.get_temp::<Option<Uuid>>(prod_key)).flatten();
+    let mut selected_segment: Option<Uuid> =
+        ctx.data(|d| d.get_temp::<Option<Uuid>>(seg_key)).flatten();
 
     // ── Selectors ─────────────────────────────────────────────────────────────
     let products = &app.valueprop_page.products_state.products;

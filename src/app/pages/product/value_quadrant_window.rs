@@ -24,8 +24,10 @@ fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     let prod_key = egui::Id::new(SELECTED_PRODUCT_KEY);
     let seg_key = egui::Id::new(SELECTED_SEGMENT_KEY);
 
-    let mut selected_product: Option<Uuid> = ctx.data(|d| d.get_temp(prod_key));
-    let mut selected_segment: Option<Uuid> = ctx.data(|d| d.get_temp(seg_key));
+    let mut selected_product: Option<Uuid> =
+        ctx.data(|d| d.get_temp::<Option<Uuid>>(prod_key)).flatten();
+    let mut selected_segment: Option<Uuid> =
+        ctx.data(|d| d.get_temp::<Option<Uuid>>(seg_key)).flatten();
 
     // ── Selectors (shared state with gap window) ──────────────────────────────
     let products = &app.valueprop_page.products_state.products;
@@ -84,24 +86,15 @@ fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
         return;
     }
 
-    // ── Axis labels ───────────────────────────────────────────────────────────
-    ui.horizontal(|ui| {
-        ui.label(
-            egui::RichText::new("Y: Strength  ↑    X: Importance  →")
-                .small()
-                .color(ui.visuals().weak_text_color()),
-        );
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let dot_size = egui::vec2(10.0, 10.0);
-            let (r, _) = ui.allocate_exact_size(dot_size, egui::Sense::empty());
-            ui.painter().circle_filled(r.center(), 4.0, color_pain());
-            ui.label(egui::RichText::new("Pain").small());
-            ui.add_space(6.0);
-            let (r2, _) = ui.allocate_exact_size(dot_size, egui::Sense::empty());
-            ui.painter().circle_filled(r2.center(), 4.0, color_gain());
-            ui.label(egui::RichText::new("Gain").small());
-        });
-    });
+    // ── Axis legend ───────────────────────────────────────────────────────────
+    ui.label(
+        egui::RichText::new(
+            "X axis: Importance (how critical is this need?)    \
+             Y axis: Strength (how well do you address it?)",
+        )
+        .small()
+        .color(ui.visuals().weak_text_color()),
+    );
 
     // ── Canvas ────────────────────────────────────────────────────────────────
     let avail = ui.available_width().min(440.0);
@@ -129,7 +122,7 @@ fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
 
     // Quadrant labels
     let label_color = weak_color.gamma_multiply(0.6);
-    let font = egui::FontId::proportional(10.0);
+    let font = egui::FontId::proportional(11.0);
     let quad_labels = [
         (0.25_f32, 0.25_f32, "Low Priority"),
         (0.75_f32, 0.25_f32, "Critical Gap"),
@@ -206,25 +199,56 @@ fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     }
 
     // ── Legend ────────────────────────────────────────────────────────────────
-    ui.add_space(4.0);
-    ui.horizontal(|ui| {
-        let s = egui::Stroke::new(1.5, ui.visuals().text_color());
+    // NOTE: use ui.painter() here — NOT the canvas painter (painter_at(rect)),
+    // which is clipped to the canvas area and would hide these shapes.
+    ui.add_space(6.0);
+    ui.separator();
+    ui.add_space(2.0);
+    ui.horizontal_wrapped(|ui| {
+        ui.label(
+            egui::RichText::new("Legend — marker shape:")
+                .small()
+                .strong(),
+        );
+        ui.add_space(6.0);
+
         let sz = egui::vec2(14.0, 14.0);
+        let ink = ui.visuals().text_color();
+        let outline = egui::Stroke::new(1.5, ink);
 
         let (r, _) = ui.allocate_exact_size(sz, egui::Sense::empty());
-        painter.circle_filled(r.center(), 5.0, ui.visuals().text_color());
+        ui.painter().circle_filled(r.center(), 5.0, ink);
         ui.label(egui::RichText::new("Differentiator").small());
         ui.add_space(8.0);
 
         let (r2, _) = ui.allocate_exact_size(sz, egui::Sense::empty());
-        let sq = egui::Rect::from_center_size(r2.center(), egui::vec2(10.0, 10.0));
-        painter.rect_filled(sq, 1.0, ui.visuals().text_color());
+        ui.painter().rect_filled(
+            egui::Rect::from_center_size(r2.center(), egui::vec2(10.0, 10.0)),
+            1.0,
+            ink,
+        );
         ui.label(egui::RichText::new("Table Stake").small());
         ui.add_space(8.0);
 
         let (r3, _) = ui.allocate_exact_size(sz, egui::Sense::empty());
-        painter.circle_stroke(r3.center(), 5.0, s);
-        ui.label(egui::RichText::new("Uncovered").small());
+        ui.painter().circle_stroke(r3.center(), 5.0, outline);
+        ui.label(egui::RichText::new("Uncovered need").small());
+    });
+
+    ui.horizontal_wrapped(|ui| {
+        ui.label(egui::RichText::new("Legend — colour:").small().strong());
+        ui.add_space(6.0);
+
+        let sz = egui::vec2(14.0, 14.0);
+
+        let (r4, _) = ui.allocate_exact_size(sz, egui::Sense::empty());
+        ui.painter().circle_filled(r4.center(), 5.0, color_pain());
+        ui.label(egui::RichText::new("Pain").small());
+        ui.add_space(8.0);
+
+        let (r5, _) = ui.allocate_exact_size(sz, egui::Sense::empty());
+        ui.painter().circle_filled(r5.center(), 5.0, color_gain());
+        ui.label(egui::RichText::new("Gain").small());
     });
 }
 
