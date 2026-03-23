@@ -41,6 +41,10 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     };
 
     // ── Demo products ─────────────────────────────────────────────────────────
+    // UUIDs are fixed (not Uuid::new_v4()) so that cross-entity link tables
+    // persisted from a previous session remain valid after a restart.
+    // Random UUIDs would silently orphan every stored link (product_feature_links,
+    // pain_relief_annotations, etc.) the moment the demo data was reloaded.
     let product_1_id =
         Uuid::from_str("e3142c46-5ac5-4425-8080-a8faff6e3ae4").expect("hardcoded UUID is valid");
     let product_2_id =

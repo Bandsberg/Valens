@@ -8,6 +8,11 @@ use super::super::{ValueAnnotation, ValueType};
 
 // ── Detail panel window ───────────────────────────────────────────────────────
 
+/// Renders the Pain Relief detail panel window for the currently selected item.
+///
+/// Shows editable fields (name, description, notes), the list of linked
+/// features, and the annotated pain list with per-pain value-type and strength
+/// controls. Does nothing when no pain relief is selected.
 #[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.valueprop_page.pain_relief_state.selected_id else {
@@ -174,7 +179,8 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         );
                     });
 
-                    ui.label("Strength:");
+                    ui.label("Strength:")
+                        .on_hover_text("How well this relief addresses the pain (0 = no impact, 1 = fully resolves). Weights the product–segment fit score.");
                     ui.add(
                         egui::DragValue::new(&mut cur_strength)
                             .range(0.0..=1.0)

@@ -6,6 +6,9 @@ use super::super::super::accordion;
 
 // ── Detail panel window (Panel mode) ─────────────────────────────────────────
 
+/// Renders the Product/Service detail panel window for the currently selected
+/// product. Shows editable fields (name, description, notes) and the list of
+/// linked features. Does nothing when no product is selected.
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.valueprop_page.products_state.selected_id else {
         return;

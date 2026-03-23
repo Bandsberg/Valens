@@ -83,11 +83,11 @@ impl eframe::App for App {
             });
         });
 
-        if self.tab == Tab::ValueProp {
-            product_sidepanel(self, ctx);
-        }
-        if self.tab == Tab::Customer {
-            customer_sidepanel(self, ctx);
+        // Only the two data-entry tabs have a side panel (Overview is read-only).
+        match self.tab {
+            Tab::ValueProp => product_sidepanel(self, ctx),
+            Tab::Customer => customer_sidepanel(self, ctx),
+            Tab::Overview => {} // no side panel
         }
 
         egui::CentralPanel::default().show(ctx, |ui| match self.tab {

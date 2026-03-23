@@ -8,6 +8,11 @@ use super::super::{ValueAnnotation, ValueType};
 
 // ── Detail panel window ───────────────────────────────────────────────────────
 
+/// Renders the Gain Creator detail panel window for the currently selected item.
+///
+/// Shows editable fields (name, description, notes), the list of linked
+/// features, and the annotated gain list with per-gain value-type and strength
+/// controls. Does nothing when no gain creator is selected.
 #[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.valueprop_page.gain_creator_state.selected_id else {
@@ -174,7 +179,8 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         );
                     });
 
-                    ui.label("Strength:");
+                    ui.label("Strength:")
+                        .on_hover_text("How well this creator delivers the gain (0 = no impact, 1 = fully delivers). Weights the product–segment fit score.");
                     ui.add(
                         egui::DragValue::new(&mut cur_strength)
                             .range(0.0..=1.0)

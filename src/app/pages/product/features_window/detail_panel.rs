@@ -5,6 +5,10 @@ use uuid::Uuid;
 
 // ── Detail panel window (Panel mode) ─────────────────────────────────────────
 
+/// Renders the Feature detail panel window for the currently selected feature.
+/// Shows editable fields (name, description, status, notes, user story,
+/// acceptance criteria) and the list of linked products. Does nothing when
+/// no feature is selected.
 #[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.valueprop_page.features_state.selected_id else {

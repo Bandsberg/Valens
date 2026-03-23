@@ -22,6 +22,7 @@ pub fn show_gains_window(app: &mut App, ctx: &egui::Context) {
     show_delete_confirmation(app, ctx);
     show_detail_panel(app, ctx);
 
+    // Collected inside the window closure; applied after it releases borrows.
     let mut nav_to_job: Option<Uuid> = None;
 
     egui::Window::new("Gains")
@@ -49,6 +50,7 @@ pub fn show_gains_window(app: &mut App, ctx: &egui::Context) {
             );
         });
 
+    // Apply navigation now that the window closure has released all borrows.
     if let Some(job_id) = nav_to_job {
         navigate_to_job(app, ctx, job_id);
     }

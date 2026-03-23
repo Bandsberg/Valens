@@ -46,6 +46,40 @@ pub struct GapGroups {
     pub strong_differentiators: Vec<NeedCoverage>,
 }
 
+impl GapGroups {
+    /// Returns `true` when no coverages were placed in any group — i.e. the
+    /// segment has no annotated needs, or all needs have adequate coverage.
+    pub fn is_empty(&self) -> bool {
+        self.uncovered.is_empty()
+            && self.weak.is_empty()
+            && self.incomplete_table_stakes.is_empty()
+            && self.strong_differentiators.is_empty()
+    }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/// Sorts and deduplicates a `Vec<Uuid>` in-place and returns it.
+/// Pains and gains can be shared by multiple jobs, so deduplication is needed
+/// before iterating to avoid double-counting.
+fn sort_dedup(mut v: Vec<Uuid>) -> Vec<Uuid> {
+    v.sort_unstable();
+    v.dedup();
+    v
+}
+
+/// Collects the destination IDs from a `(source, destination)` link table
+/// where the source is contained in `source_ids`.
+///
+/// Used to walk one hop along the entity graph: features → relievers,
+/// features → creators, jobs → pains, jobs → gains, etc.
+fn linked_ids_where_source_in(links: &[(Uuid, Uuid)], source_ids: &[Uuid]) -> Vec<Uuid> {
+    links
+        .iter()
+        .filter_map(|&(src, dst)| source_ids.contains(&src).then_some(dst))
+        .collect()
+}
+
 // ── Analytics functions ───────────────────────────────────────────────────────
 
 /// Returns the features reachable from `product_id` via `product_feature_links`.
@@ -59,20 +93,12 @@ fn features_of_product(product_id: Uuid, app: &App) -> Vec<Uuid> {
 
 /// Returns the relievers (pain relief items) reachable from a set of features.
 fn relievers_of_features(feature_ids: &[Uuid], app: &App) -> Vec<Uuid> {
-    app.valueprop_page
-        .feature_pain_relief_links
-        .iter()
-        .filter_map(|&(fid, rid)| feature_ids.contains(&fid).then_some(rid))
-        .collect()
+    linked_ids_where_source_in(&app.valueprop_page.feature_pain_relief_links, feature_ids)
 }
 
 /// Returns the creators (gain creator items) reachable from a set of features.
 fn creators_of_features(feature_ids: &[Uuid], app: &App) -> Vec<Uuid> {
-    app.valueprop_page
-        .feature_gain_creator_links
-        .iter()
-        .filter_map(|&(fid, cid)| feature_ids.contains(&fid).then_some(cid))
-        .collect()
+    linked_ids_where_source_in(&app.valueprop_page.feature_gain_creator_links, feature_ids)
 }
 
 /// Best effective strength for a pain (`is_pain = true`) or gain (`is_pain = false`)
@@ -89,6 +115,9 @@ pub fn best_strength_for_need(
     app: &App,
 ) -> Option<(f32, ValueType)> {
     let features = features_of_product(product_id, app);
+    // `partial_cmp` returns `None` for NaN; treat NaN as equal so max_by
+    // remains stable even if a strength value was never set (defaults to 0.0
+    // in practice, but defensive against future data-loading edge cases).
     let by_strength = |a: &&ValueAnnotation, b: &&ValueAnnotation| {
         a.strength
             .partial_cmp(&b.strength)
@@ -149,12 +178,8 @@ pub fn weighted_fit_score(product_id: Uuid, segment_id: Uuid, app: &App) -> f32 
         .collect();
 
     // Deduplicate (a pain/gain may be shared by multiple jobs).
-    let mut all_pain_ids = pain_ids;
-    all_pain_ids.sort_unstable();
-    all_pain_ids.dedup();
-    let mut all_gain_ids = gain_ids;
-    all_gain_ids.sort_unstable();
-    all_gain_ids.dedup();
+    let all_pain_ids = sort_dedup(pain_ids);
+    let all_gain_ids = sort_dedup(gain_ids);
 
     let total_needs = all_pain_ids.len() + all_gain_ids.len();
     if total_needs == 0 {
@@ -164,6 +189,10 @@ pub fn weighted_fit_score(product_id: Uuid, segment_id: Uuid, app: &App) -> f32 
     let mut weight_sum = 0.0_f32;
     let mut weighted_strength_sum = 0.0_f32;
 
+    // Default importance 0.5 ("medium") is used when a pain/gain entity can't
+    // be found in state — defensive against stale link tables referencing
+    // deleted entities. 0.0 would silently zero-weight the need; 0.5 keeps
+    // it visible in the score at half weight.
     for &pid in &all_pain_ids {
         let importance = cs
             .pains_state
@@ -182,12 +211,15 @@ pub fn weighted_fit_score(product_id: Uuid, segment_id: Uuid, app: &App) -> f32 
             .gains
             .iter()
             .find(|g| g.id == gid)
-            .map_or(0.5, |g| g.importance);
+            .map_or(0.5, |g| g.importance); // same 0.5 fallback as pains above
         let strength = best_strength_for_need(gid, false, product_id, app).map_or(0.0, |(s, _)| s);
         weight_sum += importance;
         weighted_strength_sum += importance * strength;
     }
 
+    // Theoretically reachable only if every pain/gain has importance == 0.0.
+    // Return NaN so callers fall back to the binary-BFS score rather than
+    // silently showing 0% fit for a product that may still be relevant.
     if weight_sum == 0.0 {
         return f32::NAN;
     }
@@ -206,49 +238,43 @@ pub fn segment_need_coverages(product_id: Uuid, segment_id: Uuid, app: &App) -> 
         .filter_map(|&(jid, sid)| (sid == segment_id).then_some(jid))
         .collect();
 
-    let mut pain_ids: Vec<Uuid> = cs
-        .job_pain_links
-        .iter()
-        .filter_map(|&(pid, jid)| jobs.contains(&jid).then_some(pid))
-        .collect();
-    pain_ids.sort_unstable();
-    pain_ids.dedup();
-
-    let mut gain_ids: Vec<Uuid> = cs
-        .job_gain_links
-        .iter()
-        .filter_map(|&(gid, jid)| jobs.contains(&jid).then_some(gid))
-        .collect();
-    gain_ids.sort_unstable();
-    gain_ids.dedup();
+    let pain_ids: Vec<Uuid> = sort_dedup(
+        cs.job_pain_links
+            .iter()
+            .filter_map(|&(pid, jid)| jobs.contains(&jid).then_some(pid))
+            .collect(),
+    );
+    let gain_ids: Vec<Uuid> = sort_dedup(
+        cs.job_gain_links
+            .iter()
+            .filter_map(|&(gid, jid)| jobs.contains(&jid).then_some(gid))
+            .collect(),
+    );
 
     let mut coverages = Vec::with_capacity(pain_ids.len() + gain_ids.len());
 
+    // Helper to build a NeedCoverage from an id + entity fields.
+    // Avoids repeating the identical struct construction for pains and gains.
+    let mut push = |id: Uuid, name: &str, importance: f32, is_pain: bool| {
+        let best = best_strength_for_need(id, is_pain, product_id, app);
+        coverages.push(NeedCoverage {
+            id,
+            name: name.to_owned(),
+            importance,
+            is_pain,
+            effective_strength: best.map(|(s, _)| s),
+            value_type: best.map(|(_, vt)| vt),
+        });
+    };
+
     for pid in pain_ids {
-        if let Some(pain) = cs.pains_state.pains.iter().find(|p| p.id == pid) {
-            let best = best_strength_for_need(pid, true, product_id, app);
-            coverages.push(NeedCoverage {
-                id: pid,
-                name: pain.name.clone(),
-                importance: pain.importance,
-                is_pain: true,
-                effective_strength: best.map(|(s, _)| s),
-                value_type: best.map(|(_, vt)| vt),
-            });
+        if let Some(p) = cs.pains_state.pains.iter().find(|p| p.id == pid) {
+            push(pid, &p.name, p.importance, true);
         }
     }
-
     for gid in gain_ids {
-        if let Some(gain) = cs.gains_state.gains.iter().find(|g| g.id == gid) {
-            let best = best_strength_for_need(gid, false, product_id, app);
-            coverages.push(NeedCoverage {
-                id: gid,
-                name: gain.name.clone(),
-                importance: gain.importance,
-                is_pain: false,
-                effective_strength: best.map(|(s, _)| s),
-                value_type: best.map(|(_, vt)| vt),
-            });
+        if let Some(g) = cs.gains_state.gains.iter().find(|g| g.id == gid) {
+            push(gid, &g.name, g.importance, false);
         }
     }
 
@@ -257,9 +283,18 @@ pub fn segment_need_coverages(product_id: Uuid, segment_id: Uuid, app: &App) -> 
 
 /// Groups a slice of `NeedCoverage` into the four actionable categories.
 ///
-/// Note: categories are not mutually exclusive in the sense of priority:
-/// - `incomplete_table_stakes` takes precedence over `weak` when both apply.
-/// - `uncovered` items never appear in any other group.
+/// The match arms are ordered by priority — each arm is only reached when all
+/// earlier arms failed to match:
+/// 1. `uncovered` — no annotation at all; highest priority.
+/// 2. `incomplete_table_stakes` — Table Stake annotated but below min viable
+///    strength; checked before the generic `weak` arm so a weak Table Stake
+///    is flagged for its specific risk (product viability) rather than lumped
+///    with ordinary weak Differentiators.
+/// 3. `strong_differentiators` — a Differentiator at or above the strong
+///    threshold; surfaces genuine competitive advantages.
+/// 4. `weak` — any remaining coverage below the weak threshold; catches weak
+///    Differentiators and any annotations without a `ValueType` set.
+/// 5. catch-all `_` — adequate coverage; nothing to flag.
 pub fn compute_gap_groups(coverages: Vec<NeedCoverage>) -> GapGroups {
     let mut groups = GapGroups {
         uncovered: Vec::new(),
@@ -270,15 +305,21 @@ pub fn compute_gap_groups(coverages: Vec<NeedCoverage>) -> GapGroups {
 
     for c in coverages {
         match (c.effective_strength, c.value_type) {
+            // 1. No annotation from this product — need is completely unaddressed.
             (None, _) => groups.uncovered.push(c),
+            // 2. Table Stake below minimum viable strength — product is at risk.
             (Some(s), Some(ValueType::TableStake)) if s < TABLE_STAKE_MIN_STRENGTH => {
                 groups.incomplete_table_stakes.push(c);
             }
+            // 3. Strong Differentiator — highlight as a source of competitive advantage.
             (Some(s), Some(ValueType::Differentiator)) if s >= DIFFERENTIATOR_STRONG_THRESHOLD => {
                 groups.strong_differentiators.push(c);
             }
+            // 4. Weak coverage — below the weak threshold but not a Table Stake
+            //    (Table Stakes are caught above regardless of weakness level).
             (Some(s), _) if s < STRENGTH_WEAK_THRESHOLD => groups.weak.push(c),
-            _ => {} // adequate coverage — not a gap
+            // 5. Adequate coverage — not a gap, nothing to surface.
+            _ => {}
         }
     }
 
@@ -333,20 +374,18 @@ pub fn table_stake_completeness(
                 .iter()
                 .filter_map(|&(jid, gsid)| (gsid == sid).then_some(jid))
                 .collect();
-            let mut pids: Vec<Uuid> = cs
-                .job_pain_links
-                .iter()
-                .filter_map(|&(pid, jid)| jobs.contains(&jid).then_some(pid))
-                .collect();
-            pids.sort_unstable();
-            pids.dedup();
-            let mut gids: Vec<Uuid> = cs
-                .job_gain_links
-                .iter()
-                .filter_map(|&(gid, jid)| jobs.contains(&jid).then_some(gid))
-                .collect();
-            gids.sort_unstable();
-            gids.dedup();
+            let pids = sort_dedup(
+                cs.job_pain_links
+                    .iter()
+                    .filter_map(|&(pid, jid)| jobs.contains(&jid).then_some(pid))
+                    .collect(),
+            );
+            let gids = sort_dedup(
+                cs.job_gain_links
+                    .iter()
+                    .filter_map(|&(gid, jid)| jobs.contains(&jid).then_some(gid))
+                    .collect(),
+            );
             (Some(pids), Some(gids))
         } else {
             (None, None)

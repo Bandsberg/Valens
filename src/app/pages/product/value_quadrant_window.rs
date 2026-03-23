@@ -3,9 +3,8 @@ use crate::app::pages::accordion::{color_gain, color_pain};
 use crate::app::pages::product::ValueType;
 use crate::app::pages::value_analytics;
 use eframe::egui;
-use uuid::Uuid;
 
-use super::value_gap_window::{SELECTED_PRODUCT_KEY, SELECTED_SEGMENT_KEY};
+use super::value_gap_window::{show_placeholder_msg, show_product_segment_selectors};
 
 // ── Window ────────────────────────────────────────────────────────────────────
 
@@ -21,56 +20,12 @@ pub fn show_value_quadrant_window(app: &App, ctx: &egui::Context, open: &mut boo
 
 #[expect(clippy::too_many_lines)]
 fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
-    let prod_key = egui::Id::new(SELECTED_PRODUCT_KEY);
-    let seg_key = egui::Id::new(SELECTED_SEGMENT_KEY);
-
-    let mut selected_product: Option<Uuid> =
-        ctx.data(|d| d.get_temp::<Option<Uuid>>(prod_key)).flatten();
-    let mut selected_segment: Option<Uuid> =
-        ctx.data(|d| d.get_temp::<Option<Uuid>>(seg_key)).flatten();
-
     // ── Selectors (shared state with gap window) ──────────────────────────────
-    let products = &app.valueprop_page.products_state.products;
-    let segments = &app.customer_segment_page.segments_state.segments;
-
-    ui.horizontal(|ui| {
-        let prod_label = selected_product
-            .and_then(|id| products.iter().find(|p| p.id == id))
-            .map_or("Select product…", |p| p.name.as_str());
-
-        egui::ComboBox::new(egui::Id::new("vq_prod_combo"), "Product")
-            .selected_text(prod_label)
-            .width(180.0)
-            .show_ui(ui, |ui| {
-                for p in products {
-                    ui.selectable_value(&mut selected_product, Some(p.id), &p.name);
-                }
-            });
-
-        let seg_label = selected_segment
-            .and_then(|id| segments.iter().find(|s| s.id == id))
-            .map_or("Select segment…", |s| s.name.as_str());
-
-        egui::ComboBox::new(egui::Id::new("vq_seg_combo"), "Segment")
-            .selected_text(seg_label)
-            .width(180.0)
-            .show_ui(ui, |ui| {
-                for s in segments {
-                    ui.selectable_value(&mut selected_segment, Some(s.id), &s.name);
-                }
-            });
-    });
-
-    ctx.data_mut(|d| d.insert_temp(prod_key, selected_product));
-    ctx.data_mut(|d| d.insert_temp(seg_key, selected_segment));
+    let (selected_product, selected_segment) =
+        show_product_segment_selectors(app, ctx, ui, "vq");
 
     let (Some(prod_id), Some(seg_id)) = (selected_product, selected_segment) else {
-        ui.add_space(8.0);
-        ui.label(
-            egui::RichText::new("Select a product and segment to see the quadrant.")
-                .italics()
-                .color(ui.visuals().weak_text_color()),
-        );
+        show_placeholder_msg(ui, "Select a product and segment to see the quadrant.");
         return;
     };
 
@@ -78,11 +33,7 @@ fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
 
     let coverages = value_analytics::segment_need_coverages(prod_id, seg_id, app);
     if coverages.is_empty() {
-        ui.label(
-            egui::RichText::new("No needs found for this segment.")
-                .italics()
-                .color(ui.visuals().weak_text_color()),
-        );
+        show_placeholder_msg(ui, "No needs found for this segment.");
         return;
     }
 

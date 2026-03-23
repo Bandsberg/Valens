@@ -2,7 +2,7 @@ use eframe::egui;
 use uuid::Uuid;
 
 use super::super::super::Pain;
-use super::super::super::accordion;
+use super::super::super::accordion::{self, ROW_H};
 use super::super::features_window::Feature;
 use super::super::{ValueAnnotation, ValueType};
 use super::model::PainReliefState;
@@ -30,6 +30,12 @@ pub fn show_accordion(
     let mut do_panel_select: Option<Uuid> = None;
     let mut do_panel_deselect = false;
 
+    // egui closures (ScrollArea, indent, horizontal) borrow `ui` exclusively,
+    // so we cannot also hold a mutable borrow on `state`, `feature_links`, or
+    // `pain_annotations` inside them. The pattern here is:
+    //   1. Snapshot the data we need to *read* during rendering.
+    //   2. Accumulate any mutations in local variables during the render loop.
+    //   3. Apply all mutations after the scroll area exits (see bottom of fn).
     let feat_links_snap = feature_links.clone();
     let pain_annotations_snap = pain_annotations.clone();
     let scroll_to = state.scroll_to_id;
@@ -57,11 +63,11 @@ pub fn show_accordion(
                 let (name_w, desc_w) = accordion::row_field_widths(ui, "Pain Relief name");
 
                 ui.add_sized(
-                    [name_w, 20.0],
+                    [name_w, ROW_H],
                     egui::TextEdit::singleline(&mut item.name).hint_text("Pain relief name…"),
                 );
                 ui.add_sized(
-                    [desc_w, 20.0],
+                    [desc_w, ROW_H],
                     egui::TextEdit::singleline(&mut item.description)
                         .hint_text("Short description…"),
                 );
@@ -144,6 +150,10 @@ pub fn show_accordion(
                         None,
                     );
                     if let Some(pid) = add {
+                        // New annotations start at neutral defaults so the
+                        // user can immediately see and adjust them in the
+                        // detail panel. 0.5 strength = "medium"; the default
+                        // ValueType is Differentiator (see ValueType::default).
                         pain_ann_to_add = Some(ValueAnnotation {
                             pain_or_gain_id: pid,
                             reliever_or_creator_id: id,
@@ -190,6 +200,10 @@ pub fn show_accordion(
     if let Some((pid, rid)) = pain_ann_to_remove {
         pain_annotations.retain(|a| !(a.pain_or_gain_id == pid && a.reliever_or_creator_id == rid));
     }
+    // Deselect (close the panel) takes the `if` branch so it always wins.
+    // Opening a new row while another is open just replaces `selected_id` —
+    // `do_panel_deselect` is only set when the user clicks the toggle on the
+    // row that is *already* open, so both flags are never set together.
     if do_panel_deselect {
         state.selected_id = None;
     } else if let Some(id) = do_panel_select {

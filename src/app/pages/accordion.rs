@@ -2,6 +2,13 @@ use eframe::egui;
 use uuid::Uuid;
 
 const DRAG_HANDLE_W: f32 = 6.0;
+/// Width reserved for the expand/collapse arrow button column.
+const ARROW_COLUMN_W: f32 = 28.0;
+/// Height of a single accordion header/row widget.
+/// Referenced by sub-accordion modules for `add_sized` text-edit rows.
+pub(crate) const ROW_H: f32 = 20.0;
+/// Width of a single action button (e.g. detail-panel toggle, delete).
+const ACTION_BTN_W: f32 = 36.0;
 
 /// Shared hover-highlight colours used across page views.
 pub fn color_pain() -> egui::Color32 {
@@ -44,19 +51,19 @@ fn current_name_w(ui: &egui::Ui, name_label: &str) -> (f32, f32) {
 /// and a separator. Drag the handle to widen the name column.
 pub fn header(ui: &mut egui::Ui, name_label: &str) {
     ui.horizontal(|ui| {
-        ui.add_space(28.0); // arrow button column
+        ui.add_space(ARROW_COLUMN_W); // arrow button column
 
         let id = col_id(name_label);
         let (name_w, min_w) = current_name_w(ui, name_label);
 
         ui.add_sized(
-            [name_w, 20.0],
+            [name_w, ROW_H],
             egui::Label::new(egui::RichText::new(name_label).heading()),
         );
 
         // Drag handle between name and description columns.
         let (handle_rect, response) =
-            ui.allocate_exact_size(egui::vec2(DRAG_HANDLE_W, 20.0), egui::Sense::drag());
+            ui.allocate_exact_size(egui::vec2(DRAG_HANDLE_W, ROW_H), egui::Sense::drag());
 
         if response.dragged() {
             let new_w = (name_w + response.drag_delta().x).max(min_w);
@@ -118,9 +125,15 @@ pub fn display_name<'a>(name: &'a str, fallback: &'a str) -> &'a str {
 }
 
 /// Scales the alpha of a premultiplied `Color32` by `factor` (0.0–1.0).
+///
+/// In premultiplied alpha the stored RGB values are already multiplied by
+/// alpha, so reducing alpha requires scaling the RGB channels by the same
+/// ratio (`new_a / old_a`). Without this correction, halving only the alpha
+/// would make the colour look lighter rather than more transparent.
 pub fn scale_color(color: egui::Color32, factor: f32) -> egui::Color32 {
     let [r, g, b, a] = color.to_array();
     let new_a = (a as f32 * factor).round() as u8;
+    // Keep RGB proportional to the new alpha so premultiplied invariant holds.
     let scale = if a > 0 { new_a as f32 / a as f32 } else { 0.0 };
     egui::Color32::from_rgba_premultiplied(
         (r as f32 * scale).round() as u8,
@@ -416,7 +429,7 @@ pub fn partition_linked<L, T>(
 pub fn row_field_widths(ui: &egui::Ui, name_label: &str) -> (f32, f32) {
     let spacing = ui.spacing().item_spacing.x;
     // Account for the drag handle allocated in the header so description columns align.
-    let btn_space = 36.0 * 2.0 + spacing * 2.0;
+    let btn_space = ACTION_BTN_W * 2.0 + spacing * 2.0;
     let avail = ui.available_width() - btn_space;
     let (name_w, _) = current_name_w(ui, name_label);
     let name_w = name_w.min(avail - DRAG_HANDLE_W - spacing * 2.0);

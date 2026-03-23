@@ -7,6 +7,13 @@ use uuid::Uuid;
 // ── Value classification types ─────────────────────────────────────────────────
 
 /// Whether a solution is a minimum requirement or a source of competitive advantage.
+///
+/// This classification changes how `strength` is interpreted in scoring
+/// (see `value_analytics::compute_gap_groups` and `weighted_fit_score`):
+/// - `TableStake`: must reach `TABLE_STAKE_MIN_STRENGTH` (0.7) or the product
+///   is flagged as incomplete on that need — viability is at risk.
+/// - `Differentiator`: contributes proportionally to the fit score; stands out
+///   as a competitive advantage when strength ≥ `DIFFERENTIATOR_STRONG_THRESHOLD` (0.7).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum ValueType {
     /// Minimum requirement to be viable — binary / qualifying.
@@ -31,8 +38,12 @@ impl ValueType {
 pub struct ValueAnnotation {
     pub pain_or_gain_id: Uuid,
     pub reliever_or_creator_id: Uuid,
+    /// Classification that changes how strength is interpreted in scoring:
+    /// - `TableStake`: must reach `TABLE_STAKE_MIN_STRENGTH` to count as viable.
+    /// - `Differentiator`: contributes proportionally to the weighted fit score.
     pub value_type: ValueType,
     /// How well this reliever/creator addresses the pain/gain (0.0–1.0).
+    /// Used as a direct multiplier in the weighted fit-score formula.
     pub strength: f32,
 }
 mod side_panel;
@@ -104,6 +115,13 @@ struct ProductWindows {
 /// Gain Creators, and Pain Reliefs. The links run:
 /// - `Product` ↔ `Feature` ↔ `GainCreator`
 /// - `Product` ↔ `Feature` ↔ `PainRelief`
+///
+/// **Why three cases?** Features are an invisible intermediate layer — they
+/// are not rendered on this page but all links flow through them. To highlight
+/// related entities across the page, we must hop through Features in both
+/// directions. GainCreators and PainReliefs need separate cases because they
+/// are connected to Features via different link tables and must each be
+/// traversed independently.
 fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
     let Some(hovered_id) = hovered else {
         return HashSet::new();
@@ -111,7 +129,8 @@ fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
     let vp = &app.valueprop_page;
     let mut result = HashSet::new();
 
-    // Case: hovered entity is a Product → Product → Feature → GainCreator / PainRelief.
+    // Case: hovered entity is a Product.
+    // Walk forward through its Features to all connected GainCreators and PainReliefs.
     let features_of_product: Vec<Uuid> = vp
         .product_feature_links
         .iter()
@@ -130,7 +149,8 @@ fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
         );
     }
 
-    // Case: hovered entity is a GainCreator → GainCreator → Feature → Product.
+    // Case: hovered entity is a GainCreator.
+    // Walk backward through its Features to find all Products that use it.
     let features_of_gain_creator: Vec<Uuid> = vp
         .feature_gain_creator_links
         .iter()
@@ -144,7 +164,8 @@ fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
         );
     }
 
-    // Case: hovered entity is a PainRelief → PainRelief → Feature → Product.
+    // Case: hovered entity is a PainRelief.
+    // Walk backward through its Features to find all Products that use it.
     let features_of_pain_relief: Vec<Uuid> = vp
         .feature_pain_relief_links
         .iter()

@@ -4,7 +4,7 @@ use uuid::Uuid;
 use super::super::jobs_window::Job;
 use super::model::GainsState;
 
-use super::super::super::accordion;
+use super::super::super::accordion::{self, ROW_H};
 
 const MULTILINE_H: f32 = 60.0;
 
@@ -23,6 +23,12 @@ pub fn show_accordion(
     let mut do_panel_select: Option<Uuid> = None;
     let mut do_panel_deselect = false;
 
+    // egui closures (ScrollArea, indent, horizontal) borrow `ui` exclusively,
+    // so we cannot also hold a mutable borrow on `state` or `links` inside
+    // them. The pattern here is:
+    //   1. Snapshot the data we need to *read* during rendering.
+    //   2. Accumulate any mutations in local variables during the render loop.
+    //   3. Apply all mutations after the scroll area exits (see bottom of fn).
     let links_snap = links.clone();
     let scroll_to = state.scroll_to_id;
     let selected_id = state.selected_id;
@@ -48,11 +54,11 @@ pub fn show_accordion(
                 let (name_w, desc_w) = accordion::row_field_widths(ui, "Gain name");
 
                 ui.add_sized(
-                    [name_w, 20.0],
+                    [name_w, ROW_H],
                     egui::TextEdit::singleline(&mut gain.name).hint_text("Gain name…"),
                 );
                 ui.add_sized(
-                    [desc_w, 20.0],
+                    [desc_w, ROW_H],
                     egui::TextEdit::singleline(&mut gain.description)
                         .hint_text("Short description…"),
                 );
@@ -134,6 +140,10 @@ pub fn show_accordion(
     if let Some(pair) = link_to_remove {
         links.retain(|l| l != &pair);
     }
+    // Deselect (close the panel) takes the `if` branch so it always wins.
+    // Opening a new row while another is open just replaces `selected_id` —
+    // `do_panel_deselect` is only set when the user clicks the toggle on the
+    // row that is *already* open, so both flags are never set together.
     if do_panel_deselect {
         state.selected_id = None;
     } else if let Some(id) = do_panel_select {

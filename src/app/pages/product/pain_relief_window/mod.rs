@@ -44,14 +44,17 @@ pub fn show_pain_relief_window(app: &mut App, ctx: &egui::Context) {
             let features = app.valueprop_page.features_state.features.as_slice();
             let pains = app.customer_segment_page.pains_state.pains.as_slice();
             let feature_links = &mut app.valueprop_page.feature_pain_relief_links;
-            let pain_links = &mut app.valueprop_page.pain_relief_annotations;
+            // pain_annotations are ValueAnnotation objects (type + strength), not
+            // plain (Uuid, Uuid) tuples — named distinctly to avoid confusion with
+            // the feature_links tuple vec passed alongside them.
+            let pain_annotations = &mut app.valueprop_page.pain_relief_annotations;
             show_accordion(
                 ui,
                 &mut app.valueprop_page.pain_relief_state,
                 features,
                 pains,
                 feature_links,
-                pain_links,
+                pain_annotations,
                 &mut nav_to_feat,
             );
         });

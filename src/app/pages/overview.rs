@@ -62,6 +62,15 @@ fn build_directed_adj(app: &App) -> (HashMap<Uuid, Vec<Uuid>>, HashMap<Uuid, Vec
     (fwd, bwd)
 }
 
+/// Breadth-first search from `start` through `adj`.
+///
+/// Returns every node reachable from `start`, **excluding `start` itself**,
+/// so callers get only the *other* entities to highlight — not the one the
+/// user is already hovering.
+///
+/// Called twice per hover event (once forward, once backward through the
+/// reversed adjacency) so that highlighting travels in both directions along
+/// the Products → … → Segments chain.
 fn bfs(start: Uuid, adj: &HashMap<Uuid, Vec<Uuid>>) -> HashSet<Uuid> {
     let mut visited = HashSet::from([start]);
     let mut queue = VecDeque::from([start]);
@@ -138,11 +147,16 @@ fn highlighted_scores(hovered: Option<Uuid>, app: &App) -> HashMap<Uuid, f32> {
     scores
 }
 
+/// Controls how hover-highlight intensity is calculated.
 #[derive(Clone, Copy, PartialEq, Default)]
 enum HighlightMode {
+    /// No highlight — all entities render at full opacity regardless of hover.
     Off,
+    /// Linked entities are highlighted at full intensity (1.0); unlinked at 0.
     #[default]
     Binary,
+    /// Like Binary but the opposite-endpoint column uses VP-Design fit scores
+    /// (0–1) as intensity, so stronger product-segment matches glow brighter.
     FitScore,
 }
 
@@ -183,6 +197,8 @@ fn compute_visible_middle(
     Some(visible)
 }
 
+/// Renders a section heading with an inline dropdown to show/hide individual items.
+/// Displays "All" when nothing is hidden, otherwise shows "visible / total".
 fn filter_heading(
     ui: &mut egui::Ui,
     heading: &str,
@@ -228,11 +244,20 @@ fn render_column(
     hidden_segments: &mut HashSet<Uuid>,
     visible_middle: &Option<HashSet<Uuid>>,
 ) {
-    let score = |id: Uuid| scores.get(&id).copied().unwrap_or(0.0);
+    let get_score = |id: Uuid| scores.get(&id).copied().unwrap_or(0.0);
+    // True when no column filter is active, OR the entity is reachable from visible products/segments.
     let is_visible = |id: Uuid| visible_middle.as_ref().is_none_or(|v| v.contains(&id));
 
+    // Column layout:  0=Products  1=GainCreators+PainReliefs  2=Gains+Pains  3=Jobs  4=Segments
+    //
+    // Columns 0 and 4 (the "root" endpoints of the chain) get a show/hide
+    // filter heading so the user can exclude individual products or segments
+    // and dim the intermediate columns accordingly. The middle columns (1–3)
+    // use `is_visible` instead — their rows are dimmed by `get_score` when
+    // unreachable from the current filter selection.
     match col_idx {
         0 => {
+            // Products & Services — filterable root
             let all_products = &app.valueprop_page.products_state.products;
             let prod_items: Vec<(Uuid, String)> = all_products
                 .iter()
@@ -247,11 +272,12 @@ fn render_column(
             );
             for (id, name) in &prod_items {
                 if !hidden_products.contains(id) {
-                    label_with_hover_id(ui, name, *id, color_job(), score(*id), hovered_key);
+                    label_with_hover_id(ui, name, *id, color_job(), get_score(*id), hovered_key);
                 }
             }
         }
         1 => {
+            // Value-proposition solution layer: Gain Creators then Pain Reliefs
             ui.label(egui::RichText::new("Gain Creators").strong());
             ui.separator();
             for item in &app.valueprop_page.gain_creator_state.gain_creators {
@@ -261,7 +287,7 @@ fn render_column(
                         display_name(&item.name, "Unnamed gain creator"),
                         item.id,
                         color_gain(),
-                        score(item.id),
+                        get_score(item.id),
                         hovered_key,
                     );
                 }
@@ -276,13 +302,14 @@ fn render_column(
                         display_name(&item.name, "Unnamed pain relief"),
                         item.id,
                         color_pain(),
-                        score(item.id),
+                        get_score(item.id),
                         hovered_key,
                     );
                 }
             }
         }
         2 => {
+            // Customer needs layer: Gains then Pains
             ui.label(egui::RichText::new("Gains").strong());
             ui.separator();
             for item in &app.customer_segment_page.gains_state.gains {
@@ -292,7 +319,7 @@ fn render_column(
                         display_name(&item.name, "Unnamed gain"),
                         item.id,
                         color_gain(),
-                        score(item.id),
+                        get_score(item.id),
                         hovered_key,
                     );
                 }
@@ -307,13 +334,14 @@ fn render_column(
                         display_name(&item.name, "Unnamed pain"),
                         item.id,
                         color_pain(),
-                        score(item.id),
+                        get_score(item.id),
                         hovered_key,
                     );
                 }
             }
         }
         3 => {
+            // Jobs-to-be-done layer
             ui.label(egui::RichText::new("Jobs").strong());
             ui.separator();
             for item in &app.customer_segment_page.jobs_state.jobs {
@@ -323,13 +351,14 @@ fn render_column(
                         display_name(&item.name, "Unnamed job"),
                         item.id,
                         color_job(),
-                        score(item.id),
+                        get_score(item.id),
                         hovered_key,
                     );
                 }
             }
         }
         4 => {
+            // Customer Segments — filterable root (mirrors column 0)
             let all_segments = &app.customer_segment_page.segments_state.segments;
             let seg_items: Vec<(Uuid, String)> = all_segments
                 .iter()
@@ -344,7 +373,7 @@ fn render_column(
             );
             for (id, name) in &seg_items {
                 if !hidden_segments.contains(id) {
-                    label_with_hover_id(ui, name, *id, color_segment(), score(*id), hovered_key);
+                    label_with_hover_id(ui, name, *id, color_segment(), get_score(*id), hovered_key);
                 }
             }
         }
@@ -378,6 +407,8 @@ fn show_fit_matrix(app: &App, ui: &mut egui::Ui) {
                 ui.label(display_name(&prod.name, "Unnamed product"));
                 for seg in segments {
                     let s = fit_score(prod.id, seg.id, app);
+                    // NaN means the segment has no annotated needs, so there
+                    // is nothing to score against — show a dash rather than 0%.
                     let (fit_text, score) = if s.is_nan() {
                         ("—".to_owned(), 0.0_f32)
                     } else {
@@ -391,6 +422,8 @@ fn show_fit_matrix(app: &App, ui: &mut egui::Ui) {
                     let response = ui.vertical(|ui| {
                         ui.label(&fit_text);
                         if ts_total > 0 {
+                            // Green = all table stakes met (product is viable).
+                            // Red   = one or more table stakes below minimum strength.
                             let ts_color = if ts_met == ts_total {
                                 egui::Color32::from_rgb(80, 160, 80)
                             } else {
@@ -414,6 +447,13 @@ fn show_fit_matrix(app: &App, ui: &mut egui::Ui) {
         });
 }
 
+/// Renders the Overview toolbar: heading, highlight-mode toggle, fit-matrix
+/// toggle, and a "Columns ▾" popup that controls which of the five entity
+/// columns are visible.
+///
+/// `col_vis` indices map to columns left-to-right:
+/// `[0]` Products & Services, `[1]` Gain Creators / Pain Reliefs,
+/// `[2]` Gains / Pains, `[3]` Jobs, `[4]` Customer Segments.
 fn show_toolbar(
     ui: &mut egui::Ui,
     mode: &mut HighlightMode,
@@ -462,6 +502,20 @@ fn show_toolbar(
     });
 }
 
+/// Renders the Overview page into the central panel.
+///
+/// Displays up to five entity columns (Products → Gain Creators/Pain Reliefs →
+/// Gains/Pains → Jobs → Customer Segments) side by side, with connecting lines
+/// indicating links between adjacent columns. Column visibility is controlled
+/// by the "Columns ▾" toolbar button and persisted in egui temp storage
+/// (`ov_col_visibility`).
+///
+/// Hovering any entity highlights its directly and transitively linked
+/// counterparts using [`highlighted_ids`]. Three highlight modes cycle via the
+/// toolbar: Off, Binary (linked/not), and Fit Score (colored by strength).
+///
+/// An optional Product-Market Fit matrix below the columns shows pairwise
+/// fit scores between every product and every customer segment.
 pub fn show_overview(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     let mode_key = egui::Id::new("ov_highlight_mode");
     let mut mode: HighlightMode = ctx.data(|d| d.get_temp(mode_key).unwrap_or_default());
@@ -470,6 +524,7 @@ pub fn show_overview(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     let mut show_matrix: bool = ctx.data(|d| d.get_temp(matrix_key).unwrap_or(false));
 
     let col_vis_key = egui::Id::new("ov_col_visibility");
+    // [0] Products  [1] GainCreators/PainReliefs  [2] Gains/Pains  [3] Jobs  [4] Segments
     let mut col_vis: [bool; 5] = ctx.data(|d| d.get_temp(col_vis_key).unwrap_or([true; 5]));
 
     show_toolbar(ui, &mut mode, &mut show_matrix, &mut col_vis);

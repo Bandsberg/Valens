@@ -1,7 +1,7 @@
 use crate::app::App;
 use eframe::egui;
 pub fn product_sidepanel(app: &mut App, ctx: &egui::Context) {
-    egui::SidePanel::right("demo_right_panel")
+    egui::SidePanel::right("vp_tools_panel")
         .resizable(false)
         .default_width(160.0)
         .min_width(160.0)
@@ -27,7 +27,7 @@ pub fn product_sidepanel(app: &mut App, ctx: &egui::Context) {
             );
             ui.checkbox(
                 &mut app.valueprop_page.product_windows.thoughtful_execution_open,
-                "Thoughtfull Execution",
+                "Thoughtful Execution",
             );
             ui.separator();
             ui.checkbox(

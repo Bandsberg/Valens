@@ -9,6 +9,89 @@ use uuid::Uuid;
 pub const SELECTED_PRODUCT_KEY: &str = "vg_selected_product";
 pub const SELECTED_SEGMENT_KEY: &str = "vg_selected_segment";
 
+// ── Shared product/segment selector ──────────────────────────────────────────
+
+/// Renders the product + segment combo dropdowns and persists the selection in
+/// egui temp storage under [`SELECTED_PRODUCT_KEY`] / [`SELECTED_SEGMENT_KEY`].
+///
+/// Both the gap window and the quadrant window call this so they always reflect
+/// the same selection — changing one automatically updates the other.
+///
+/// `combo_id_prefix` differentiates the egui widget IDs between windows
+/// (e.g. `"vg"` for gap, `"vq"` for quadrant) to avoid ID collisions when
+/// both windows are open simultaneously.
+///
+/// Returns `(selected_product_id, selected_segment_id)`.
+pub fn show_product_segment_selectors(
+    app: &App,
+    ctx: &egui::Context,
+    ui: &mut egui::Ui,
+    combo_id_prefix: &str,
+) -> (Option<Uuid>, Option<Uuid>) {
+    let prod_key = egui::Id::new(SELECTED_PRODUCT_KEY);
+    let seg_key = egui::Id::new(SELECTED_SEGMENT_KEY);
+
+    let mut selected_product: Option<Uuid> =
+        ctx.data(|d| d.get_temp::<Option<Uuid>>(prod_key)).flatten();
+    let mut selected_segment: Option<Uuid> =
+        ctx.data(|d| d.get_temp::<Option<Uuid>>(seg_key)).flatten();
+
+    let products = &app.valueprop_page.products_state.products;
+    let segments = &app.customer_segment_page.segments_state.segments;
+
+    ui.horizontal(|ui| {
+        let prod_label = selected_product
+            .and_then(|id| products.iter().find(|p| p.id == id))
+            .map_or("Select product…", |p| p.name.as_str());
+
+        egui::ComboBox::new(
+            egui::Id::new(format!("{combo_id_prefix}_prod_combo")),
+            "Product",
+        )
+        .selected_text(prod_label)
+        .width(180.0)
+        .show_ui(ui, |ui| {
+            for p in products {
+                ui.selectable_value(&mut selected_product, Some(p.id), &p.name);
+            }
+        });
+
+        let seg_label = selected_segment
+            .and_then(|id| segments.iter().find(|s| s.id == id))
+            .map_or("Select segment…", |s| s.name.as_str());
+
+        egui::ComboBox::new(
+            egui::Id::new(format!("{combo_id_prefix}_seg_combo")),
+            "Segment",
+        )
+        .selected_text(seg_label)
+        .width(180.0)
+        .show_ui(ui, |ui| {
+            for s in segments {
+                ui.selectable_value(&mut selected_segment, Some(s.id), &s.name);
+            }
+        });
+    });
+
+    ctx.data_mut(|d| d.insert_temp(prod_key, selected_product));
+    ctx.data_mut(|d| d.insert_temp(seg_key, selected_segment));
+
+    (selected_product, selected_segment)
+}
+
+// ── Shared UI helpers ─────────────────────────────────────────────────────────
+
+/// Renders an italicised, dimmed placeholder message. Used when there is no
+/// data to display yet (e.g. no product/segment selected, or no needs found).
+pub fn show_placeholder_msg(ui: &mut egui::Ui, msg: &str) {
+    ui.add_space(8.0);
+    ui.label(
+        egui::RichText::new(msg)
+            .italics()
+            .color(ui.visuals().weak_text_color()),
+    );
+}
+
 // ── Window ────────────────────────────────────────────────────────────────────
 
 pub fn show_value_gap_window(app: &App, ctx: &egui::Context, open: &mut bool) {
@@ -24,56 +107,12 @@ pub fn show_value_gap_window(app: &App, ctx: &egui::Context, open: &mut bool) {
 
 #[expect(clippy::too_many_lines)]
 fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
-    let prod_key = egui::Id::new(SELECTED_PRODUCT_KEY);
-    let seg_key = egui::Id::new(SELECTED_SEGMENT_KEY);
-
-    let mut selected_product: Option<Uuid> =
-        ctx.data(|d| d.get_temp::<Option<Uuid>>(prod_key)).flatten();
-    let mut selected_segment: Option<Uuid> =
-        ctx.data(|d| d.get_temp::<Option<Uuid>>(seg_key)).flatten();
-
     // ── Selectors ─────────────────────────────────────────────────────────────
-    let products = &app.valueprop_page.products_state.products;
-    let segments = &app.customer_segment_page.segments_state.segments;
-
-    ui.horizontal(|ui| {
-        let prod_label = selected_product
-            .and_then(|id| products.iter().find(|p| p.id == id))
-            .map_or("Select product…", |p| p.name.as_str());
-
-        egui::ComboBox::new(egui::Id::new("vg_prod_combo"), "Product")
-            .selected_text(prod_label)
-            .width(180.0)
-            .show_ui(ui, |ui| {
-                for p in products {
-                    ui.selectable_value(&mut selected_product, Some(p.id), &p.name);
-                }
-            });
-
-        let seg_label = selected_segment
-            .and_then(|id| segments.iter().find(|s| s.id == id))
-            .map_or("Select segment…", |s| s.name.as_str());
-
-        egui::ComboBox::new(egui::Id::new("vg_seg_combo"), "Segment")
-            .selected_text(seg_label)
-            .width(180.0)
-            .show_ui(ui, |ui| {
-                for s in segments {
-                    ui.selectable_value(&mut selected_segment, Some(s.id), &s.name);
-                }
-            });
-    });
-
-    ctx.data_mut(|d| d.insert_temp(prod_key, selected_product));
-    ctx.data_mut(|d| d.insert_temp(seg_key, selected_segment));
+    let (selected_product, selected_segment) =
+        show_product_segment_selectors(app, ctx, ui, "vg");
 
     let (Some(prod_id), Some(seg_id)) = (selected_product, selected_segment) else {
-        ui.add_space(8.0);
-        ui.label(
-            egui::RichText::new("Select a product and segment to see the gap analysis.")
-                .italics()
-                .color(ui.visuals().weak_text_color()),
-        );
+        show_placeholder_msg(ui, "Select a product and segment to see the gap analysis.");
         return;
     };
 
@@ -109,18 +148,10 @@ fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     let coverages = value_analytics::segment_need_coverages(prod_id, seg_id, app);
     let groups = value_analytics::compute_gap_groups(coverages);
 
-    if groups.uncovered.is_empty()
-        && groups.weak.is_empty()
-        && groups.incomplete_table_stakes.is_empty()
-        && groups.strong_differentiators.is_empty()
-    {
-        ui.add_space(8.0);
-        ui.label(
-            egui::RichText::new(
-                "No needs found for this segment, or no annotations on this product's relievers/creators.",
-            )
-            .italics()
-            .color(ui.visuals().weak_text_color()),
+    if groups.is_empty() {
+        show_placeholder_msg(
+            ui,
+            "No needs found for this segment, or no annotations on this product's relievers/creators.",
         );
         return;
     }

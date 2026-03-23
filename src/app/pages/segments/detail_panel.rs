@@ -6,6 +6,9 @@ use super::super::accordion;
 
 // ── Detail panel window ───────────────────────────────────────────────────────
 
+/// Renders the Customer Segment detail panel window for the currently selected
+/// segment. Shows editable fields (name, description, notes, characteristics)
+/// and the list of linked jobs. Does nothing when no segment is selected.
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_segment_page.segments_state.selected_id else {
         return;

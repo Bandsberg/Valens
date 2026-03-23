@@ -110,6 +110,12 @@ fn highlighted_ids(hovered: Option<Uuid>, app: &App) -> HashSet<Uuid> {
         .collect()
 }
 
+/// Renders the Customer Segment page into the central panel.
+///
+/// Displays a two-column layout: Gains and Pains on the left, Jobs on the
+/// right. Hovering any entity highlights its linked counterparts via
+/// [`highlighted_ids`]. Floating windows (Segments, Jobs, Pains, Gains) are
+/// rendered on top if their `customer_windows` toggles are open.
 pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     ui.heading("Customer Segment");
     ui.add_space(8.0);
