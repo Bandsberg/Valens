@@ -24,8 +24,8 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             .feature_pain_relief_links
             .retain(|(_, rid)| *rid != id);
         app.valueprop_page
-            .pain_pain_relief_links
-            .retain(|(_, rid)| *rid != id);
+            .pain_relief_annotations
+            .retain(|ann| ann.reliever_or_creator_id != id);
         app.valueprop_page
             .pain_relief_state
             .pain_reliefs

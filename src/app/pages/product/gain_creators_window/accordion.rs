@@ -4,6 +4,7 @@ use uuid::Uuid;
 use super::super::super::Gain;
 use super::super::super::accordion;
 use super::super::features_window::Feature;
+use super::super::{ValueAnnotation, ValueType};
 use super::model::GainCreatorState;
 
 const MULTILINE_H: f32 = 58.0;
@@ -17,20 +18,20 @@ pub fn show_accordion(
     features: &[Feature],
     gains: &[Gain],
     feature_links: &mut Vec<(Uuid, Uuid)>,
-    gain_links: &mut Vec<(Uuid, Uuid)>,
+    gain_annotations: &mut Vec<ValueAnnotation>,
     navigate_to: &mut Option<Uuid>,
 ) {
     let mut to_delete: Option<Uuid> = None;
     let mut feat_link_to_add: Option<(Uuid, Uuid)> = None;
     let mut feat_link_to_remove: Option<(Uuid, Uuid)> = None;
-    let mut gain_link_to_add: Option<(Uuid, Uuid)> = None;
-    let mut gain_link_to_remove: Option<(Uuid, Uuid)> = None;
+    let mut gain_ann_to_add: Option<ValueAnnotation> = None;
+    let mut gain_ann_to_remove: Option<(Uuid, Uuid)> = None;
     let mut did_scroll = false;
     let mut do_panel_select: Option<Uuid> = None;
     let mut do_panel_deselect = false;
 
     let feat_links_snap = feature_links.clone();
-    let gain_links_snap = gain_links.clone();
+    let gain_annotations_snap = gain_annotations.clone();
     let scroll_to = state.scroll_to_id;
     let selected_id = state.selected_id;
 
@@ -122,11 +123,11 @@ pub fn show_accordion(
                     }
 
                     // ── Creates Gains ─────────────────────────────────────────
-                    // Link tuple: (gain_id, gain_creator_id) — gain_creator is second.
+                    // Annotation: pain_or_gain_id = gain_id, reliever_or_creator_id = gc_id.
                     ui.separator();
                     let (linked_gains, avail_gains) = accordion::partition_linked(
-                        &gain_links_snap,
-                        |(gid, rid)| (*rid == id).then_some(*gid),
+                        &gain_annotations_snap,
+                        |ann| (ann.reliever_or_creator_id == id).then_some(ann.pain_or_gain_id),
                         gains,
                         |g| g.id,
                         |g| g.name.as_str(),
@@ -143,10 +144,15 @@ pub fn show_accordion(
                         None,
                     );
                     if let Some(gid) = add {
-                        gain_link_to_add = Some((gid, id));
+                        gain_ann_to_add = Some(ValueAnnotation {
+                            pain_or_gain_id: gid,
+                            reliever_or_creator_id: id,
+                            value_type: ValueType::default(),
+                            strength: 0.5,
+                        });
                     }
                     if let Some(gid) = rem {
-                        gain_link_to_remove = Some((gid, id));
+                        gain_ann_to_remove = Some((gid, id));
                     }
 
                     ui.add_space(4.0);
@@ -172,13 +178,17 @@ pub fn show_accordion(
     if let Some(pair) = feat_link_to_remove {
         feature_links.retain(|l| l != &pair);
     }
-    if let Some(pair) = gain_link_to_add
-        && !gain_links.contains(&pair)
-    {
-        gain_links.push(pair);
+    if let Some(ann) = gain_ann_to_add {
+        let already_linked = gain_annotations.iter().any(|a| {
+            a.pain_or_gain_id == ann.pain_or_gain_id
+                && a.reliever_or_creator_id == ann.reliever_or_creator_id
+        });
+        if !already_linked {
+            gain_annotations.push(ann);
+        }
     }
-    if let Some(pair) = gain_link_to_remove {
-        gain_links.retain(|l| l != &pair);
+    if let Some((gid, cid)) = gain_ann_to_remove {
+        gain_annotations.retain(|a| !(a.pain_or_gain_id == gid && a.reliever_or_creator_id == cid));
     }
     if do_panel_deselect {
         state.selected_id = None;

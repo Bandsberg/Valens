@@ -10,6 +10,8 @@ use crate::app::pages::Pain;
 use crate::app::pages::product::Feature;
 use crate::app::pages::product::GainCreator;
 use crate::app::pages::product::PainRelief;
+use crate::app::pages::product::ValueAnnotation;
+use crate::app::pages::product::ValueType;
 use crate::app::pages::product::products_window::Product;
 use uuid::Uuid;
 
@@ -291,6 +293,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         description: "BaaS APIs are inconsistent across providers, slowing time-to-market"
             .to_owned(),
         notes: "Fintechs cite this as the top bottleneck before launch".to_owned(),
+        importance: 0.9,
         expanded: false,
     };
     let pain_2 = Pain {
@@ -298,6 +301,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         name: "KYC drop-off rates".to_owned(),
         description: "Lengthy identity checks cause customers to abandon onboarding".to_owned(),
         notes: "Manual review steps are the main culprit for regional banks".to_owned(),
+        importance: 0.8,
         expanded: false,
     };
     let pain_3 = Pain {
@@ -305,6 +309,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         name: "High false-positive fraud alerts".to_owned(),
         description: "Legitimate transactions blocked, damaging customer trust".to_owned(),
         notes: "Both segments lose revenue and incur support costs from false positives".to_owned(),
+        importance: 0.7,
         expanded: false,
     };
 
@@ -326,16 +331,38 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         }
     }
 
-    // ── Demo pain-pain-relief links (deferred until pains are loaded) ─────────
-    let demo_pain_pr_links = [
-        (pain_1_id, pr_1_id),
-        (pain_2_id, pr_2_id),
-        (pain_3_id, pr_3_id),
+    // ── Demo pain-relief annotations (deferred until pains are loaded) ──────────
+    // Pain 1 (complex API integration) → PR 1: table stake, strong coverage
+    // Pain 2 (KYC drop-off rates)      → PR 2: table stake, strong coverage
+    // Pain 3 (false-positive alerts)   → PR 3: differentiator, partial coverage
+    let demo_pain_pr_annotations = [
+        ValueAnnotation {
+            pain_or_gain_id: pain_1_id,
+            reliever_or_creator_id: pr_1_id,
+            value_type: ValueType::TableStake,
+            strength: 0.9,
+        },
+        ValueAnnotation {
+            pain_or_gain_id: pain_2_id,
+            reliever_or_creator_id: pr_2_id,
+            value_type: ValueType::TableStake,
+            strength: 0.85,
+        },
+        ValueAnnotation {
+            pain_or_gain_id: pain_3_id,
+            reliever_or_creator_id: pr_3_id,
+            value_type: ValueType::Differentiator,
+            strength: 0.7,
+        },
     ];
-    let existing_pain_pr = &mut demo_app.valueprop_page.pain_pain_relief_links;
-    for link in demo_pain_pr_links {
-        if !existing_pain_pr.contains(&link) {
-            existing_pain_pr.push(link);
+    let existing_pain_pr = &mut demo_app.valueprop_page.pain_relief_annotations;
+    for ann in demo_pain_pr_annotations {
+        let exists = existing_pain_pr.iter().any(|a| {
+            a.pain_or_gain_id == ann.pain_or_gain_id
+                && a.reliever_or_creator_id == ann.reliever_or_creator_id
+        });
+        if !exists {
+            existing_pain_pr.push(ann);
         }
     }
 
@@ -353,6 +380,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         description: "Launch payment capabilities in days with well-documented, consistent APIs"
             .to_owned(),
         notes: "Top priority for fintechs racing to market".to_owned(),
+        importance: 0.9,
         expanded: false,
     };
     let gain_2 = Gain {
@@ -360,6 +388,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         name: "High KYC pass rates".to_owned(),
         description: "More customers complete onboarding with minimal friction".to_owned(),
         notes: "Automated decisioning with clear audit trail satisfies both segments".to_owned(),
+        importance: 0.8,
         expanded: false,
     };
     let gain_3 = Gain {
@@ -367,6 +396,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         name: "Accurate fraud detection".to_owned(),
         description: "Catch real fraud while keeping false-positive rates low".to_owned(),
         notes: "Tunable risk thresholds are valued by regional banks".to_owned(),
+        importance: 0.75,
         expanded: false,
     };
 
@@ -441,19 +471,38 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         }
     }
 
-    // ── Demo gain-gain-creator links ──────────────────────────────────────────
-    // Gain 1 (fast API go-live)       → GC 1 (one-day API go-live)
-    // Gain 2 (high KYC pass rates)    → GC 2 (frictionless onboarding)
-    // Gain 3 (accurate fraud detect.) → GC 3 (transparent analytics)
-    let demo_gain_gc_links = [
-        (gain_1_id, gc_1_id),
-        (gain_2_id, gc_2_id),
-        (gain_3_id, gc_3_id),
+    // ── Demo gain-creator annotations ─────────────────────────────────────────
+    // Gain 1 (fast API go-live)       → GC 1 (one-day API go-live):       differentiator
+    // Gain 2 (high KYC pass rates)    → GC 2 (frictionless onboarding):   differentiator
+    // Gain 3 (accurate fraud detect.) → GC 3 (transparent analytics):     differentiator
+    let demo_gain_gc_annotations = [
+        ValueAnnotation {
+            pain_or_gain_id: gain_1_id,
+            reliever_or_creator_id: gc_1_id,
+            value_type: ValueType::Differentiator,
+            strength: 0.85,
+        },
+        ValueAnnotation {
+            pain_or_gain_id: gain_2_id,
+            reliever_or_creator_id: gc_2_id,
+            value_type: ValueType::Differentiator,
+            strength: 0.8,
+        },
+        ValueAnnotation {
+            pain_or_gain_id: gain_3_id,
+            reliever_or_creator_id: gc_3_id,
+            value_type: ValueType::Differentiator,
+            strength: 0.75,
+        },
     ];
-    let existing_gain_gc = &mut demo_app.valueprop_page.gain_gain_creator_links;
-    for link in demo_gain_gc_links {
-        if !existing_gain_gc.contains(&link) {
-            existing_gain_gc.push(link);
+    let existing_gain_gc = &mut demo_app.valueprop_page.gain_creator_annotations;
+    for ann in demo_gain_gc_annotations {
+        let exists = existing_gain_gc.iter().any(|a| {
+            a.pain_or_gain_id == ann.pain_or_gain_id
+                && a.reliever_or_creator_id == ann.reliever_or_creator_id
+        });
+        if !exists {
+            existing_gain_gc.push(ann);
         }
     }
 

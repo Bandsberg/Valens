@@ -24,8 +24,8 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
             .feature_gain_creator_links
             .retain(|(_, rid)| *rid != id);
         app.valueprop_page
-            .gain_gain_creator_links
-            .retain(|(_, rid)| *rid != id);
+            .gain_creator_annotations
+            .retain(|ann| ann.reliever_or_creator_id != id);
         app.valueprop_page
             .gain_creator_state
             .gain_creators

@@ -383,9 +383,9 @@ pub fn detail_link_row(
 /// );
 /// ```
 #[expect(clippy::type_complexity)]
-pub fn partition_linked<T>(
-    links: &[(Uuid, Uuid)],
-    extract_other_id: impl Fn(&(Uuid, Uuid)) -> Option<Uuid>,
+pub fn partition_linked<L, T>(
+    links: &[L],
+    extract_other_id: impl Fn(&L) -> Option<Uuid>,
     items: &[T],
     get_id: impl Fn(&T) -> Uuid,
     get_name: impl Fn(&T) -> &str,

@@ -44,7 +44,7 @@ pub fn show_gain_creators_window(app: &mut App, ctx: &egui::Context) {
             let features = app.valueprop_page.features_state.features.as_slice();
             let gains = app.customer_segment_page.gains_state.gains.as_slice();
             let feature_links = &mut app.valueprop_page.feature_gain_creator_links;
-            let gain_links = &mut app.valueprop_page.gain_gain_creator_links;
+            let gain_links = &mut app.valueprop_page.gain_creator_annotations;
             show_accordion(
                 ui,
                 &mut app.valueprop_page.gain_creator_state,

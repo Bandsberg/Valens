@@ -44,7 +44,7 @@ pub fn show_pain_relief_window(app: &mut App, ctx: &egui::Context) {
             let features = app.valueprop_page.features_state.features.as_slice();
             let pains = app.customer_segment_page.pains_state.pains.as_slice();
             let feature_links = &mut app.valueprop_page.feature_pain_relief_links;
-            let pain_links = &mut app.valueprop_page.pain_pain_relief_links;
+            let pain_links = &mut app.valueprop_page.pain_relief_annotations;
             show_accordion(
                 ui,
                 &mut app.valueprop_page.pain_relief_state,

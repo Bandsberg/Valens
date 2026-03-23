@@ -4,6 +4,7 @@ use uuid::Uuid;
 use super::super::super::Pain;
 use super::super::super::accordion;
 use super::super::features_window::Feature;
+use super::super::{ValueAnnotation, ValueType};
 use super::model::PainReliefState;
 
 const MULTILINE_H: f32 = 58.0;
@@ -17,20 +18,20 @@ pub fn show_accordion(
     features: &[Feature],
     pains: &[Pain],
     feature_links: &mut Vec<(Uuid, Uuid)>,
-    pain_links: &mut Vec<(Uuid, Uuid)>,
+    pain_annotations: &mut Vec<ValueAnnotation>,
     navigate_to: &mut Option<Uuid>,
 ) {
     let mut to_delete: Option<Uuid> = None;
     let mut feat_link_to_add: Option<(Uuid, Uuid)> = None;
     let mut feat_link_to_remove: Option<(Uuid, Uuid)> = None;
-    let mut pain_link_to_add: Option<(Uuid, Uuid)> = None;
-    let mut pain_link_to_remove: Option<(Uuid, Uuid)> = None;
+    let mut pain_ann_to_add: Option<ValueAnnotation> = None;
+    let mut pain_ann_to_remove: Option<(Uuid, Uuid)> = None;
     let mut did_scroll = false;
     let mut do_panel_select: Option<Uuid> = None;
     let mut do_panel_deselect = false;
 
     let feat_links_snap = feature_links.clone();
-    let pain_links_snap = pain_links.clone();
+    let pain_annotations_snap = pain_annotations.clone();
     let scroll_to = state.scroll_to_id;
     let selected_id = state.selected_id;
 
@@ -122,11 +123,11 @@ pub fn show_accordion(
                     }
 
                     // ── Relieves Pains ────────────────────────────────────────
-                    // Link tuple: (pain_id, pain_relief_id) — pain_relief is second.
+                    // Annotation: pain_or_gain_id = pain_id, reliever_or_creator_id = pr_id.
                     ui.separator();
                     let (linked_pains, avail_pains) = accordion::partition_linked(
-                        &pain_links_snap,
-                        |(pid, rid)| (*rid == id).then_some(*pid),
+                        &pain_annotations_snap,
+                        |ann| (ann.reliever_or_creator_id == id).then_some(ann.pain_or_gain_id),
                         pains,
                         |p| p.id,
                         |p| p.name.as_str(),
@@ -143,10 +144,15 @@ pub fn show_accordion(
                         None,
                     );
                     if let Some(pid) = add {
-                        pain_link_to_add = Some((pid, id));
+                        pain_ann_to_add = Some(ValueAnnotation {
+                            pain_or_gain_id: pid,
+                            reliever_or_creator_id: id,
+                            value_type: ValueType::default(),
+                            strength: 0.5,
+                        });
                     }
                     if let Some(pid) = rem {
-                        pain_link_to_remove = Some((pid, id));
+                        pain_ann_to_remove = Some((pid, id));
                     }
 
                     ui.add_space(4.0);
@@ -172,13 +178,17 @@ pub fn show_accordion(
     if let Some(pair) = feat_link_to_remove {
         feature_links.retain(|l| l != &pair);
     }
-    if let Some(pair) = pain_link_to_add
-        && !pain_links.contains(&pair)
-    {
-        pain_links.push(pair);
+    if let Some(ann) = pain_ann_to_add {
+        let already_linked = pain_annotations.iter().any(|a| {
+            a.pain_or_gain_id == ann.pain_or_gain_id
+                && a.reliever_or_creator_id == ann.reliever_or_creator_id
+        });
+        if !already_linked {
+            pain_annotations.push(ann);
+        }
     }
-    if let Some(pair) = pain_link_to_remove {
-        pain_links.retain(|l| l != &pair);
+    if let Some((pid, rid)) = pain_ann_to_remove {
+        pain_annotations.retain(|a| !(a.pain_or_gain_id == pid && a.reliever_or_creator_id == rid));
     }
     if do_panel_deselect {
         state.selected_id = None;

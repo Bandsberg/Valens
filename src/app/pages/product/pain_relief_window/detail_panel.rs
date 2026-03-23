@@ -4,6 +4,7 @@ use eframe::egui;
 use uuid::Uuid;
 
 use super::super::products_window::navigate_to_feature;
+use super::super::{ValueAnnotation, ValueType};
 
 // ── Detail panel window ───────────────────────────────────────────────────────
 
@@ -13,7 +14,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         return;
     };
 
-    // Snapshot linked features and pains before the window closure.
+    // Snapshot linked features before the window closure.
     // Link tuple: (feature_id, pain_relief_id) — pain_relief is in second position.
     let (linked_features, available_features) = accordion::partition_linked(
         &app.valueprop_page.feature_pain_relief_links,
@@ -22,19 +23,30 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         |f| f.id,
         |f| f.name.as_str(),
     );
-    // Link tuple: (pain_id, pain_relief_id) — pain_relief is in second position.
-    let (linked_pains, available_pains) = accordion::partition_linked(
-        &app.valueprop_page.pain_pain_relief_links,
-        |(pid, rid)| (*rid == id).then_some(*pid),
-        &app.customer_segment_page.pains_state.pains,
-        |p| p.id,
-        |p| p.name.as_str(),
-    );
+
+    // Snapshot available pains (not yet linked to this relief).
+    let linked_pain_ids: Vec<Uuid> = app
+        .valueprop_page
+        .pain_relief_annotations
+        .iter()
+        .filter(|ann| ann.reliever_or_creator_id == id)
+        .map(|ann| ann.pain_or_gain_id)
+        .collect();
+    let available_pains: Vec<(Uuid, String)> = app
+        .customer_segment_page
+        .pains_state
+        .pains
+        .iter()
+        .filter(|p| !linked_pain_ids.contains(&p.id))
+        .map(|p| (p.id, p.name.clone()))
+        .collect();
 
     let mut feat_link_to_add: Option<(Uuid, Uuid)> = None;
     let mut feat_link_to_remove: Option<(Uuid, Uuid)> = None;
-    let mut pain_link_to_add: Option<(Uuid, Uuid)> = None;
-    let mut pain_link_to_remove: Option<(Uuid, Uuid)> = None;
+    let mut pain_ann_to_add: Option<ValueAnnotation> = None;
+    let mut pain_ann_to_remove: Option<Uuid> = None;
+    // Inline annotation edits: (pain_id, new_value_type, new_strength)
+    let mut ann_edit: Option<(Uuid, ValueType, f32)> = None;
     let mut navigate_to_feat: Option<Uuid> = None;
 
     let mut keep_open = true;
@@ -98,28 +110,109 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         feat_link_to_remove = Some((fid, id));
                     }
                     ui.end_row();
-
-                    // ── Relieves Pains ────────────────────────────────────────
-                    let mut _nav_unused = None;
-                    let (add, rem) = accordion::detail_link_row(
-                        ui,
-                        "Relieves\nPains:",
-                        egui::Id::new("pr_detail_link_pain").with(id),
-                        "Add a pain…",
-                        &available_pains,
-                        &linked_pains,
-                        &mut _nav_unused,
-                        None,
-                    );
-                    // Link tuple: (pain_id, pain_relief_id).
-                    if let Some(pid) = add {
-                        pain_link_to_add = Some((pid, id));
-                    }
-                    if let Some(pid) = rem {
-                        pain_link_to_remove = Some((pid, id));
-                    }
-                    ui.end_row();
                 });
+
+            // ── Relieves Pains (annotated) ────────────────────────────────────
+            ui.separator();
+            ui.label(egui::RichText::new("Relieves Pains").strong());
+            ui.add_space(4.0);
+
+            // Render each linked pain with annotation controls.
+            let annotations_snap: Vec<ValueAnnotation> = app
+                .valueprop_page
+                .pain_relief_annotations
+                .iter()
+                .filter(|ann| ann.reliever_or_creator_id == id)
+                .cloned()
+                .collect();
+
+            for ann in &annotations_snap {
+                let pain_name = app
+                    .customer_segment_page
+                    .pains_state
+                    .pains
+                    .iter()
+                    .find(|p| p.id == ann.pain_or_gain_id)
+                    .map_or("Unknown pain", |p| p.name.as_str());
+
+                let mut cur_type = ann.value_type;
+                let mut cur_strength = ann.strength;
+
+                ui.horizontal(|ui| {
+                    ui.label(pain_name);
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui
+                            .add(egui::Button::new("✕").fill(egui::Color32::TRANSPARENT))
+                            .on_hover_text("Remove link")
+                            .clicked()
+                        {
+                            pain_ann_to_remove = Some(ann.pain_or_gain_id);
+                        }
+                    });
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add_space(12.0);
+                    egui::ComboBox::new(
+                        egui::Id::new("pr_detail_vtype")
+                            .with(id)
+                            .with(ann.pain_or_gain_id),
+                        "",
+                    )
+                    .selected_text(cur_type.label())
+                    .width(120.0)
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut cur_type,
+                            ValueType::TableStake,
+                            ValueType::TableStake.label(),
+                        );
+                        ui.selectable_value(
+                            &mut cur_type,
+                            ValueType::Differentiator,
+                            ValueType::Differentiator.label(),
+                        );
+                    });
+
+                    ui.label("Strength:");
+                    ui.add(
+                        egui::DragValue::new(&mut cur_strength)
+                            .range(0.0..=1.0)
+                            .speed(0.01)
+                            .fixed_decimals(2),
+                    );
+                });
+
+                if cur_type != ann.value_type || (cur_strength - ann.strength).abs() > f32::EPSILON
+                {
+                    ann_edit = Some((ann.pain_or_gain_id, cur_type, cur_strength));
+                }
+
+                ui.add_space(2.0);
+            }
+
+            // Add a new pain link.
+            if !available_pains.is_empty() {
+                let mut selected_pain: Option<Uuid> = None;
+                egui::ComboBox::new(egui::Id::new("pr_detail_add_pain").with(id), "")
+                    .selected_text("Add a pain…")
+                    .width(200.0)
+                    .show_ui(ui, |ui| {
+                        for (pid, pname) in &available_pains {
+                            if ui.selectable_label(false, pname).clicked() {
+                                selected_pain = Some(*pid);
+                            }
+                        }
+                    });
+                if let Some(pid) = selected_pain {
+                    pain_ann_to_add = Some(ValueAnnotation {
+                        pain_or_gain_id: pid,
+                        reliever_or_creator_id: id,
+                        value_type: ValueType::default(),
+                        strength: 0.5,
+                    });
+                }
+            }
         });
 
     if !keep_open {
@@ -136,15 +229,29 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
             .feature_pain_relief_links
             .retain(|l| l != &pair);
     }
-    if let Some(pair) = pain_link_to_add
-        && !app.valueprop_page.pain_pain_relief_links.contains(&pair)
-    {
-        app.valueprop_page.pain_pain_relief_links.push(pair);
+    if let Some(ann) = pain_ann_to_add {
+        let exists =
+            app.valueprop_page.pain_relief_annotations.iter().any(|a| {
+                a.pain_or_gain_id == ann.pain_or_gain_id && a.reliever_or_creator_id == id
+            });
+        if !exists {
+            app.valueprop_page.pain_relief_annotations.push(ann);
+        }
     }
-    if let Some(pair) = pain_link_to_remove {
+    if let Some(pid) = pain_ann_to_remove {
         app.valueprop_page
-            .pain_pain_relief_links
-            .retain(|l| l != &pair);
+            .pain_relief_annotations
+            .retain(|a| !(a.pain_or_gain_id == pid && a.reliever_or_creator_id == id));
+    }
+    if let Some((pid, vtype, strength)) = ann_edit
+        && let Some(ann) = app
+            .valueprop_page
+            .pain_relief_annotations
+            .iter_mut()
+            .find(|a| a.pain_or_gain_id == pid && a.reliever_or_creator_id == id)
+    {
+        ann.value_type = vtype;
+        ann.strength = strength;
     }
     if let Some(feat_id) = navigate_to_feat {
         navigate_to_feature(app, ctx, feat_id);

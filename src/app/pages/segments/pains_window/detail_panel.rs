@@ -65,6 +65,15 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                     );
                     ui.end_row();
 
+                    ui.label("Importance:");
+                    ui.add(
+                        egui::DragValue::new(&mut pain.importance)
+                            .range(0.0..=1.0)
+                            .speed(0.01)
+                            .fixed_decimals(2),
+                    );
+                    ui.end_row();
+
                     // ── Used by Jobs ──────────────────────────────────────────
                     let (add, rem) = accordion::detail_link_row(
                         ui,

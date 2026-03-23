@@ -18,6 +18,10 @@ pub struct GainsState {
     pub scroll_to_id: Option<Uuid>,
 }
 
+fn default_importance() -> f32 {
+    0.5
+}
+
 /// A single customer gain entry.
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
 pub struct Gain {
@@ -26,6 +30,9 @@ pub struct Gain {
     pub name: String,
     pub description: String,
     pub notes: String,
+    /// Customer-perceived importance weight (0.0–1.0).
+    #[serde(default = "default_importance")]
+    pub importance: f32,
     /// Whether this row is expanded in accordion mode (UI state, not persisted).
     #[serde(skip)]
     pub expanded: bool,

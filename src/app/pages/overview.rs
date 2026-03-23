@@ -39,12 +39,12 @@ fn build_directed_adj(app: &App) -> (HashMap<Uuid, Vec<Uuid>>, HashMap<Uuid, Vec
         edge(fid, prid);
     }
     // GainCreator → Gain  (cross-page: value prop side → customer side)
-    for &(gain_id, gcid) in &vp.gain_gain_creator_links {
-        edge(gcid, gain_id);
+    for ann in &vp.gain_creator_annotations {
+        edge(ann.reliever_or_creator_id, ann.pain_or_gain_id);
     }
     // PainRelief → Pain
-    for &(pain_id, prid) in &vp.pain_pain_relief_links {
-        edge(prid, pain_id);
+    for ann in &vp.pain_relief_annotations {
+        edge(ann.reliever_or_creator_id, ann.pain_or_gain_id);
     }
     // Gain → Job
     for &(gain_id, job_id) in &cs.job_gain_links {
@@ -105,20 +105,20 @@ fn product_covered_gains_pains(product_id: Uuid, app: &App) -> (HashSet<Uuid>, H
         .map(|(_, prid)| *prid)
         .collect();
 
-    // Gains linked to those GainCreators (gain_gain_creator_links: (gain_id, gc_id))
+    // Gains linked to those GainCreators
     let gains: HashSet<Uuid> = vp
-        .gain_gain_creator_links
+        .gain_creator_annotations
         .iter()
-        .filter(|(_, gcid)| gain_creators.contains(gcid))
-        .map(|(gain_id, _)| *gain_id)
+        .filter(|ann| gain_creators.contains(&ann.reliever_or_creator_id))
+        .map(|ann| ann.pain_or_gain_id)
         .collect();
 
-    // Pains linked to those PainReliefs (pain_pain_relief_links: (pain_id, pr_id))
+    // Pains linked to those PainReliefs
     let pains: HashSet<Uuid> = vp
-        .pain_pain_relief_links
+        .pain_relief_annotations
         .iter()
-        .filter(|(_, prid)| pain_reliefs.contains(prid))
-        .map(|(pain_id, _)| *pain_id)
+        .filter(|ann| pain_reliefs.contains(&ann.reliever_or_creator_id))
+        .map(|ann| ann.pain_or_gain_id)
         .collect();
 
     (gains, pains)

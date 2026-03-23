@@ -3,6 +3,38 @@ use crate::app::App;
 use eframe::egui;
 use std::collections::HashSet;
 use uuid::Uuid;
+
+// ── Value classification types ─────────────────────────────────────────────────
+
+/// Whether a solution is a minimum requirement or a source of competitive advantage.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
+pub enum ValueType {
+    /// Minimum requirement to be viable — binary / qualifying.
+    TableStake,
+    /// Creates competitive advantage — gradual / comparable.
+    #[default]
+    Differentiator,
+}
+
+impl ValueType {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::TableStake => "Table Stake",
+            Self::Differentiator => "Differentiator",
+        }
+    }
+}
+
+/// Annotated link between a Pain/Gain node and its Reliever/Creator.
+/// Replaces the bare `(Uuid, Uuid)` tuples in [`ValuePropPage`].
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ValueAnnotation {
+    pub pain_or_gain_id: Uuid,
+    pub reliever_or_creator_id: Uuid,
+    pub value_type: ValueType,
+    /// How well this reliever/creator addresses the pain/gain (0.0–1.0).
+    pub strength: f32,
+}
 mod side_panel;
 pub use side_panel::product_sidepanel;
 pub mod products_window;
@@ -39,15 +71,15 @@ pub struct ValuePropPage {
     /// Many-to-many links between features and pain relief items.
     /// Each entry is `(feature_id, pain_relief_id)`.
     pub feature_pain_relief_links: Vec<(Uuid, Uuid)>,
-    /// Many-to-many links between pains and pain relief items.
-    /// Each entry is `(pain_id, pain_relief_id)`.
-    pub pain_pain_relief_links: Vec<(Uuid, Uuid)>,
+    /// Annotated many-to-many links between pains and pain relief items.
+    #[serde(default)]
+    pub pain_relief_annotations: Vec<ValueAnnotation>,
     /// Many-to-many links between features and gain creators.
     /// Each entry is `(feature_id, gain_creator_id)`.
     pub feature_gain_creator_links: Vec<(Uuid, Uuid)>,
-    /// Many-to-many links between gains and gain creators.
-    /// Each entry is `(gain_id, gain_creator_id)`.
-    pub gain_gain_creator_links: Vec<(Uuid, Uuid)>,
+    /// Annotated many-to-many links between gains and gain creators.
+    #[serde(default)]
+    pub gain_creator_annotations: Vec<ValueAnnotation>,
 }
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]
