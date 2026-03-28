@@ -1,6 +1,7 @@
 use eframe::egui;
 use uuid::Uuid;
 
+/// Width of the resize drag handle between the name and description columns.
 const DRAG_HANDLE_W: f32 = 6.0;
 /// Width reserved for the expand/collapse arrow button column.
 const ARROW_COLUMN_W: f32 = 28.0;
@@ -10,16 +11,25 @@ pub(crate) const ROW_H: f32 = 20.0;
 /// Width of a single action button (e.g. detail-panel toggle, delete).
 const ACTION_BTN_W: f32 = 36.0;
 
-/// Shared hover-highlight colours used across page views.
+/// Fill colour for destructive-action buttons such as the delete confirmation button.
+const DANGER_RED: egui::Color32 = egui::Color32::from_rgb(180, 40, 40);
+/// Icon colour for unlink (✕) buttons — softer than `DANGER_RED` since removing
+/// a link is less severe than deleting an entity.
+const UNLINK_RED: egui::Color32 = egui::Color32::from_rgb(200, 60, 60);
+
+/// Hover-highlight colour for pain-related entities (warm red, low opacity).
 pub fn color_pain() -> egui::Color32 {
     egui::Color32::from_rgba_unmultiplied(220, 80, 80, 40)
 }
+/// Hover-highlight colour for gain-related entities (soft green, low opacity).
 pub fn color_gain() -> egui::Color32 {
     egui::Color32::from_rgba_unmultiplied(80, 200, 120, 40)
 }
+/// Hover-highlight colour for job entities (muted purple, low opacity).
 pub fn color_job() -> egui::Color32 {
     egui::Color32::from_rgba_unmultiplied(160, 100, 220, 40)
 }
+/// Hover-highlight colour for customer segment entities (muted blue, low opacity).
 pub fn color_segment() -> egui::Color32 {
     egui::Color32::from_rgba_unmultiplied(60, 140, 220, 40)
 }
@@ -92,6 +102,11 @@ pub fn header(ui: &mut egui::Ui, name_label: &str) {
 /// between frames. The `show` closure receives `&mut egui::Ui` and a
 /// `&mut Uuid` selection value to pass to `selectable_value` calls.
 /// Returns `Some(uuid)` the frame the user makes a pick, `None` otherwise.
+///
+/// `Uuid::nil()` (all-zeroes) is used as the "nothing selected yet" sentinel
+/// because egui temp storage requires a concrete type, not `Option<T>`.
+/// Real entity UUIDs are always `Uuid::new_v4()` (random), so a nil UUID
+/// will never collide with a legitimate selection.
 pub fn link_combo_pick(
     ui: &mut egui::Ui,
     key: egui::Id,
@@ -194,7 +209,7 @@ pub fn delete_dialog(ctx: &egui::Context, title: &str, item_name: &str) -> (bool
                         egui::Button::new(
                             egui::RichText::new("Delete").color(egui::Color32::WHITE),
                         )
-                        .fill(egui::Color32::from_rgb(180, 40, 40)),
+                        .fill(DANGER_RED),
                     )
                     .clicked()
                 {
@@ -234,12 +249,8 @@ pub fn panel_toggle_button(ui: &mut egui::Ui, is_open: bool) -> bool {
 /// Small red ✕ button used to remove a link between two entities.
 pub fn unlink_button(ui: &mut egui::Ui) -> egui::Response {
     ui.add(
-        egui::Button::new(
-            egui::RichText::new("✕")
-                .small()
-                .color(egui::Color32::from_rgb(200, 60, 60)),
-        )
-        .fill(egui::Color32::TRANSPARENT),
+        egui::Button::new(egui::RichText::new("✕").small().color(UNLINK_RED))
+            .fill(egui::Color32::TRANSPARENT),
     )
     .on_hover_text("Remove link")
 }

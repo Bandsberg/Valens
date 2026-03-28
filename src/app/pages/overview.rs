@@ -8,6 +8,13 @@ use super::accordion::{
     scale_color,
 };
 
+/// Cell colour used in the fit matrix when all Table Stakes for a product-segment
+/// pair are met (product is viable for this segment).
+const TABLE_STAKE_MET: egui::Color32 = egui::Color32::from_rgb(80, 160, 80);
+/// Cell colour used in the fit matrix when one or more Table Stakes are below
+/// the minimum strength threshold (product viability at risk).
+const TABLE_STAKE_UNMET: egui::Color32 = egui::Color32::from_rgb(200, 60, 60);
+
 /// The chain runs left-to-right across the overview columns:
 ///   Products → Features → GainCreators/PainReliefs → Gains/Pains → Jobs → Segments
 ///
@@ -429,12 +436,10 @@ fn show_fit_matrix(app: &App, ui: &mut egui::Ui) {
                     let response = ui.vertical(|ui| {
                         ui.label(&fit_text);
                         if ts_total > 0 {
-                            // Green = all table stakes met (product is viable).
-                            // Red   = one or more table stakes below minimum strength.
                             let ts_color = if ts_met == ts_total {
-                                egui::Color32::from_rgb(80, 160, 80)
+                                TABLE_STAKE_MET
                             } else {
-                                egui::Color32::from_rgb(200, 60, 60)
+                                TABLE_STAKE_UNMET
                             };
                             ui.label(
                                 egui::RichText::new(format!("TS: {ts_met}/{ts_total}"))

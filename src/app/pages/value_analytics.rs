@@ -16,6 +16,14 @@ pub const TABLE_STAKE_MIN_STRENGTH: f32 = 0.7;
 /// genuine source of competitive advantage worth highlighting.
 pub const DIFFERENTIATOR_STRONG_THRESHOLD: f32 = 0.7;
 
+/// Fallback importance used when a pain or gain entity cannot be found in
+/// state (e.g. a link table references an entity that was deleted).
+///
+/// Using `0.0` would silently zero-weight the orphaned need; using this
+/// mid-range value keeps it visible in the score at half weight so the
+/// gap is not hidden from the user.
+pub const DEFAULT_NEED_IMPORTANCE: f32 = 0.5;
+
 // ── Core types ────────────────────────────────────────────────────────────────
 
 /// Coverage descriptor for a single pain or gain relative to a product.
@@ -189,17 +197,13 @@ pub fn weighted_fit_score(product_id: Uuid, segment_id: Uuid, app: &App) -> f32 
     let mut weight_sum = 0.0_f32;
     let mut weighted_strength_sum = 0.0_f32;
 
-    // Default importance 0.5 ("medium") is used when a pain/gain entity can't
-    // be found in state — defensive against stale link tables referencing
-    // deleted entities. 0.0 would silently zero-weight the need; 0.5 keeps
-    // it visible in the score at half weight.
     for &pid in &all_pain_ids {
         let importance = cs
             .pains_state
             .pains
             .iter()
             .find(|p| p.id == pid)
-            .map_or(0.5, |p| p.importance);
+            .map_or(DEFAULT_NEED_IMPORTANCE, |p| p.importance);
         let strength = best_strength_for_need(pid, true, product_id, app).map_or(0.0, |(s, _)| s);
         weight_sum += importance;
         weighted_strength_sum += importance * strength;
@@ -211,7 +215,7 @@ pub fn weighted_fit_score(product_id: Uuid, segment_id: Uuid, app: &App) -> f32 
             .gains
             .iter()
             .find(|g| g.id == gid)
-            .map_or(0.5, |g| g.importance); // same 0.5 fallback as pains above
+            .map_or(DEFAULT_NEED_IMPORTANCE, |g| g.importance);
         let strength = best_strength_for_need(gid, false, product_id, app).map_or(0.0, |(s, _)| s);
         weight_sum += importance;
         weighted_strength_sum += importance * strength;

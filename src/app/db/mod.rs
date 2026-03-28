@@ -291,6 +291,12 @@ fn load_gains(conn: &Connection) -> Result<Vec<Gain>, rusqlite::Error> {
     .collect()
 }
 
+/// Loads a two-column UUID link table into a `Vec<(Uuid, Uuid)>`.
+///
+/// `col_a` maps to the **first** element of each tuple; `col_b` to the
+/// **second**. Callers choose the column order to match the field layout of
+/// the target `Vec` in `App` (e.g. `(product_id, feature_id)` vs
+/// `(feature_id, pain_relief_id)`).
 fn load_links(
     conn: &Connection,
     table: &str,

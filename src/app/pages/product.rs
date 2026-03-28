@@ -10,10 +10,10 @@ use uuid::Uuid;
 ///
 /// This classification changes how `strength` is interpreted in scoring
 /// (see `value_analytics::compute_gap_groups` and `weighted_fit_score`):
-/// - `TableStake`: must reach `TABLE_STAKE_MIN_STRENGTH` (0.7) or the product
+/// - `TableStake`: must reach `value_analytics::TABLE_STAKE_MIN_STRENGTH` or the product
 ///   is flagged as incomplete on that need — viability is at risk.
 /// - `Differentiator`: contributes proportionally to the fit score; stands out
-///   as a competitive advantage when strength ≥ `DIFFERENTIATOR_STRONG_THRESHOLD` (0.7).
+///   as a competitive advantage when strength ≥ `value_analytics::DIFFERENTIATOR_STRONG_THRESHOLD`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum ValueType {
     /// Minimum requirement to be viable — binary / qualifying.
@@ -38,9 +38,7 @@ impl ValueType {
 pub struct ValueAnnotation {
     pub pain_or_gain_id: Uuid,
     pub reliever_or_creator_id: Uuid,
-    /// Classification that changes how strength is interpreted in scoring:
-    /// - `TableStake`: must reach `TABLE_STAKE_MIN_STRENGTH` to count as viable.
-    /// - `Differentiator`: contributes proportionally to the weighted fit score.
+    /// See [`ValueType`] for how this changes the scoring interpretation.
     pub value_type: ValueType,
     /// How well this reliever/creator addresses the pain/gain (0.0–1.0).
     /// Used as a direct multiplier in the weighted fit-score formula.
