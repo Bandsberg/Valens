@@ -79,11 +79,6 @@ use value_quadrant_window::show_value_quadrant_window;
 
 // ── Page structs ──────────────────────────────────────────────────────────────
 
-/// This is a good sentence to remember about products
-/// Products deliver value by enabling capabilities,
-/// which users experience through journeys, which are realised via features,
-/// which are implemented through user stories.
-
 #[derive(Default, serde::Deserialize, serde::Serialize)]
 pub struct ValuePropPage {
     // UI state — serialized via eframe::Storage so window toggles survive restarts.
@@ -213,6 +208,13 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     ctx.data_mut(|d| d.remove::<Uuid>(hovered_key));
 
     let highlighted = highlighted_ids(prev_hovered, app);
+    let score = |id: Uuid| {
+        if highlighted.contains(&id) {
+            1.0_f32
+        } else {
+            0.0
+        }
+    };
 
     ui.columns(2, |cols| {
         let [left, right] = cols else { return };
@@ -226,11 +228,7 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 accordion::display_name(&product.name, "Unnamed product"),
                 product.id,
                 accordion::color_job(),
-                if highlighted.contains(&product.id) {
-                    1.0
-                } else {
-                    0.0
-                },
+                score(product.id),
                 hovered_key,
             );
         }
@@ -244,11 +242,7 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 accordion::display_name(&item.name, "Unnamed gain creator"),
                 item.id,
                 accordion::color_gain(),
-                if highlighted.contains(&item.id) {
-                    1.0
-                } else {
-                    0.0
-                },
+                score(item.id),
                 hovered_key,
             );
         }
@@ -262,11 +256,7 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 accordion::display_name(&item.name, "Unnamed pain relief"),
                 item.id,
                 accordion::color_pain(),
-                if highlighted.contains(&item.id) {
-                    1.0
-                } else {
-                    0.0
-                },
+                score(item.id),
                 hovered_key,
             );
         }

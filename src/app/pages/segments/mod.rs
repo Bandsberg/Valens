@@ -149,6 +149,13 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     ctx.data_mut(|d| d.remove::<Uuid>(hovered_key));
 
     let highlighted = highlighted_ids(prev_hovered, app);
+    let score = |id: Uuid| {
+        if highlighted.contains(&id) {
+            1.0_f32
+        } else {
+            0.0
+        }
+    };
 
     ui.columns(2, |cols| {
         let [left, right] = cols else { return };
@@ -162,11 +169,7 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 display_name(&item.name, "Unnamed gain"),
                 item.id,
                 color_gain(),
-                if highlighted.contains(&item.id) {
-                    1.0
-                } else {
-                    0.0
-                },
+                score(item.id),
                 hovered_key,
             );
         }
@@ -180,11 +183,7 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 display_name(&item.name, "Unnamed pain"),
                 item.id,
                 color_pain(),
-                if highlighted.contains(&item.id) {
-                    1.0
-                } else {
-                    0.0
-                },
+                score(item.id),
                 hovered_key,
             );
         }
@@ -198,11 +197,7 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 display_name(&item.name, "Unnamed job"),
                 item.id,
                 color_job(),
-                if highlighted.contains(&item.id) {
-                    1.0
-                } else {
-                    0.0
-                },
+                score(item.id),
                 hovered_key,
             );
         }
