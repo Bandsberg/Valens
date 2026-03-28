@@ -4,6 +4,9 @@
 # trunk output folder
 dist
 
+# macOS app bundle build output (scripts/bundle.sh)
+build
+
 # Rust compile target directories:
 target
 target_ra

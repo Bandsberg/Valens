@@ -91,5 +91,31 @@ Schema changes use append-only versioned SQL files. **Never modify or reorder ex
 
 Use the `/db-migration` skill to scaffold all of this automatically.
 
+### Release Workflow
+
+Releases are triggered by typing `/release patch|minor|major` in a Claude Code session.
+Claude Code handles the entire process — no manual steps needed.
+
+**To release:**
+1. Open Claude Code in this repo (`claude` in the terminal from the repo root)
+2. Type `/release patch` (or `minor` / `major` depending on what changed)
+3. Claude Code bumps the version, runs all checks, commits, tags, builds the `.app`, and
+   installs it to `/Applications/Valens.app`
+4. Quit the running app (if open) and relaunch from `/Applications/`
+
+**What "patch / minor / major" means:**
+- `patch` — bug fixes, polish, small tweaks (0.1.0 → 0.1.1)
+- `minor` — new features or meaningful new capabilities (0.1.0 → 0.2.0)
+- `major` — large milestones or breaking data changes (0.1.0 → 1.0.0)
+
+**Rollback**: The previous `.app` is always backed up to `/Applications/Valens.app.bak`.
+To roll back manually: `rm -rf /Applications/Valens.app && mv /Applications/Valens.app.bak /Applications/Valens.app`
+
+**First launch after install**: If macOS Gatekeeper complains, right-click `Valens.app` in
+`/Applications/` and choose Open. This is a one-time prompt; subsequent launches work normally.
+
+**Build script only** (no version bump, no git): `bash scripts/bundle.sh` builds and installs
+the current HEAD without touching git. Useful for testing a build mid-development.
+
 ### Code Quality
 The project enforces strict Clippy lints (see `Cargo.toml` `[lints.clippy]`) and denies `unsafe_code`. CI runs on macOS (arm64 + x86_64), Linux (musl + ARM), and Windows. Spell checking via `.typos.toml`.
