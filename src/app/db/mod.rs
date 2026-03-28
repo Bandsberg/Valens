@@ -154,6 +154,12 @@ impl Database {
 
 // ── Load helpers ──────────────────────────────────────────────────────────────
 
+/// Parses a UUID from a database column value.
+///
+/// Panics rather than propagating `Result` because the schema enforces that
+/// every UUID column is populated by our own `save()` function (which always
+/// writes `Uuid::to_string()`). An unparseable value means the database file
+/// has been manually corrupted — there is no safe recovery path.
 #[expect(
     clippy::needless_pass_by_value,
     reason = "callers pass owned String from row.get()"
@@ -311,6 +317,11 @@ fn load_links(
     .collect()
 }
 
+/// Loads a `ValueAnnotation` table (`pain_or_gain_id`, `reliever_or_creator_id`,
+/// `value_type`, `strength`) into a `Vec<ValueAnnotation>`.
+///
+/// `value_type` is stored as a TEXT literal: `"TableStake"` or `"Differentiator"`.
+/// This must stay in sync with the strings in [`save_annotations`].
 fn load_annotations(
     conn: &Connection,
     table: &str,
@@ -322,6 +333,8 @@ fn load_annotations(
     let mut stmt = conn.prepare(&sql)?;
     stmt.query_map([], |row| {
         let vt: String = row.get(2)?;
+        // Strings must match what save_annotations writes. Unknown strings
+        // default to Differentiator so old DBs degrade gracefully.
         let value_type = match vt.as_str() {
             "TableStake" => ValueType::TableStake,
             _ => ValueType::Differentiator,
@@ -499,6 +512,7 @@ fn save_annotations(
     );
     let mut stmt = tx.prepare(&sql)?;
     for a in annotations {
+        // Literal strings must stay in sync with the match in load_annotations.
         let vt = match a.value_type {
             ValueType::TableStake => "TableStake",
             ValueType::Differentiator => "Differentiator",

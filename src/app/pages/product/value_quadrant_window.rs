@@ -91,6 +91,8 @@ fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     }
 
     // Dots
+    // DOT_RADIUS: chosen to be visible on a 440 px canvas without overlapping neighbours.
+    // HOVER_RADIUS: expanded hit area so small dots are easy to hover on high-DPI screens.
     const DOT_RADIUS: f32 = 6.0;
     const HOVER_RADIUS: f32 = 10.0;
     let hover_pos = response.hover_pos();
@@ -202,11 +204,18 @@ fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     });
 }
 
-/// Maps (importance, strength) → canvas pixel position.
-/// Importance runs left→right; strength runs bottom→top (egui Y is inverted).
+/// Maps `(importance, strength)` values (both 0.0–1.0) to a pixel position
+/// within `rect`.
+///
+/// - Importance: 0.0 → left edge, 1.0 → right edge.
+/// - Strength: 0.0 → bottom edge, 1.0 → top edge (egui Y axis is inverted,
+///   so high strength maps to a *smaller* Y coordinate).
+///
+/// A small margin keeps dots off the very edge of the canvas background.
 fn to_screen(rect: egui::Rect, importance: f32, strength: f32) -> egui::Pos2 {
-    let margin = 16.0;
-    let inner = rect.shrink(margin);
+    // Pixels of padding so dots never clip the canvas border.
+    const CANVAS_MARGIN: f32 = 16.0;
+    let inner = rect.shrink(CANVAS_MARGIN);
     egui::pos2(
         inner.min.x + importance.clamp(0.0, 1.0) * inner.width(),
         inner.max.y - strength.clamp(0.0, 1.0) * inner.height(),

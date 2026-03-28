@@ -1,3 +1,17 @@
+//! Scoring and gap-analysis logic for the Value Proposition design framework.
+//!
+//! ## Threshold values
+//!
+//! All four thresholds are intentionally hand-tuned rather than derived from data:
+//! - `STRENGTH_WEAK_THRESHOLD` (0.5) — the midpoint of the 0–1 scale; any
+//!   coverage below this is "doing something but not enough".
+//! - `TABLE_STAKE_MIN_STRENGTH` and `DIFFERENTIATOR_STRONG_THRESHOLD` (both 0.7)
+//!   — the same value simplifies UX communication: "70% or above means ready".
+//!   Table Stakes use it as a viability floor; Differentiators use it as an
+//!   excellence ceiling.
+//! - `DEFAULT_NEED_IMPORTANCE` (0.5) — neutral mid-range so orphaned needs
+//!   remain visible rather than silently disappearing from the score.
+
 use crate::app::App;
 use uuid::Uuid;
 
@@ -28,6 +42,9 @@ pub const DEFAULT_NEED_IMPORTANCE: f32 = 0.5;
 
 /// Coverage descriptor for a single pain or gain relative to a product.
 pub struct NeedCoverage {
+    /// Stable identifier for this need. Not currently rendered, but kept so
+    /// future UI interactions (e.g. clicking a quadrant dot to jump to the
+    /// entity detail panel) have a stable key to work with.
     #[expect(dead_code)]
     pub id: Uuid,
     pub name: String,

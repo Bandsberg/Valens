@@ -1,3 +1,16 @@
+//! Value Proposition page — products, features, and the links that connect them
+//! to customer pains and gains.
+//!
+//! ## Entity graph
+//!
+//! ```text
+//! Product ──▶ Feature ──▶ PainRelief ──▶ Pain   (pain_relief_annotations)
+//!                    └──▶ GainCreator ──▶ Gain   (gain_creator_annotations)
+//! ```
+//!
+//! Link tables store bare `(id_a, id_b)` tuples; annotation tables add
+//! [`ValueType`] and `strength` metadata on top of each link.
+
 use super::accordion::{self, label_with_hover_id};
 use crate::app::App;
 use eframe::egui;
@@ -213,7 +226,11 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 accordion::display_name(&product.name, "Unnamed product"),
                 product.id,
                 accordion::color_job(),
-                f32::from(highlighted.contains(&product.id)),
+                if highlighted.contains(&product.id) {
+                    1.0
+                } else {
+                    0.0
+                },
                 hovered_key,
             );
         }
@@ -227,7 +244,11 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 accordion::display_name(&item.name, "Unnamed gain creator"),
                 item.id,
                 accordion::color_gain(),
-                f32::from(highlighted.contains(&item.id)),
+                if highlighted.contains(&item.id) {
+                    1.0
+                } else {
+                    0.0
+                },
                 hovered_key,
             );
         }
@@ -241,7 +262,11 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 accordion::display_name(&item.name, "Unnamed pain relief"),
                 item.id,
                 accordion::color_pain(),
-                f32::from(highlighted.contains(&item.id)),
+                if highlighted.contains(&item.id) {
+                    1.0
+                } else {
+                    0.0
+                },
                 hovered_key,
             );
         }

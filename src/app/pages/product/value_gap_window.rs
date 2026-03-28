@@ -1,5 +1,5 @@
 use crate::app::App;
-use crate::app::pages::accordion::{color_gain, color_pain};
+use crate::app::pages::accordion::{TABLE_STAKE_MET, TABLE_STAKE_UNMET, color_gain, color_pain};
 use crate::app::pages::value_analytics::{self, NeedCoverage, TABLE_STAKE_MIN_STRENGTH};
 use eframe::egui;
 use uuid::Uuid;
@@ -124,9 +124,9 @@ fn show_contents(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.label("Table Stake completeness:");
             let bar_color = if ts_met == ts_total {
-                egui::Color32::from_rgb(80, 160, 80)
+                TABLE_STAKE_MET
             } else {
-                egui::Color32::from_rgb(200, 60, 60)
+                TABLE_STAKE_UNMET
             };
             ui.add(
                 egui::ProgressBar::new(fraction)

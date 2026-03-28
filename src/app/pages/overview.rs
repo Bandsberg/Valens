@@ -4,16 +4,9 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use uuid::Uuid;
 
 use super::accordion::{
-    color_gain, color_job, color_pain, color_segment, display_name, label_with_hover_id,
-    scale_color,
+    TABLE_STAKE_MET, TABLE_STAKE_UNMET, color_gain, color_job, color_pain, color_segment,
+    display_name, label_with_hover_id, scale_color,
 };
-
-/// Cell colour used in the fit matrix when all Table Stakes for a product-segment
-/// pair are met (product is viable for this segment).
-const TABLE_STAKE_MET: egui::Color32 = egui::Color32::from_rgb(80, 160, 80);
-/// Cell colour used in the fit matrix when one or more Table Stakes are below
-/// the minimum strength threshold (product viability at risk).
-const TABLE_STAKE_UNMET: egui::Color32 = egui::Color32::from_rgb(200, 60, 60);
 
 /// The chain runs left-to-right across the overview columns:
 ///   Products → Features → GainCreators/PainReliefs → Gains/Pains → Jobs → Segments
@@ -28,6 +21,10 @@ fn build_directed_adj(app: &App) -> (HashMap<Uuid, Vec<Uuid>>, HashMap<Uuid, Vec
     let mut fwd: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
     let mut bwd: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
 
+    // `edge(a, b)` records a directed link from `a` to `b` in the forward graph
+    // (Products → … → Segments) and from `b` to `a` in the backward graph
+    // (Segments → … → Products). Both directions are needed so BFS started
+    // from *any* node can traverse the full chain in either direction.
     let mut edge = |a: Uuid, b: Uuid| {
         fwd.entry(a).or_default().push(b);
         bwd.entry(b).or_default().push(a);

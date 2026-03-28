@@ -18,6 +18,10 @@ pub struct PainsState {
     pub scroll_to_id: Option<Uuid>,
 }
 
+/// Default importance for new pains: neutral mid-range (0.5) so the user is
+/// prompted to set a real value rather than having needs silently zero-weighted.
+/// A function is required here because serde's `default = "…"` attribute takes
+/// a function path, not an expression or constant.
 fn default_importance() -> f32 {
     0.5
 }

@@ -18,7 +18,7 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
     eframe::run_native(
-        "eframe template",
+        "Valens",
         native_options,
         Box::new(|cc| Ok(Box::new(valens::App::new(cc, valens::Mode::Production)))),
     )

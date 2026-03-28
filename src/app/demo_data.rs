@@ -1,3 +1,13 @@
+//! Pre-populated demo data used in web (WASM / `Mode::Demo`) builds.
+//!
+//! All entity UUIDs are **fixed** (not `Uuid::new_v4()`) so that cross-entity
+//! link tables stored from a previous browser session remain valid after a
+//! page reload. Randomly generated UUIDs would silently orphan every stored
+//! link the moment the demo data was rebuilt.
+//!
+//! The data models a fictional fintech `BaaS` vendor to provide a realistic
+//! worked example of the Value Proposition design framework.
+
 use std::str::FromStr as _;
 
 use crate::App;

@@ -11,6 +11,12 @@ pub(crate) const ROW_H: f32 = 20.0;
 /// Width of a single action button (e.g. detail-panel toggle, delete).
 const ACTION_BTN_W: f32 = 36.0;
 
+/// Cell / progress-bar colour for Table Stake indicators when all stakes are met.
+pub const TABLE_STAKE_MET: egui::Color32 = egui::Color32::from_rgb(80, 160, 80);
+/// Cell / progress-bar colour for Table Stake indicators when one or more stakes
+/// are below the minimum strength threshold (product viability at risk).
+pub const TABLE_STAKE_UNMET: egui::Color32 = egui::Color32::from_rgb(200, 60, 60);
+
 /// Fill colour for destructive-action buttons such as the delete confirmation button.
 const DANGER_RED: egui::Color32 = egui::Color32::from_rgb(180, 40, 40);
 /// Icon colour for unlink (✕) buttons — softer than `DANGER_RED` since removing
