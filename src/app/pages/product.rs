@@ -75,25 +75,34 @@ use value_quadrant_window::show_value_quadrant_window;
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]
 pub struct ValuePropPage {
+    // UI state — serialized via eframe::Storage so window toggles survive restarts.
     product_windows: ProductWindows,
+    // Entity data — loaded from SQLite on native; not serialized to eframe::Storage.
+    #[serde(skip)]
     pub products_state: ProductsState,
+    #[serde(skip)]
     pub features_state: FeaturesState,
+    #[serde(skip)]
     pub pain_relief_state: PainReliefState,
+    #[serde(skip)]
     pub gain_creator_state: GainCreatorState,
     /// Many-to-many links between products and features.
     /// Each entry is `(product_id, feature_id)`.
+    #[serde(skip)]
     pub product_feature_links: Vec<(Uuid, Uuid)>,
     /// Many-to-many links between features and pain relief items.
     /// Each entry is `(feature_id, pain_relief_id)`.
+    #[serde(skip)]
     pub feature_pain_relief_links: Vec<(Uuid, Uuid)>,
     /// Annotated many-to-many links between pains and pain relief items.
-    #[serde(default)]
+    #[serde(skip)]
     pub pain_relief_annotations: Vec<ValueAnnotation>,
     /// Many-to-many links between features and gain creators.
     /// Each entry is `(feature_id, gain_creator_id)`.
+    #[serde(skip)]
     pub feature_gain_creator_links: Vec<(Uuid, Uuid)>,
     /// Annotated many-to-many links between gains and gain creators.
-    #[serde(default)]
+    #[serde(skip)]
     pub gain_creator_annotations: Vec<ValueAnnotation>,
 }
 

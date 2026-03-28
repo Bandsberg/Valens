@@ -1,8 +1,6 @@
 use std::str::FromStr as _;
 
 use crate::App;
-use crate::app::Tab;
-use crate::app::ValuePropPage;
 use crate::app::pages::CustomerSegment;
 use crate::app::pages::Gain;
 use crate::app::pages::Job;
@@ -33,11 +31,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let mut demo_app: App = if let Some(storage) = cc.storage {
         eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
     } else {
-        App {
-            tab: Tab::ValueProp,
-            valueprop_page: ValuePropPage::default(),
-            customer_segment_page: Default::default(),
-        }
+        App::default()
     };
 
     // ── Demo products ─────────────────────────────────────────────────────────

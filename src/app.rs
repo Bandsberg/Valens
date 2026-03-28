@@ -5,6 +5,8 @@ use pages::{
 };
 mod demo_data;
 use demo_data::load_demo_data;
+#[cfg(not(target_arch = "wasm32"))]
+mod db;
 
 #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
 pub enum Mode {
@@ -19,13 +21,18 @@ enum Tab {
     Overview,
 }
 
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
+/// We derive Deserialize/Serialize so we can persist UI state (tab, window toggles) on shutdown.
+/// Entity data (products, features, etc.) is persisted in `SQLite` — those fields are serde-skipped.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct App {
     tab: Tab,
     valueprop_page: ValuePropPage,
     customer_segment_page: CustomerSegmentPage,
+    /// Open handle to the `SQLite` database (native only, not serialized).
+    #[cfg(not(target_arch = "wasm32"))]
+    #[serde(skip)]
+    db: Option<db::Database>,
 }
 
 impl Default for App {
@@ -34,6 +41,8 @@ impl Default for App {
             tab: Tab::ValueProp,
             valueprop_page: ValuePropPage::default(),
             customer_segment_page: CustomerSegmentPage::default(),
+            #[cfg(not(target_arch = "wasm32"))]
+            db: None,
         }
     }
 }
@@ -44,11 +53,29 @@ impl App {
         match mode {
             Mode::Demo => load_demo_data(cc),
             Mode::Production => {
-                // Load previous app state (if any).
-                // Note that you must enable the `persistence` feature for this to work.
-                cc.storage
-                    .and_then(|storage| eframe::get_value(storage, eframe::APP_KEY))
-                    .unwrap_or_default()
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    let db_path = eframe::storage_dir("valens")
+                        .unwrap_or_else(|| std::path::PathBuf::from("."))
+                        .join("valens.db");
+                    let database = db::Database::open(&db_path).expect("Failed to open database");
+                    // Load UI state (tab, window toggles) from eframe::Storage.
+                    let mut app: Self = cc
+                        .storage
+                        .and_then(|s| eframe::get_value(s, eframe::APP_KEY))
+                        .unwrap_or_default();
+                    // Populate entity data from SQLite.
+                    database
+                        .load_into(&mut app)
+                        .expect("Failed to load data from database");
+                    app.db = Some(database);
+                    app
+                }
+                #[cfg(target_arch = "wasm32")]
+                {
+                    // Production mode is native-only; this branch is unreachable in practice.
+                    Self::default()
+                }
             }
         }
     }
@@ -57,7 +84,16 @@ impl App {
 impl eframe::App for App {
     /// Called by the framework to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        // Persist UI state (tab, window toggles).
         eframe::set_value(storage, eframe::APP_KEY, self);
+        // Persist entity data to SQLite.
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(mut database) = self.db.take() {
+            if let Err(e) = database.save(&self.valueprop_page, &self.customer_segment_page) {
+                log::error!("Failed to save data to database: {e}");
+            }
+            self.db = Some(database);
+        }
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.

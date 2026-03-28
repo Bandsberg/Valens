@@ -28,16 +28,25 @@ pub use pains_window::{Pain, PainsState};
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]
 pub struct CustomerSegmentPage {
+    // UI state — serialized via eframe::Storage so window toggles survive restarts.
     customer_windows: CustomerWindows,
+    // Entity data — loaded from SQLite on native; not serialized to eframe::Storage.
+    #[serde(skip)]
     pub segments_state: SegmentsState,
+    #[serde(skip)]
     pub jobs_state: JobsState,
+    #[serde(skip)]
     pub pains_state: PainsState,
+    #[serde(skip)]
     pub gains_state: GainsState,
     /// Many-to-many links between jobs and segments. Each entry is `(job_id, segment_id)`.
+    #[serde(skip)]
     pub segment_job_links: Vec<(Uuid, Uuid)>,
     /// Many-to-many links between pains and jobs. Each entry is `(pain_id, job_id)`.
+    #[serde(skip)]
     pub job_pain_links: Vec<(Uuid, Uuid)>,
     /// Many-to-many links between gains and jobs. Each entry is `(gain_id, job_id)`.
+    #[serde(skip)]
     pub job_gain_links: Vec<(Uuid, Uuid)>,
 }
 
