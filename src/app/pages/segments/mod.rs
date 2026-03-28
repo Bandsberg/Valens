@@ -1,3 +1,18 @@
+//! Customer Segment page — segments, jobs, and the link tables connecting them
+//! to customer pains and gains.
+//!
+//! ## Entity graph
+//!
+//! ```text
+//! Segment ──▶ Job ──▶ Pain   (job_pain_links:  (pain_id, job_id))
+//!                └──▶ Gain   (job_gain_links:  (gain_id, job_id))
+//! ```
+//!
+//! Note: all link tuples put the child/need ID first and the parent ID second
+//! (e.g. `(pain_id, job_id)`), which is the reverse of the value-proposition
+//! side. This reflects the order the DB schema was written and is documented
+//! on each call site.
+
 use crate::app::App;
 use eframe::egui;
 use std::collections::HashSet;
@@ -147,7 +162,11 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 display_name(&item.name, "Unnamed gain"),
                 item.id,
                 color_gain(),
-                f32::from(highlighted.contains(&item.id)),
+                if highlighted.contains(&item.id) {
+                    1.0
+                } else {
+                    0.0
+                },
                 hovered_key,
             );
         }
@@ -161,7 +180,11 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 display_name(&item.name, "Unnamed pain"),
                 item.id,
                 color_pain(),
-                f32::from(highlighted.contains(&item.id)),
+                if highlighted.contains(&item.id) {
+                    1.0
+                } else {
+                    0.0
+                },
                 hovered_key,
             );
         }
@@ -175,7 +198,11 @@ pub fn show_customer(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
                 display_name(&item.name, "Unnamed job"),
                 item.id,
                 color_job(),
-                f32::from(highlighted.contains(&item.id)),
+                if highlighted.contains(&item.id) {
+                    1.0
+                } else {
+                    0.0
+                },
                 hovered_key,
             );
         }

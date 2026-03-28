@@ -6,6 +6,8 @@ use super::model::ProductsState;
 
 use super::super::super::accordion::{self, ROW_H};
 
+/// Minimum pixel height for multiline text-edit fields in the expanded row.
+/// Chosen to display roughly three lines at the default font size.
 const MULTILINE_H: f32 = 60.0;
 
 // ── Accordion table ───────────────────────────────────────────────────────────

@@ -1,5 +1,12 @@
 use crate::app::App;
 use eframe::egui;
+
+/// Renders the Value Proposition right-hand tools panel.
+///
+/// Each checkbox toggles one of the floating editor windows.
+/// The top group contains the core entity editors (Products, Features,
+/// Pain Relief, Gain Creators, Thoughtful Execution); the bottom group
+/// contains the analytical views (Value Gap Analysis, Value Quadrant).
 pub fn product_sidepanel(app: &mut App, ui: &mut egui::Ui) {
     egui::Panel::right("vp_tools_panel")
         .resizable(false)
@@ -8,7 +15,6 @@ pub fn product_sidepanel(app: &mut App, ui: &mut egui::Ui) {
         .show_inside(ui, |ui| {
             ui.heading("Tools");
             ui.separator();
-            // toggles / list / etc
             ui.checkbox(
                 &mut app.valueprop_page.product_windows.products_open,
                 "Products & Services",

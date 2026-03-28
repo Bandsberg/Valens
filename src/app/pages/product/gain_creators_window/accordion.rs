@@ -7,7 +7,9 @@ use super::super::features_window::Feature;
 use super::super::{ValueAnnotation, ValueType};
 use super::model::GainCreatorState;
 
-const MULTILINE_H: f32 = 58.0;
+/// Minimum pixel height for multiline text-edit fields in the expanded row.
+/// Chosen to display roughly three lines at the default font size.
+const MULTILINE_H: f32 = 60.0;
 
 // ── Accordion table ───────────────────────────────────────────────────────────
 
@@ -150,10 +152,11 @@ pub fn show_accordion(
                         None,
                     );
                     if let Some(gid) = add {
-                        // New annotations start at neutral defaults so the
-                        // user can immediately see and adjust them in the
-                        // detail panel. 0.5 strength = "medium"; the default
-                        // ValueType is Differentiator (see ValueType::default).
+                        // New annotations start at neutral defaults so the user
+                        // can immediately see and adjust them in the detail panel.
+                        // strength = 0.5: mid-range, neither "no impact" nor "fully creates".
+                        // value_type = Differentiator: the less-severe default — a Table Stake
+                        // would immediately flag the product as incomplete if strength < 0.7.
                         gain_ann_to_add = Some(ValueAnnotation {
                             pain_or_gain_id: gid,
                             reliever_or_creator_id: id,

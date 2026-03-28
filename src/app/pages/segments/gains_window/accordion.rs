@@ -6,6 +6,8 @@ use super::model::GainsState;
 
 use super::super::super::accordion::{self, ROW_H};
 
+/// Minimum pixel height for multiline text-edit fields in the expanded row.
+/// Chosen to display roughly three lines at the default font size.
 const MULTILINE_H: f32 = 60.0;
 
 #[expect(clippy::too_many_lines)]

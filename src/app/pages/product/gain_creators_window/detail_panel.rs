@@ -29,7 +29,11 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         |f| f.name.as_str(),
     );
 
-    // Snapshot available gains (not yet linked to this creator).
+    // Compute gains not yet linked to this creator, so the "Add a gain…" combo
+    // only shows unlinked options. We cannot reuse `partition_linked` here
+    // because gain-creator links are `ValueAnnotation` objects (with value_type
+    // and strength), not plain `(Uuid, Uuid)` tuples — so we extract the
+    // linked IDs manually and filter the full gains list.
     let linked_gain_ids: Vec<Uuid> = app
         .valueprop_page
         .gain_creator_annotations
@@ -180,7 +184,11 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                     });
 
                     ui.label("Strength:")
-                        .on_hover_text("How well this creator delivers the gain (0 = no impact, 1 = fully delivers). Weights the product–segment fit score.");
+                        .on_hover_text(
+                            "How well this creator delivers the gain (0 = no impact, 1 = fully delivers).\n\
+                             Differentiators: weights the product–segment fit score proportionally.\n\
+                             Table Stakes: must reach 70% or the product is flagged as incomplete."
+                        );
                     ui.add(
                         egui::DragValue::new(&mut cur_strength)
                             .range(0.0..=1.0)

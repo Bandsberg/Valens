@@ -26,7 +26,8 @@ pub struct CustomerSegment {
     pub name: String,
     pub description: String,
     pub notes: String,
-    /// Demographics, behaviours, pain points, etc.
+    /// Free-text description of who belongs to this segment: demographics,
+    /// behaviours, psychographics, and any other distinguishing attributes.
     pub characteristics: String,
     /// Whether this row is expanded in accordion mode (UI state, not persisted).
     #[serde(skip)]

@@ -29,7 +29,11 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         |f| f.name.as_str(),
     );
 
-    // Snapshot available pains (not yet linked to this relief).
+    // Compute pains not yet linked to this relief, so the "Add a pain…" combo
+    // only shows unlinked options. We cannot reuse `partition_linked` here
+    // because pain-relief links are `ValueAnnotation` objects (with value_type
+    // and strength), not plain `(Uuid, Uuid)` tuples — so we extract the
+    // linked IDs manually and filter the full pains list.
     let linked_pain_ids: Vec<Uuid> = app
         .valueprop_page
         .pain_relief_annotations
@@ -180,7 +184,11 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                     });
 
                     ui.label("Strength:")
-                        .on_hover_text("How well this relief addresses the pain (0 = no impact, 1 = fully resolves). Weights the product–segment fit score.");
+                        .on_hover_text(
+                            "How well this relief addresses the pain (0 = no impact, 1 = fully resolves).\n\
+                             Differentiators: weights the product–segment fit score proportionally.\n\
+                             Table Stakes: must reach 70% or the product is flagged as incomplete."
+                        );
                     ui.add(
                         egui::DragValue::new(&mut cur_strength)
                             .range(0.0..=1.0)
