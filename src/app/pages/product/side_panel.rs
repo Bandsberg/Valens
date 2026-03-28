@@ -1,11 +1,11 @@
 use crate::app::App;
 use eframe::egui;
-pub fn product_sidepanel(app: &mut App, ctx: &egui::Context) {
-    egui::SidePanel::right("vp_tools_panel")
+pub fn product_sidepanel(app: &mut App, ui: &mut egui::Ui) {
+    egui::Panel::right("vp_tools_panel")
         .resizable(false)
-        .default_width(160.0)
-        .min_width(160.0)
-        .show(ctx, |ui| {
+        .default_size(160.0)
+        .min_size(160.0)
+        .show_inside(ui, |ui| {
             ui.heading("Tools");
             ui.separator();
             // toggles / list / etc

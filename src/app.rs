@@ -61,15 +61,15 @@ impl eframe::App for App {
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        egui::Panel::top("top_panel").show_inside(ui, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
                 // NOTE: no File->Quit on web pages!
                 let is_web = cfg!(target_arch = "wasm32");
                 if !is_web {
                     ui.menu_button("File", |ui| {
                         if ui.button("Quit").clicked() {
-                            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                            ui.send_viewport_cmd(egui::ViewportCommand::Close);
                         }
                     });
                     ui.add_space(16.0);
@@ -85,20 +85,17 @@ impl eframe::App for App {
 
         // Only the two data-entry tabs have a side panel (Overview is read-only).
         match self.tab {
-            Tab::ValueProp => product_sidepanel(self, ctx),
-            Tab::Customer => customer_sidepanel(self, ctx),
+            Tab::ValueProp => product_sidepanel(self, ui),
+            Tab::Customer => customer_sidepanel(self, ui),
             Tab::Overview => {} // no side panel
         }
 
-        egui::CentralPanel::default().show(ctx, |ui| match self.tab {
-            Tab::ValueProp => {
-                show_product(self, ctx, ui);
-            }
-            Tab::Customer => {
-                show_customer(self, ctx, ui);
-            }
-            Tab::Overview => {
-                show_overview(self, ctx, ui);
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            let ctx = ui.ctx().clone();
+            match self.tab {
+                Tab::ValueProp => show_product(self, &ctx, ui),
+                Tab::Customer => show_customer(self, &ctx, ui),
+                Tab::Overview => show_overview(self, &ctx, ui),
             }
         });
     }
