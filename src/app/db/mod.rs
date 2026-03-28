@@ -168,6 +168,14 @@ fn parse_uuid(s: String) -> Uuid {
     s.parse().expect("database must contain valid UUIDs")
 }
 
+/// Parses a UUID from a nullable database column value.
+///
+/// Returns `None` for SQL `NULL` (the column was absent), or for any value
+/// that fails to parse. The latter silently downgrades to `None` rather than
+/// panicking because nullable UUID columns (like `parent_id`) should only ever
+/// contain `NULL` or a well-formed UUID written by our own `save()` — so a
+/// parse failure here also indicates manual DB corruption, and `None` is a
+/// safe fallback (the entity simply appears as a top-level item).
 fn parse_uuid_opt(s: Option<String>) -> Option<Uuid> {
     let v = s?;
     v.parse().ok()

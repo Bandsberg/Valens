@@ -15,8 +15,10 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
         return;
     };
 
-    // If this is a sub-segment, resolve the parent name now — before any
-    // mutable borrows of `segments_state.segments` are taken.
+    // If this is a sub-segment, resolve the parent name before taking any
+    // mutable borrows of `segments_state.segments`. The window closure below
+    // calls `iter_mut().find()` to get a mutable borrow on the selected segment,
+    // which would conflict with a simultaneous immutable borrow on the same Vec.
     let parent_name: Option<String> = app
         .customer_segment_page
         .segments_state

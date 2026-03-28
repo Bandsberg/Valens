@@ -269,9 +269,11 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
         expanded: false,
     };
 
+    // Parents first, then their sub-segments immediately following, so the
+    // upsert positional order mirrors the visual hierarchy in the accordion.
     upsert_items(
         &mut demo_app.customer_segment_page.segments_state.segments,
-        [segment_1, segment_2, sub_seg_1, sub_seg_2, sub_seg_3],
+        [segment_1, sub_seg_1, sub_seg_2, segment_2, sub_seg_3],
     );
 
     // ── Demo jobs ─────────────────────────────────────────────────────────────

@@ -28,8 +28,19 @@ pub fn show_accordion(
     let mut do_panel_deselect = false;
     let mut new_child_for: Option<Uuid> = None;
 
-    // Snapshot the segments so we can read children (and other data) without
-    // conflicting with the per-parent mutable borrows inside the loop.
+    // egui closures (ScrollArea, indent, horizontal) borrow `ui` exclusively,
+    // so we cannot also hold a mutable borrow on `state` or `links` inside
+    // them. The pattern here is:
+    //   1. Snapshot the data we need to *read* during rendering.
+    //   2. Accumulate any mutations in local variables during the render loop.
+    //   3. Apply all mutations after the scroll area exits (see bottom of fn).
+    //
+    // This accordion has an additional constraint: sub-segments and their parent
+    // segments live in the same Vec (`state.segments`). We need to mutably borrow
+    // the parent to edit its fields, but also read children from the same Vec.
+    // The solution: clone the entire Vec once as `snap` (for reading children),
+    // then use `iter_mut().find()` to get a single mutable borrow on each parent
+    // one at a time. Each parent borrow is released before the next iteration.
     let snap = state.segments.clone();
     let links_snap = links.clone();
     let scroll_to = state.scroll_to_id;
