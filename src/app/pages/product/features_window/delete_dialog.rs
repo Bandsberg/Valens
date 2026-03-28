@@ -4,6 +4,13 @@ use eframe::egui;
 
 // ── Delete confirmation dialog ────────────────────────────────────────────────
 
+/// Shows the delete confirmation dialog for the pending feature deletion.
+///
+/// On confirmation, removes the feature and its entries from all three feature
+/// link tables (`product_feature_links`, `feature_pain_relief_links`,
+/// `feature_gain_creator_links`), then clears `selected_id` if the deleted
+/// feature was open in the detail panel. On dismissal, clears `pending_delete`
+/// without deleting anything.
 pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.valueprop_page.features_state.pending_delete else {
         return;

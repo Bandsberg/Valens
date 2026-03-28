@@ -3,6 +3,12 @@ use eframe::egui;
 
 use super::super::accordion;
 
+/// Shows the delete confirmation dialog for the pending segment deletion.
+///
+/// On confirmation, removes the segment itself and clears `selected_id` if it
+/// was open in the detail panel. Does **not** cascade to `segment_job_links` —
+/// orphaned job links are harmless because jobs are independent entities.
+/// On dismissal, clears `pending_delete` without deleting anything.
 pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_segment_page.segments_state.pending_delete else {
         return;

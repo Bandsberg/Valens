@@ -4,6 +4,12 @@ use eframe::egui;
 
 // ── Delete confirmation dialog ────────────────────────────────────────────────
 
+/// Shows the delete confirmation dialog for the pending pain relief deletion.
+///
+/// On confirmation, removes the pain relief from `feature_pain_relief_links`
+/// and `pain_relief_annotations`, then deletes the item itself and clears
+/// `selected_id` if it was open in the detail panel. On dismissal, clears
+/// `pending_delete` without deleting anything.
 pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.valueprop_page.pain_relief_state.pending_delete else {
         return;

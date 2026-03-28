@@ -21,7 +21,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
 
     let mut link_to_add: Option<(Uuid, Uuid)> = None;
     let mut link_to_remove: Option<(Uuid, Uuid)> = None;
-    let mut navigate_to_job_id: Option<Uuid> = None;
+    let mut nav_to_job: Option<Uuid> = None;
 
     let mut keep_open = true;
     egui::Window::new("Gain Details")
@@ -82,7 +82,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                         "Add a job…",
                         &available_jobs,
                         &linked_jobs,
-                        &mut navigate_to_job_id,
+                        &mut nav_to_job,
                         Some("Open in Jobs"),
                     );
                     // Link tuple: (gain_id, job_id).
@@ -109,7 +109,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
             .job_gain_links
             .retain(|l| l != &pair);
     }
-    if let Some(job_id) = navigate_to_job_id {
+    if let Some(job_id) = nav_to_job {
         navigate_to_job(app, ctx, job_id);
     }
 }

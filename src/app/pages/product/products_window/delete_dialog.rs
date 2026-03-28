@@ -4,6 +4,11 @@ use eframe::egui;
 
 // ── Delete confirmation dialog ────────────────────────────────────────────────
 
+/// Shows the delete confirmation dialog for the pending product deletion.
+///
+/// On confirmation, removes the product and its `product_feature_links`, then
+/// clears `selected_id` if the deleted product was open in the detail panel.
+/// On dismissal, clears `pending_delete` without deleting anything.
 pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.valueprop_page.products_state.pending_delete else {
         return;

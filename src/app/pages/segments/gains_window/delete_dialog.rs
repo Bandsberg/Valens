@@ -3,6 +3,11 @@ use eframe::egui;
 
 use super::super::super::accordion;
 
+/// Shows the delete confirmation dialog for the pending gain deletion.
+///
+/// On confirmation, removes the gain from `job_gain_links`, then deletes the
+/// item itself and clears `selected_id` if it was open in the detail panel.
+/// On dismissal, clears `pending_delete` without deleting anything.
 pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_segment_page.gains_state.pending_delete else {
         return;
