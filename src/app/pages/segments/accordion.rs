@@ -2,7 +2,7 @@ use eframe::egui;
 use uuid::Uuid;
 
 use super::jobs_window::Job;
-use super::model::SegmentsState;
+use super::model::{CustomerSegment, SegmentsState};
 
 use super::super::accordion::{self, ROW_H};
 
@@ -26,21 +26,32 @@ pub fn show_accordion(
     let mut did_scroll = false;
     let mut do_panel_select: Option<Uuid> = None;
     let mut do_panel_deselect = false;
+    let mut new_child_for: Option<Uuid> = None;
 
-    // egui closures (ScrollArea, indent, horizontal) borrow `ui` exclusively,
-    // so we cannot also hold a mutable borrow on `state` or `links` inside
-    // them. The pattern here is:
-    //   1. Snapshot the data we need to *read* during rendering.
-    //   2. Accumulate any mutations in local variables during the render loop.
-    //   3. Apply all mutations after the scroll area exits (see bottom of fn).
+    // Snapshot the segments so we can read children (and other data) without
+    // conflicting with the per-parent mutable borrows inside the loop.
+    let snap = state.segments.clone();
     let links_snap = links.clone();
     let scroll_to = state.scroll_to_id;
     let selected_id = state.selected_id;
 
+    // Only top-level segments are rendered as root rows; sub-segments appear
+    // nested inside their parent's expanded section.
+    let parent_ids: Vec<Uuid> = snap
+        .iter()
+        .filter(|s| s.parent_id.is_none())
+        .map(|s| s.id)
+        .collect();
+
     accordion::header(ui, "Segment name");
 
     egui::ScrollArea::vertical().show(ui, |ui| {
-        for segment in &mut state.segments {
+        for parent_id in &parent_ids {
+            // Borrow one segment at a time; the borrow is released at the end
+            // of each block so the next iteration can borrow again.
+            let Some(segment) = state.segments.iter_mut().find(|s| s.id == *parent_id) else {
+                continue;
+            };
             let id = segment.id;
             let expanded = segment.expanded;
             let is_panel_open = selected_id == Some(id);
@@ -133,6 +144,48 @@ pub fn show_accordion(
                     if let Some(jid) = rem {
                         link_to_remove = Some((jid, id));
                     }
+
+                    // ── Sub-segments ──────────────────────────────────────────
+                    ui.separator();
+                    ui.label("Sub-segments:");
+                    ui.add_space(2.0);
+
+                    for child in snap.iter().filter(|s| s.parent_id == Some(id)) {
+                        let child_id = child.id;
+                        let child_is_panel_open = selected_id == Some(child_id);
+                        ui.horizontal(|ui| {
+                            ui.add_space(4.0);
+                            ui.label(accordion::display_name(&child.name, "Unnamed sub-segment"));
+                            if !child.description.is_empty() {
+                                ui.label(egui::RichText::new(&child.description).weak().italics());
+                            }
+                            ui.with_layout(
+                                egui::Layout::right_to_left(egui::Align::Center),
+                                |ui| {
+                                    if ui
+                                        .add(
+                                            egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT),
+                                        )
+                                        .on_hover_text("Delete sub-segment")
+                                        .clicked()
+                                    {
+                                        to_delete = Some(child_id);
+                                    }
+                                    if accordion::panel_toggle_button(ui, child_is_panel_open) {
+                                        if child_is_panel_open {
+                                            do_panel_deselect = true;
+                                        } else {
+                                            do_panel_select = Some(child_id);
+                                        }
+                                    }
+                                },
+                            );
+                        });
+                    }
+
+                    if ui.button("➕ Add Sub-segment").clicked() {
+                        new_child_for = Some(id);
+                    }
                     ui.add_space(4.0);
                 });
             }
@@ -155,6 +208,13 @@ pub fn show_accordion(
     }
     if let Some(pair) = link_to_remove {
         links.retain(|l| l != &pair);
+    }
+    if let Some(parent_id) = new_child_for {
+        state.segments.push(CustomerSegment {
+            id: Uuid::new_v4(),
+            parent_id: Some(parent_id),
+            ..Default::default()
+        });
     }
     // Deselect (close the panel) takes the `if` branch so it always wins.
     // Opening a new row while another is open just replaces `selected_id` —

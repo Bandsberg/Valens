@@ -207,8 +207,16 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     let segment_2_id =
         Uuid::from_str("d2e3f4a5-b6c7-8901-defa-123456789012").expect("hardcoded UUID is valid");
 
+    let sub_seg_1_id =
+        Uuid::from_str("e4f5a6b7-c8d9-0123-efab-234567890123").expect("hardcoded UUID is valid");
+    let sub_seg_2_id =
+        Uuid::from_str("f5a6b7c8-d9e0-1234-fabc-345678901234").expect("hardcoded UUID is valid");
+    let sub_seg_3_id =
+        Uuid::from_str("a6b7c8d9-e0f1-2345-abcd-456789012345").expect("hardcoded UUID is valid");
+
     let segment_1 = CustomerSegment {
         id: segment_1_id,
+        parent_id: None,
         name: "Fintech Startups".to_owned(),
         description: "Early-stage fintechs embedding financial services into their product"
             .to_owned(),
@@ -219,6 +227,7 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
     };
     let segment_2 = CustomerSegment {
         id: segment_2_id,
+        parent_id: None,
         name: "Regional Banks".to_owned(),
         description: "Mid-sized banks modernising their infrastructure via BaaS".to_owned(),
         notes: String::new(),
@@ -227,10 +236,42 @@ pub fn load_demo_data(cc: &eframe::CreationContext<'_>) -> App {
                 .to_owned(),
         expanded: false,
     };
+    // Sub-segments of "Fintech Startups"
+    let sub_seg_1 = CustomerSegment {
+        id: sub_seg_1_id,
+        parent_id: Some(segment_1_id),
+        name: "Neo-banks".to_owned(),
+        description: "Consumer-facing digital banks building on BaaS".to_owned(),
+        notes: String::new(),
+        characteristics: "B2C focus, growth-stage, high transaction volumes, brand-sensitive"
+            .to_owned(),
+        expanded: false,
+    };
+    let sub_seg_2 = CustomerSegment {
+        id: sub_seg_2_id,
+        parent_id: Some(segment_1_id),
+        name: "Embedded Finance Platforms".to_owned(),
+        description: "Non-finance apps adding payments or lending to their product".to_owned(),
+        notes: String::new(),
+        characteristics: "B2B2C model, need white-label APIs, care about uptime SLAs".to_owned(),
+        expanded: false,
+    };
+    // Sub-segment of "Regional Banks"
+    let sub_seg_3 = CustomerSegment {
+        id: sub_seg_3_id,
+        parent_id: Some(segment_2_id),
+        name: "Community Banks".to_owned(),
+        description: "Small community-owned banks with limited IT capacity".to_owned(),
+        notes: String::new(),
+        characteristics:
+            "Highly risk-averse, vendor-lock-in concerns, need hands-on onboarding support"
+                .to_owned(),
+        expanded: false,
+    };
 
     upsert_items(
         &mut demo_app.customer_segment_page.segments_state.segments,
-        [segment_1, segment_2],
+        [segment_1, segment_2, sub_seg_1, sub_seg_2, sub_seg_3],
     );
 
     // ── Demo jobs ─────────────────────────────────────────────────────────────

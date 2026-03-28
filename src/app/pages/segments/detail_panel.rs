@@ -9,10 +9,29 @@ use super::super::accordion;
 /// Renders the Customer Segment detail panel window for the currently selected
 /// segment. Shows editable fields (name, description, notes, characteristics)
 /// and the list of linked jobs. Does nothing when no segment is selected.
+#[expect(clippy::too_many_lines)]
 pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
     let Some(id) = app.customer_segment_page.segments_state.selected_id else {
         return;
     };
+
+    // If this is a sub-segment, resolve the parent name now — before any
+    // mutable borrows of `segments_state.segments` are taken.
+    let parent_name: Option<String> = app
+        .customer_segment_page
+        .segments_state
+        .segments
+        .iter()
+        .find(|s| s.id == id)
+        .and_then(|s| s.parent_id)
+        .and_then(|pid| {
+            app.customer_segment_page
+                .segments_state
+                .segments
+                .iter()
+                .find(|s| s.id == pid)
+        })
+        .map(|p| accordion::display_name(&p.name, "Unnamed segment").to_owned());
 
     // Snapshot linked / available jobs before entering the window closure so we
     // can borrow `segments_state.segments` mutably inside without conflict.
@@ -47,6 +66,15 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
                 ui.label("Segment not found.");
                 return;
             };
+
+            if let Some(name) = &parent_name {
+                ui.label(
+                    egui::RichText::new(format!("Sub-segment of: {name}"))
+                        .weak()
+                        .italics(),
+                );
+                ui.add_space(4.0);
+            }
 
             egui::Grid::new("segment_detail_grid")
                 .num_columns(2)

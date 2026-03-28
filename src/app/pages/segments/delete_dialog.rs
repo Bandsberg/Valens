@@ -27,6 +27,25 @@ pub fn show_delete_confirmation(app: &mut App, ctx: &egui::Context) {
         accordion::delete_dialog(ctx, "Delete Customer Segment?", &item_name);
 
     if confirmed {
+        // Cascade: remove all sub-segments that belong to this parent first.
+        let children: Vec<_> = app
+            .customer_segment_page
+            .segments_state
+            .segments
+            .iter()
+            .filter(|s| s.parent_id == Some(id))
+            .map(|s| s.id)
+            .collect();
+        for child_id in children {
+            app.customer_segment_page
+                .segments_state
+                .segments
+                .retain(|s| s.id != child_id);
+            if app.customer_segment_page.segments_state.selected_id == Some(child_id) {
+                app.customer_segment_page.segments_state.selected_id = None;
+            }
+        }
+        // Remove the parent segment itself.
         app.customer_segment_page
             .segments_state
             .segments

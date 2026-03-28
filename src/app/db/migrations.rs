@@ -11,6 +11,9 @@ use rusqlite_migration::{M, Migrations};
 pub(super) fn migrations() -> Migrations<'static> {
     Migrations::new(vec![
         M::up(include_str!("../../migrations/V1__initial_schema.sql")),
+        M::up(include_str!(
+            "../../migrations/V2__add_parent_id_to_segments.sql"
+        )),
         // Add new migrations here — append only, never reorder
     ])
 }

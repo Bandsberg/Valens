@@ -168,6 +168,11 @@ fn parse_uuid(s: String) -> Uuid {
     s.parse().expect("database must contain valid UUIDs")
 }
 
+fn parse_uuid_opt(s: Option<String>) -> Option<Uuid> {
+    let v = s?;
+    v.parse().ok()
+}
+
 fn load_products(conn: &Connection) -> Result<Vec<Product>, rusqlite::Error> {
     let mut stmt =
         conn.prepare("SELECT id, name, description, notes FROM products ORDER BY rowid")?;
@@ -235,7 +240,7 @@ fn load_gain_creators(conn: &Connection) -> Result<Vec<GainCreator>, rusqlite::E
 
 fn load_segments(conn: &Connection) -> Result<Vec<CustomerSegment>, rusqlite::Error> {
     let mut stmt = conn.prepare(
-        "SELECT id, name, description, notes, characteristics \
+        "SELECT id, name, description, notes, characteristics, parent_id \
          FROM customer_segments ORDER BY rowid",
     )?;
     stmt.query_map([], |row| {
@@ -245,6 +250,7 @@ fn load_segments(conn: &Connection) -> Result<Vec<CustomerSegment>, rusqlite::Er
             description: row.get(2)?,
             notes: row.get(3)?,
             characteristics: row.get(4)?,
+            parent_id: parse_uuid_opt(row.get(5)?),
             expanded: false,
         })
     })?
@@ -424,8 +430,8 @@ fn save_segments(
 ) -> Result<(), rusqlite::Error> {
     tx.execute_batch("DELETE FROM customer_segments")?;
     let mut stmt = tx.prepare(
-        "INSERT INTO customer_segments (id, name, description, notes, characteristics) \
-         VALUES (?1,?2,?3,?4,?5)",
+        "INSERT INTO customer_segments (id, name, description, notes, characteristics, parent_id) \
+         VALUES (?1,?2,?3,?4,?5,?6)",
     )?;
     for s in segments {
         stmt.execute(params![
@@ -433,7 +439,8 @@ fn save_segments(
             &s.name,
             &s.description,
             &s.notes,
-            &s.characteristics
+            &s.characteristics,
+            s.parent_id.map(|u| u.to_string())
         ])?;
     }
     Ok(())

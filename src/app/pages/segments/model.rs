@@ -23,6 +23,9 @@ pub struct SegmentsState {
 pub struct CustomerSegment {
     /// Stable unique identifier.
     pub id: Uuid,
+    /// Parent segment ID. `None` = top-level segment; `Some(x)` = sub-segment of `x`.
+    #[serde(default)]
+    pub parent_id: Option<Uuid>,
     pub name: String,
     pub description: String,
     pub notes: String,
