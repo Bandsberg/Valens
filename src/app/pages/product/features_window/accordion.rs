@@ -1,13 +1,9 @@
 use eframe::egui;
 use uuid::Uuid;
 
-use super::super::super::accordion::{self, ROW_H};
+use super::super::super::accordion::{self, MULTILINE_H, ROW_H};
 use super::super::products_window::Product;
 use super::model::FeaturesState;
-
-/// Minimum pixel height for multiline text-edit fields in the expanded row.
-/// Chosen to display roughly three lines at the default font size.
-const MULTILINE_H: f32 = 60.0;
 
 // ── Accordion table ───────────────────────────────────────────────────────────
 

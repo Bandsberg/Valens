@@ -244,13 +244,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
             .retain(|l| l != &pair);
     }
     if let Some(ann) = pain_ann_to_add {
-        let exists =
-            app.valueprop_page.pain_relief_annotations.iter().any(|a| {
-                a.pain_or_gain_id == ann.pain_or_gain_id && a.reliever_or_creator_id == id
-            });
-        if !exists {
-            app.valueprop_page.pain_relief_annotations.push(ann);
-        }
+        super::super::push_annotation_if_new(&mut app.valueprop_page.pain_relief_annotations, ann);
     }
     if let Some(pid) = pain_ann_to_remove {
         app.valueprop_page

@@ -4,11 +4,7 @@ use uuid::Uuid;
 use super::super::jobs_window::Job;
 use super::model::GainsState;
 
-use super::super::super::accordion::{self, ROW_H};
-
-/// Minimum pixel height for multiline text-edit fields in the expanded row.
-/// Chosen to display roughly three lines at the default font size.
-const MULTILINE_H: f32 = 60.0;
+use super::super::super::accordion::{self, MULTILINE_H, ROW_H};
 
 #[expect(clippy::too_many_lines)]
 pub fn show_accordion(

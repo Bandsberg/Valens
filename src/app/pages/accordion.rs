@@ -8,6 +8,9 @@ const ARROW_COLUMN_W: f32 = 28.0;
 /// Height of a single accordion header/row widget.
 /// Referenced by sub-accordion modules for `add_sized` text-edit rows.
 pub(crate) const ROW_H: f32 = 20.0;
+/// Minimum pixel height for multiline text-edit fields in expanded accordion rows.
+/// Chosen to display roughly three lines at the default font size.
+pub(crate) const MULTILINE_H: f32 = 60.0;
 /// Width of a single action button (e.g. detail-panel toggle, delete).
 const ACTION_BTN_W: f32 = 36.0;
 

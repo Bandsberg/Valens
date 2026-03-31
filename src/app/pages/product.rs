@@ -57,6 +57,19 @@ pub struct ValueAnnotation {
     /// Used as a direct multiplier in the weighted fit-score formula.
     pub strength: f32,
 }
+
+/// Pushes `ann` onto `annotations` only if no existing entry already links
+/// the same `(pain_or_gain_id, reliever_or_creator_id)` pair.
+pub fn push_annotation_if_new(annotations: &mut Vec<ValueAnnotation>, ann: ValueAnnotation) {
+    let exists = annotations.iter().any(|a| {
+        a.pain_or_gain_id == ann.pain_or_gain_id
+            && a.reliever_or_creator_id == ann.reliever_or_creator_id
+    });
+    if !exists {
+        annotations.push(ann);
+    }
+}
+
 mod side_panel;
 pub use side_panel::product_sidepanel;
 pub mod products_window;
