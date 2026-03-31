@@ -38,120 +38,122 @@ pub fn show_accordion(
 
     accordion::header(ui, "Feature name");
 
-    egui::ScrollArea::vertical().show(ui, |ui| {
-        for feature in &mut state.features {
-            let id = feature.id;
-            let expanded = feature.expanded;
-            let is_panel_open = selected_id == Some(id);
+    egui::ScrollArea::vertical()
+        .auto_shrink(false)
+        .show(ui, |ui| {
+            for feature in &mut state.features {
+                let id = feature.id;
+                let expanded = feature.expanded;
+                let is_panel_open = selected_id == Some(id);
 
-            if scroll_to == Some(id) {
-                ui.scroll_to_cursor(Some(egui::Align::Center));
-                did_scroll = true;
-            }
-
-            // ── Collapsed / header row ────────────────────────────────────────
-            ui.horizontal(|ui| {
-                if accordion::expand_button(ui, expanded) {
-                    feature.expanded = !feature.expanded;
+                if scroll_to == Some(id) {
+                    ui.scroll_to_cursor(Some(egui::Align::Center));
+                    did_scroll = true;
                 }
 
-                let (name_w, desc_w) = accordion::row_field_widths(ui, "Feature name");
-
-                ui.add_sized(
-                    [name_w, ROW_H],
-                    egui::TextEdit::singleline(&mut feature.name).hint_text("Feature name…"),
-                );
-                ui.add_sized(
-                    [desc_w, ROW_H],
-                    egui::TextEdit::singleline(&mut feature.description)
-                        .hint_text("Short description…"),
-                );
-
-                if accordion::panel_toggle_button(ui, is_panel_open) {
-                    if is_panel_open {
-                        do_panel_deselect = true;
-                    } else {
-                        do_panel_select = Some(id);
+                // ── Collapsed / header row ────────────────────────────────────────
+                ui.horizontal(|ui| {
+                    if accordion::expand_button(ui, expanded) {
+                        feature.expanded = !feature.expanded;
                     }
-                }
-                if ui
-                    .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
-                    .on_hover_text("Delete feature")
-                    .clicked()
-                {
-                    to_delete = Some(id);
-                }
-            });
 
-            // ── Expanded content (full-width, no column divide) ───────────────
-            if expanded {
-                ui.indent(id, |ui| {
-                    ui.add_space(4.0);
-                    ui.label("Status:");
-                    ui.add(
-                        egui::TextEdit::singleline(&mut feature.status)
-                            .hint_text("e.g. Draft, In Progress, Done")
-                            .desired_width(f32::INFINITY),
+                    let (name_w, desc_w) = accordion::row_field_widths(ui, "Feature name");
+
+                    ui.add_sized(
+                        [name_w, ROW_H],
+                        egui::TextEdit::singleline(&mut feature.name).hint_text("Feature name…"),
                     );
-                    ui.add_space(4.0);
-                    ui.label("Notes:");
-                    ui.add(
-                        egui::TextEdit::multiline(&mut feature.notes)
-                            .desired_rows(3)
-                            .desired_width(f32::INFINITY)
-                            .min_size(egui::vec2(0.0, MULTILINE_H)),
-                    );
-                    ui.add_space(4.0);
-                    ui.label("User Story:");
-                    ui.add(
-                        egui::TextEdit::multiline(&mut feature.user_story)
-                            .desired_rows(3)
-                            .desired_width(f32::INFINITY)
-                            .min_size(egui::vec2(0.0, MULTILINE_H)),
-                    );
-                    ui.add_space(4.0);
-                    ui.label("Acceptance Criteria:");
-                    ui.add(
-                        egui::TextEdit::multiline(&mut feature.acceptance_criteria)
-                            .desired_rows(3)
-                            .desired_width(f32::INFINITY)
-                            .min_size(egui::vec2(0.0, MULTILINE_H)),
+                    ui.add_sized(
+                        [desc_w, ROW_H],
+                        egui::TextEdit::singleline(&mut feature.description)
+                            .hint_text("Short description…"),
                     );
 
-                    // ── Used by Products ──────────────────────────────────────
-                    // Link tuple: (product_id, feature_id) — feature is second.
-                    ui.separator();
-                    let (linked_prods, avail_prods) = accordion::partition_linked(
-                        &links_snap,
-                        |(pid, fid)| (*fid == id).then_some(*pid),
-                        products,
-                        |p| p.id,
-                        |p| p.name.as_str(),
-                    );
-                    let (add, rem) = accordion::acc_link_section(
-                        ui,
-                        "Used by Products & Services:",
-                        egui::Id::new("feat_acc_link_prod").with(id),
-                        "Add a product…",
-                        "All products and services linked",
-                        &avail_prods,
-                        &linked_prods,
-                        navigate_to,
-                        Some("Open in Products & Services"),
-                    );
-                    if let Some(pid) = add {
-                        link_to_add = Some((pid, id));
+                    if accordion::panel_toggle_button(ui, is_panel_open) {
+                        if is_panel_open {
+                            do_panel_deselect = true;
+                        } else {
+                            do_panel_select = Some(id);
+                        }
                     }
-                    if let Some(pid) = rem {
-                        link_to_remove = Some((pid, id));
+                    if ui
+                        .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
+                        .on_hover_text("Delete feature")
+                        .clicked()
+                    {
+                        to_delete = Some(id);
                     }
-                    ui.add_space(4.0);
                 });
-            }
 
-            ui.separator();
-        }
-    });
+                // ── Expanded content (full-width, no column divide) ───────────────
+                if expanded {
+                    ui.indent(id, |ui| {
+                        ui.add_space(4.0);
+                        ui.label("Status:");
+                        ui.add(
+                            egui::TextEdit::singleline(&mut feature.status)
+                                .hint_text("e.g. Draft, In Progress, Done")
+                                .desired_width(f32::INFINITY),
+                        );
+                        ui.add_space(4.0);
+                        ui.label("Notes:");
+                        ui.add(
+                            egui::TextEdit::multiline(&mut feature.notes)
+                                .desired_rows(3)
+                                .desired_width(f32::INFINITY)
+                                .min_size(egui::vec2(0.0, MULTILINE_H)),
+                        );
+                        ui.add_space(4.0);
+                        ui.label("User Story:");
+                        ui.add(
+                            egui::TextEdit::multiline(&mut feature.user_story)
+                                .desired_rows(3)
+                                .desired_width(f32::INFINITY)
+                                .min_size(egui::vec2(0.0, MULTILINE_H)),
+                        );
+                        ui.add_space(4.0);
+                        ui.label("Acceptance Criteria:");
+                        ui.add(
+                            egui::TextEdit::multiline(&mut feature.acceptance_criteria)
+                                .desired_rows(3)
+                                .desired_width(f32::INFINITY)
+                                .min_size(egui::vec2(0.0, MULTILINE_H)),
+                        );
+
+                        // ── Used by Products ──────────────────────────────────────
+                        // Link tuple: (product_id, feature_id) — feature is second.
+                        ui.separator();
+                        let (linked_prods, avail_prods) = accordion::partition_linked(
+                            &links_snap,
+                            |(pid, fid)| (*fid == id).then_some(*pid),
+                            products,
+                            |p| p.id,
+                            |p| p.name.as_str(),
+                        );
+                        let (add, rem) = accordion::acc_link_section(
+                            ui,
+                            "Used by Products & Services:",
+                            egui::Id::new("feat_acc_link_prod").with(id),
+                            "Add a product…",
+                            "All products and services linked",
+                            &avail_prods,
+                            &linked_prods,
+                            navigate_to,
+                            Some("Open in Products & Services"),
+                        );
+                        if let Some(pid) = add {
+                            link_to_add = Some((pid, id));
+                        }
+                        if let Some(pid) = rem {
+                            link_to_remove = Some((pid, id));
+                        }
+                        ui.add_space(4.0);
+                    });
+                }
+
+                ui.separator();
+            }
+        });
 
     // Apply deferred mutations.
     if did_scroll {

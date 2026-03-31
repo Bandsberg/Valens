@@ -39,98 +39,101 @@ pub fn show_accordion(
 
     accordion::header(ui, "Product / Service name");
 
-    egui::ScrollArea::vertical().show(ui, |ui| {
-        for product in &mut state.products {
-            let id = product.id;
-            let expanded = product.expanded;
-            let is_panel_open = selected_id == Some(id);
+    egui::ScrollArea::vertical()
+        .auto_shrink(false)
+        .show(ui, |ui| {
+            for product in &mut state.products {
+                let id = product.id;
+                let expanded = product.expanded;
+                let is_panel_open = selected_id == Some(id);
 
-            if scroll_to == Some(id) {
-                ui.scroll_to_cursor(Some(egui::Align::Center));
-                did_scroll = true;
-            }
-
-            // ── Collapsed / header row ────────────────────────────────────────
-            ui.horizontal(|ui| {
-                if accordion::expand_button(ui, expanded) {
-                    product.expanded = !product.expanded;
+                if scroll_to == Some(id) {
+                    ui.scroll_to_cursor(Some(egui::Align::Center));
+                    did_scroll = true;
                 }
 
-                let (name_w, desc_w) = accordion::row_field_widths(ui, "Product / Service name");
-
-                ui.add_sized(
-                    [name_w, ROW_H],
-                    egui::TextEdit::singleline(&mut product.name).hint_text("Product name…"),
-                );
-                ui.add_sized(
-                    [desc_w, ROW_H],
-                    egui::TextEdit::singleline(&mut product.description)
-                        .hint_text("Short description…"),
-                );
-
-                if accordion::panel_toggle_button(ui, is_panel_open) {
-                    if is_panel_open {
-                        do_panel_deselect = true;
-                    } else {
-                        do_panel_select = Some(id);
+                // ── Collapsed / header row ────────────────────────────────────────
+                ui.horizontal(|ui| {
+                    if accordion::expand_button(ui, expanded) {
+                        product.expanded = !product.expanded;
                     }
-                }
-                if ui
-                    .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
-                    .on_hover_text("Delete product")
-                    .clicked()
-                {
-                    to_delete = Some(id);
-                }
-            });
 
-            // ── Expanded content (full-width, no column divide) ───────────────
-            if expanded {
-                ui.indent(id, |ui| {
-                    ui.add_space(4.0);
-                    ui.label("Notes:");
-                    ui.add(
-                        egui::TextEdit::multiline(&mut product.notes)
-                            .desired_rows(3)
-                            .desired_width(f32::INFINITY)
-                            .min_size(egui::vec2(0.0, MULTILINE_H)),
+                    let (name_w, desc_w) =
+                        accordion::row_field_widths(ui, "Product / Service name");
+
+                    ui.add_sized(
+                        [name_w, ROW_H],
+                        egui::TextEdit::singleline(&mut product.name).hint_text("Product name…"),
+                    );
+                    ui.add_sized(
+                        [desc_w, ROW_H],
+                        egui::TextEdit::singleline(&mut product.description)
+                            .hint_text("Short description…"),
                     );
 
-                    // ── Linked Features ───────────────────────────────────────
-                    // Link tuple: (product_id, feature_id) — product is first.
-                    ui.separator();
-                    let (linked_feats, avail_feats) = accordion::partition_linked(
-                        &links_snap,
-                        |(pid, fid)| (*pid == id).then_some(*fid),
-                        features,
-                        |f| f.id,
-                        |f| f.name.as_str(),
-                    );
-                    let (add, rem) = accordion::acc_link_section(
-                        ui,
-                        "Linked Features:",
-                        egui::Id::new("prod_acc_link_feat").with(id),
-                        "Add a feature…",
-                        "All features linked",
-                        &avail_feats,
-                        &linked_feats,
-                        navigate_to,
-                        Some("Open in Features"),
-                    );
-                    // Link tuple is (product_id, feature_id).
-                    if let Some(fid) = add {
-                        link_to_add = Some((id, fid));
+                    if accordion::panel_toggle_button(ui, is_panel_open) {
+                        if is_panel_open {
+                            do_panel_deselect = true;
+                        } else {
+                            do_panel_select = Some(id);
+                        }
                     }
-                    if let Some(fid) = rem {
-                        link_to_remove = Some((id, fid));
+                    if ui
+                        .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
+                        .on_hover_text("Delete product")
+                        .clicked()
+                    {
+                        to_delete = Some(id);
                     }
-                    ui.add_space(4.0);
                 });
-            }
 
-            ui.separator();
-        }
-    });
+                // ── Expanded content (full-width, no column divide) ───────────────
+                if expanded {
+                    ui.indent(id, |ui| {
+                        ui.add_space(4.0);
+                        ui.label("Notes:");
+                        ui.add(
+                            egui::TextEdit::multiline(&mut product.notes)
+                                .desired_rows(3)
+                                .desired_width(f32::INFINITY)
+                                .min_size(egui::vec2(0.0, MULTILINE_H)),
+                        );
+
+                        // ── Linked Features ───────────────────────────────────────
+                        // Link tuple: (product_id, feature_id) — product is first.
+                        ui.separator();
+                        let (linked_feats, avail_feats) = accordion::partition_linked(
+                            &links_snap,
+                            |(pid, fid)| (*pid == id).then_some(*fid),
+                            features,
+                            |f| f.id,
+                            |f| f.name.as_str(),
+                        );
+                        let (add, rem) = accordion::acc_link_section(
+                            ui,
+                            "Linked Features:",
+                            egui::Id::new("prod_acc_link_feat").with(id),
+                            "Add a feature…",
+                            "All features linked",
+                            &avail_feats,
+                            &linked_feats,
+                            navigate_to,
+                            Some("Open in Features"),
+                        );
+                        // Link tuple is (product_id, feature_id).
+                        if let Some(fid) = add {
+                            link_to_add = Some((id, fid));
+                        }
+                        if let Some(fid) = rem {
+                            link_to_remove = Some((id, fid));
+                        }
+                        ui.add_space(4.0);
+                    });
+                }
+
+                ui.separator();
+            }
+        });
 
     // Apply deferred mutations.
     if did_scroll {

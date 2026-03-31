@@ -14,7 +14,11 @@ pub fn show_value_quadrant_window(app: &App, ctx: &egui::Context, open: &mut boo
         .default_size([480.0, 520.0])
         .resizable(true)
         .show(ctx, |ui| {
-            show_contents(app, ctx, ui);
+            egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| {
+                    show_contents(app, ctx, ui);
+                });
         });
 }
 

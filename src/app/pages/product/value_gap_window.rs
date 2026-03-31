@@ -99,9 +99,12 @@ pub fn show_value_gap_window(app: &App, ctx: &egui::Context, open: &mut bool) {
         .open(open)
         .default_size([540.0, 500.0])
         .resizable(true)
-        .scroll(true)
         .show(ctx, |ui| {
-            show_contents(app, ctx, ui);
+            egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| {
+                    show_contents(app, ctx, ui);
+                });
         });
 }
 

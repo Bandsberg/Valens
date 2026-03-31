@@ -44,5 +44,9 @@ pub fn product_sidepanel(app: &mut App, ui: &mut egui::Ui) {
                 &mut app.valueprop_page.product_windows.value_quadrant_open,
                 "Value Quadrant",
             );
+            ui.checkbox(
+                &mut app.valueprop_page.product_windows.relationships_open,
+                "Entity Relationships",
+            );
         });
 }

@@ -76,6 +76,8 @@ mod value_gap_window;
 use value_gap_window::show_value_gap_window;
 mod value_quadrant_window;
 use value_quadrant_window::show_value_quadrant_window;
+mod relationships_window;
+use relationships_window::show_relationships_window;
 
 // ── Page structs ──────────────────────────────────────────────────────────────
 
@@ -121,6 +123,7 @@ struct ProductWindows {
     thoughtful_execution_open: bool,
     value_gap_open: bool,
     value_quadrant_open: bool,
+    relationships_open: bool,
 }
 
 /// Computes the set of entity IDs that should be highlighted because they are
@@ -291,5 +294,10 @@ pub fn show_product(app: &mut App, ctx: &egui::Context, ui: &mut egui::Ui) {
     if quadrant_open {
         show_value_quadrant_window(app, ctx, &mut quadrant_open);
         app.valueprop_page.product_windows.value_quadrant_open = quadrant_open;
+    }
+    let mut rel_open = app.valueprop_page.product_windows.relationships_open;
+    if rel_open {
+        show_relationships_window(app, ctx, &mut rel_open);
+        app.valueprop_page.product_windows.relationships_open = rel_open;
     }
 }

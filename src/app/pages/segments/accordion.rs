@@ -56,154 +56,162 @@ pub fn show_accordion(
 
     accordion::header(ui, "Segment name");
 
-    egui::ScrollArea::vertical().show(ui, |ui| {
-        for parent_id in &parent_ids {
-            // Borrow one segment at a time; the borrow is released at the end
-            // of each block so the next iteration can borrow again.
-            let Some(segment) = state.segments.iter_mut().find(|s| s.id == *parent_id) else {
-                continue;
-            };
-            let id = segment.id;
-            let expanded = segment.expanded;
-            let is_panel_open = selected_id == Some(id);
+    egui::ScrollArea::vertical()
+        .auto_shrink(false)
+        .show(ui, |ui| {
+            for parent_id in &parent_ids {
+                // Borrow one segment at a time; the borrow is released at the end
+                // of each block so the next iteration can borrow again.
+                let Some(segment) = state.segments.iter_mut().find(|s| s.id == *parent_id) else {
+                    continue;
+                };
+                let id = segment.id;
+                let expanded = segment.expanded;
+                let is_panel_open = selected_id == Some(id);
 
-            if scroll_to == Some(id) {
-                ui.scroll_to_cursor(Some(egui::Align::Center));
-                did_scroll = true;
-            }
-
-            // ── Collapsed / header row ────────────────────────────────────────
-            ui.horizontal(|ui| {
-                if accordion::expand_button(ui, expanded) {
-                    segment.expanded = !segment.expanded;
+                if scroll_to == Some(id) {
+                    ui.scroll_to_cursor(Some(egui::Align::Center));
+                    did_scroll = true;
                 }
 
-                let (name_w, desc_w) = accordion::row_field_widths(ui, "Segment name");
-
-                ui.add_sized(
-                    [name_w, ROW_H],
-                    egui::TextEdit::singleline(&mut segment.name).hint_text("Segment name…"),
-                );
-                ui.add_sized(
-                    [desc_w, ROW_H],
-                    egui::TextEdit::singleline(&mut segment.description)
-                        .hint_text("Short description…"),
-                );
-
-                if accordion::panel_toggle_button(ui, is_panel_open) {
-                    if is_panel_open {
-                        do_panel_deselect = true;
-                    } else {
-                        do_panel_select = Some(id);
+                // ── Collapsed / header row ────────────────────────────────────────
+                ui.horizontal(|ui| {
+                    if accordion::expand_button(ui, expanded) {
+                        segment.expanded = !segment.expanded;
                     }
-                }
-                if ui
-                    .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
-                    .on_hover_text("Delete segment")
-                    .clicked()
-                {
-                    to_delete = Some(id);
-                }
-            });
 
-            // ── Expanded content (full-width, no column divide) ───────────────
-            if expanded {
-                ui.indent(id, |ui| {
-                    ui.add_space(4.0);
-                    ui.label("Notes:");
-                    ui.add(
-                        egui::TextEdit::multiline(&mut segment.notes)
-                            .desired_rows(3)
-                            .desired_width(f32::INFINITY)
-                            .min_size(egui::vec2(0.0, MULTILINE_H)),
+                    let (name_w, desc_w) = accordion::row_field_widths(ui, "Segment name");
+
+                    ui.add_sized(
+                        [name_w, ROW_H],
+                        egui::TextEdit::singleline(&mut segment.name).hint_text("Segment name…"),
+                    );
+                    ui.add_sized(
+                        [desc_w, ROW_H],
+                        egui::TextEdit::singleline(&mut segment.description)
+                            .hint_text("Short description…"),
                     );
 
-                    ui.separator();
-                    ui.label("Characteristics:");
-                    ui.add(
-                        egui::TextEdit::multiline(&mut segment.characteristics)
-                            .desired_rows(3)
-                            .desired_width(f32::INFINITY)
-                            .min_size(egui::vec2(0.0, MULTILINE_H)),
-                    );
-
-                    // ── Linked Jobs ───────────────────────────────────────────
-                    // Link tuple: (job_id, segment_id) — segment is second.
-                    ui.separator();
-                    let (linked_jobs, avail_jobs) = accordion::partition_linked(
-                        &links_snap,
-                        |(jid, sid)| (*sid == id).then_some(*jid),
-                        jobs,
-                        |j| j.id,
-                        |j| j.name.as_str(),
-                    );
-                    let (add, rem) = accordion::acc_link_section(
-                        ui,
-                        "Linked Jobs:",
-                        egui::Id::new("seg_acc_link_job").with(id),
-                        "Add a job…",
-                        "All jobs linked",
-                        &avail_jobs,
-                        &linked_jobs,
-                        navigate_to,
-                        Some("Open in Jobs"),
-                    );
-                    // Link tuple is (job_id, segment_id) — note reversed order.
-                    if let Some(jid) = add {
-                        link_to_add = Some((jid, id));
+                    if accordion::panel_toggle_button(ui, is_panel_open) {
+                        if is_panel_open {
+                            do_panel_deselect = true;
+                        } else {
+                            do_panel_select = Some(id);
+                        }
                     }
-                    if let Some(jid) = rem {
-                        link_to_remove = Some((jid, id));
+                    if ui
+                        .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
+                        .on_hover_text("Delete segment")
+                        .clicked()
+                    {
+                        to_delete = Some(id);
                     }
-
-                    // ── Sub-segments ──────────────────────────────────────────
-                    ui.separator();
-                    ui.label("Sub-segments:");
-                    ui.add_space(2.0);
-
-                    for child in snap.iter().filter(|s| s.parent_id == Some(id)) {
-                        let child_id = child.id;
-                        let child_is_panel_open = selected_id == Some(child_id);
-                        ui.horizontal(|ui| {
-                            ui.add_space(4.0);
-                            ui.label(accordion::display_name(&child.name, "Unnamed sub-segment"));
-                            if !child.description.is_empty() {
-                                ui.label(egui::RichText::new(&child.description).weak().italics());
-                            }
-                            ui.with_layout(
-                                egui::Layout::right_to_left(egui::Align::Center),
-                                |ui| {
-                                    if ui
-                                        .add(
-                                            egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT),
-                                        )
-                                        .on_hover_text("Delete sub-segment")
-                                        .clicked()
-                                    {
-                                        to_delete = Some(child_id);
-                                    }
-                                    if accordion::panel_toggle_button(ui, child_is_panel_open) {
-                                        if child_is_panel_open {
-                                            do_panel_deselect = true;
-                                        } else {
-                                            do_panel_select = Some(child_id);
-                                        }
-                                    }
-                                },
-                            );
-                        });
-                    }
-
-                    if ui.button("➕ Add Sub-segment").clicked() {
-                        new_child_for = Some(id);
-                    }
-                    ui.add_space(4.0);
                 });
-            }
 
-            ui.separator();
-        }
-    });
+                // ── Expanded content (full-width, no column divide) ───────────────
+                if expanded {
+                    ui.indent(id, |ui| {
+                        ui.add_space(4.0);
+                        ui.label("Notes:");
+                        ui.add(
+                            egui::TextEdit::multiline(&mut segment.notes)
+                                .desired_rows(3)
+                                .desired_width(f32::INFINITY)
+                                .min_size(egui::vec2(0.0, MULTILINE_H)),
+                        );
+
+                        ui.separator();
+                        ui.label("Characteristics:");
+                        ui.add(
+                            egui::TextEdit::multiline(&mut segment.characteristics)
+                                .desired_rows(3)
+                                .desired_width(f32::INFINITY)
+                                .min_size(egui::vec2(0.0, MULTILINE_H)),
+                        );
+
+                        // ── Linked Jobs ───────────────────────────────────────────
+                        // Link tuple: (job_id, segment_id) — segment is second.
+                        ui.separator();
+                        let (linked_jobs, avail_jobs) = accordion::partition_linked(
+                            &links_snap,
+                            |(jid, sid)| (*sid == id).then_some(*jid),
+                            jobs,
+                            |j| j.id,
+                            |j| j.name.as_str(),
+                        );
+                        let (add, rem) = accordion::acc_link_section(
+                            ui,
+                            "Linked Jobs:",
+                            egui::Id::new("seg_acc_link_job").with(id),
+                            "Add a job…",
+                            "All jobs linked",
+                            &avail_jobs,
+                            &linked_jobs,
+                            navigate_to,
+                            Some("Open in Jobs"),
+                        );
+                        // Link tuple is (job_id, segment_id) — note reversed order.
+                        if let Some(jid) = add {
+                            link_to_add = Some((jid, id));
+                        }
+                        if let Some(jid) = rem {
+                            link_to_remove = Some((jid, id));
+                        }
+
+                        // ── Sub-segments ──────────────────────────────────────────
+                        ui.separator();
+                        ui.label("Sub-segments:");
+                        ui.add_space(2.0);
+
+                        for child in snap.iter().filter(|s| s.parent_id == Some(id)) {
+                            let child_id = child.id;
+                            let child_is_panel_open = selected_id == Some(child_id);
+                            ui.horizontal(|ui| {
+                                ui.add_space(4.0);
+                                ui.label(accordion::display_name(
+                                    &child.name,
+                                    "Unnamed sub-segment",
+                                ));
+                                if !child.description.is_empty() {
+                                    ui.label(
+                                        egui::RichText::new(&child.description).weak().italics(),
+                                    );
+                                }
+                                ui.with_layout(
+                                    egui::Layout::right_to_left(egui::Align::Center),
+                                    |ui| {
+                                        if ui
+                                            .add(
+                                                egui::Button::new("🗑")
+                                                    .fill(egui::Color32::TRANSPARENT),
+                                            )
+                                            .on_hover_text("Delete sub-segment")
+                                            .clicked()
+                                        {
+                                            to_delete = Some(child_id);
+                                        }
+                                        if accordion::panel_toggle_button(ui, child_is_panel_open) {
+                                            if child_is_panel_open {
+                                                do_panel_deselect = true;
+                                            } else {
+                                                do_panel_select = Some(child_id);
+                                            }
+                                        }
+                                    },
+                                );
+                            });
+                        }
+
+                        if ui.button("➕ Add Sub-segment").clicked() {
+                            new_child_for = Some(id);
+                        }
+                        ui.add_space(4.0);
+                    });
+                }
+
+                ui.separator();
+            }
+        });
 
     // Apply deferred mutations.
     if did_scroll {

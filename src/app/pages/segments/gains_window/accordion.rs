@@ -37,96 +37,98 @@ pub fn show_accordion(
 
     accordion::header(ui, "Gain name");
 
-    egui::ScrollArea::vertical().show(ui, |ui| {
-        for gain in &mut state.gains {
-            let id = gain.id;
-            let expanded = gain.expanded;
-            let is_panel_open = selected_id == Some(id);
+    egui::ScrollArea::vertical()
+        .auto_shrink(false)
+        .show(ui, |ui| {
+            for gain in &mut state.gains {
+                let id = gain.id;
+                let expanded = gain.expanded;
+                let is_panel_open = selected_id == Some(id);
 
-            if scroll_to == Some(id) {
-                ui.scroll_to_cursor(Some(egui::Align::Center));
-                did_scroll = true;
-            }
-
-            ui.horizontal(|ui| {
-                if accordion::expand_button(ui, expanded) {
-                    gain.expanded = !gain.expanded;
+                if scroll_to == Some(id) {
+                    ui.scroll_to_cursor(Some(egui::Align::Center));
+                    did_scroll = true;
                 }
 
-                let (name_w, desc_w) = accordion::row_field_widths(ui, "Gain name");
-
-                ui.add_sized(
-                    [name_w, ROW_H],
-                    egui::TextEdit::singleline(&mut gain.name).hint_text("Gain name…"),
-                );
-                ui.add_sized(
-                    [desc_w, ROW_H],
-                    egui::TextEdit::singleline(&mut gain.description)
-                        .hint_text("Short description…"),
-                );
-
-                if accordion::panel_toggle_button(ui, is_panel_open) {
-                    if is_panel_open {
-                        do_panel_deselect = true;
-                    } else {
-                        do_panel_select = Some(id);
+                ui.horizontal(|ui| {
+                    if accordion::expand_button(ui, expanded) {
+                        gain.expanded = !gain.expanded;
                     }
-                }
-                if ui
-                    .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
-                    .on_hover_text("Delete gain")
-                    .clicked()
-                {
-                    to_delete = Some(id);
-                }
-            });
 
-            if expanded {
-                ui.indent(id, |ui| {
-                    ui.add_space(4.0);
-                    ui.label("Notes:");
-                    ui.add(
-                        egui::TextEdit::multiline(&mut gain.notes)
-                            .desired_rows(3)
-                            .desired_width(f32::INFINITY)
-                            .min_size(egui::vec2(0.0, MULTILINE_H)),
+                    let (name_w, desc_w) = accordion::row_field_widths(ui, "Gain name");
+
+                    ui.add_sized(
+                        [name_w, ROW_H],
+                        egui::TextEdit::singleline(&mut gain.name).hint_text("Gain name…"),
+                    );
+                    ui.add_sized(
+                        [desc_w, ROW_H],
+                        egui::TextEdit::singleline(&mut gain.description)
+                            .hint_text("Short description…"),
                     );
 
-                    // ── Used by Jobs ──────────────────────────────────────────
-                    // Link tuple: (gain_id, job_id) — gain is first.
-                    ui.separator();
-                    let (linked_jobs, avail_jobs) = accordion::partition_linked(
-                        &links_snap,
-                        |(gid, jid)| (*gid == id).then_some(*jid),
-                        jobs,
-                        |j| j.id,
-                        |j| j.name.as_str(),
-                    );
-                    let (add, rem) = accordion::acc_link_section(
-                        ui,
-                        "Used by Jobs:",
-                        egui::Id::new("gain_acc_link_job").with(id),
-                        "Add a job…",
-                        "All jobs linked",
-                        &avail_jobs,
-                        &linked_jobs,
-                        navigate_to,
-                        Some("Open in Jobs"),
-                    );
-                    // Link tuple is (gain_id, job_id).
-                    if let Some(jid) = add {
-                        link_to_add = Some((id, jid));
+                    if accordion::panel_toggle_button(ui, is_panel_open) {
+                        if is_panel_open {
+                            do_panel_deselect = true;
+                        } else {
+                            do_panel_select = Some(id);
+                        }
                     }
-                    if let Some(jid) = rem {
-                        link_to_remove = Some((id, jid));
+                    if ui
+                        .add(egui::Button::new("🗑").fill(egui::Color32::TRANSPARENT))
+                        .on_hover_text("Delete gain")
+                        .clicked()
+                    {
+                        to_delete = Some(id);
                     }
-                    ui.add_space(4.0);
                 });
-            }
 
-            ui.separator();
-        }
-    });
+                if expanded {
+                    ui.indent(id, |ui| {
+                        ui.add_space(4.0);
+                        ui.label("Notes:");
+                        ui.add(
+                            egui::TextEdit::multiline(&mut gain.notes)
+                                .desired_rows(3)
+                                .desired_width(f32::INFINITY)
+                                .min_size(egui::vec2(0.0, MULTILINE_H)),
+                        );
+
+                        // ── Used by Jobs ──────────────────────────────────────────
+                        // Link tuple: (gain_id, job_id) — gain is first.
+                        ui.separator();
+                        let (linked_jobs, avail_jobs) = accordion::partition_linked(
+                            &links_snap,
+                            |(gid, jid)| (*gid == id).then_some(*jid),
+                            jobs,
+                            |j| j.id,
+                            |j| j.name.as_str(),
+                        );
+                        let (add, rem) = accordion::acc_link_section(
+                            ui,
+                            "Used by Jobs:",
+                            egui::Id::new("gain_acc_link_job").with(id),
+                            "Add a job…",
+                            "All jobs linked",
+                            &avail_jobs,
+                            &linked_jobs,
+                            navigate_to,
+                            Some("Open in Jobs"),
+                        );
+                        // Link tuple is (gain_id, job_id).
+                        if let Some(jid) = add {
+                            link_to_add = Some((id, jid));
+                        }
+                        if let Some(jid) = rem {
+                            link_to_remove = Some((id, jid));
+                        }
+                        ui.add_space(4.0);
+                    });
+                }
+
+                ui.separator();
+            }
+        });
 
     if did_scroll {
         state.scroll_to_id = None;
