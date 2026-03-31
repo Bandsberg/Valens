@@ -4,11 +4,23 @@
 
 use crate::app::App;
 use crate::app::pages::accordion::{TABLE_STAKE_MET, TABLE_STAKE_UNMET, display_name};
-use crate::app::pages::product::ValueType;
+use crate::app::pages::product::{ValueAnnotation, ValueType};
 use crate::app::pages::value_analytics::TABLE_STAKE_MIN_STRENGTH;
 use eframe::egui;
 use std::collections::HashSet;
 use uuid::Uuid;
+
+// ── Entity colour palette ─────────────────────────────────────────────────────
+// Shared by all four tabs so colours stay consistent as you switch between them.
+
+const PAIN_RGB: [u8; 3] = [200, 80, 80];
+const GAIN_RGB: [u8; 3] = [60, 175, 100];
+const JOB_RGB: [u8; 3] = [140, 90, 210];
+/// Pain relief — slightly muted relative to pain so solutions are visually
+/// distinct from the need they address.
+const PAIN_RELIEF_RGB: [u8; 3] = [185, 100, 100];
+/// Gain creator — slightly muted relative to gain for the same reason.
+const GAIN_CREATOR_RGB: [u8; 3] = [60, 155, 100];
 
 // ── Tab ───────────────────────────────────────────────────────────────────────
 
@@ -64,7 +76,7 @@ fn show_placeholder(ui: &mut egui::Ui, msg: &str) {
 fn truncate(name: &str, max: usize) -> String {
     if name.chars().count() > max {
         let s: String = name.chars().take(max.saturating_sub(1)).collect();
-        format!("{s}\u{2026}")
+        format!("{s}…")
     } else {
         name.to_owned()
     }
@@ -132,12 +144,13 @@ fn show_flow(app: &App, ui: &mut egui::Ui) {
         })
         .collect();
 
-    let mut needs: Vec<(Uuid, String, [u8; 3], bool)> = Vec::new(); // is_pain flag
+    // is_pain flag distinguishes red (pain) from green (gain) when drawing beziers.
+    let mut needs: Vec<(Uuid, String, [u8; 3], bool)> = Vec::new();
     for p in &cs.pains_state.pains {
         needs.push((
             p.id,
             truncate(display_name(&p.name, "Unnamed pain"), 18),
-            [200, 80, 80],
+            PAIN_RGB,
             true,
         ));
     }
@@ -145,26 +158,24 @@ fn show_flow(app: &App, ui: &mut egui::Ui) {
         needs.push((
             g.id,
             truncate(display_name(&g.name, "Unnamed gain"), 18),
-            [60, 175, 100],
+            GAIN_RGB,
             false,
         ));
     }
 
-    let mut solutions: Vec<(Uuid, String, [u8; 3], bool)> = Vec::new(); // is_pain_relief flag
+    let mut solutions: Vec<(Uuid, String, [u8; 3])> = Vec::new();
     for pr in &vp.pain_relief_state.pain_reliefs {
         solutions.push((
             pr.id,
             truncate(display_name(&pr.name, "Unnamed pain relief"), 18),
-            [185, 100, 100],
-            true,
+            PAIN_RELIEF_RGB,
         ));
     }
     for gc in &vp.gain_creator_state.gain_creators {
         solutions.push((
             gc.id,
             truncate(display_name(&gc.name, "Unnamed gain creator"), 18),
-            [60, 155, 100],
-            false,
+            GAIN_CREATOR_RGB,
         ));
     }
 
@@ -228,7 +239,7 @@ fn show_flow(app: &App, ui: &mut egui::Ui) {
     let col2: Vec<(Uuid, egui::Pos2)> = solutions
         .iter()
         .enumerate()
-        .map(|(i, (id, _, _, _))| (*id, egui::pos2(col_x[2], y_pos(i))))
+        .map(|(i, (id, _, _))| (*id, egui::pos2(col_x[2], y_pos(i))))
         .collect();
 
     // ── Hover & highlight ─────────────────────────────────────────────────────
@@ -273,11 +284,7 @@ fn show_flow(app: &App, ui: &mut egui::Ui) {
                 continue;
             }
             let a = ja.min(alpha_for(nid));
-            let [r, g, b, _] = if is_pain {
-                [200_u8, 80, 80, 0]
-            } else {
-                [60, 175, 100, 0]
-            };
+            let [r, g, b] = if is_pain { PAIN_RGB } else { GAIN_RGB };
             let stroke = egui::Stroke::new(1.5, egui::Color32::from_rgba_unmultiplied(r, g, b, a));
             draw_bezier(
                 &painter,
@@ -309,12 +316,8 @@ fn show_flow(app: &App, ui: &mut egui::Ui) {
                 continue;
             };
             let base_a = alpha_for(nid).min(alpha_for(sid));
-            let a = ((f32::from(base_a)) * (strength * 0.7 + 0.3)) as u8;
-            let [r, g, b, _] = if is_pain {
-                [200_u8, 80, 80, 0]
-            } else {
-                [60, 175, 100, 0]
-            };
+            let a = (f32::from(base_a) * (strength * 0.7 + 0.3)) as u8;
+            let [r, g, b] = if is_pain { PAIN_RGB } else { GAIN_RGB };
             let width = 1.0 + strength * 2.5;
             let stroke =
                 egui::Stroke::new(width, egui::Color32::from_rgba_unmultiplied(r, g, b, a));
@@ -341,7 +344,6 @@ fn show_flow(app: &App, ui: &mut egui::Ui) {
             let fill = egui::Color32::from_rgba_unmultiplied(rgb[0], rgb[1], rgb[2], a / 2);
             let pill_rect = egui::Rect::from_center_size(center, egui::vec2(pill_w, pill_h));
             painter.rect_filled(pill_rect, 5.0, fill);
-            let ta = a;
             painter.text(
                 center,
                 egui::Align2::CENTER_CENTER,
@@ -351,32 +353,23 @@ fn show_flow(app: &App, ui: &mut egui::Ui) {
                     text_base.r(),
                     text_base.g(),
                     text_base.b(),
-                    ta,
+                    a,
                 ),
             );
         }
     };
 
-    // col0 (jobs)
-    let jobs_simple: Vec<(Uuid, String, [u8; 3])> = jobs
-        .iter()
-        .map(|(id, n, rgb)| (*id, n.clone(), *rgb))
-        .collect();
-    draw_pills(&jobs_simple, &col0);
+    draw_pills(&jobs, &col0);
 
-    // col1 (needs)
-    let needs_simple: Vec<(Uuid, String, [u8; 3])> = needs
+    // needs carries an extra bool (is_pain) used for bezier colours above, so
+    // we strip it before passing to the generic draw_pills helper.
+    let needs_for_pills: Vec<(Uuid, String, [u8; 3])> = needs
         .iter()
         .map(|(id, n, rgb, _)| (*id, n.clone(), *rgb))
         .collect();
-    draw_pills(&needs_simple, &col1);
+    draw_pills(&needs_for_pills, &col1);
 
-    // col2 (solutions)
-    let sols_simple: Vec<(Uuid, String, [u8; 3])> = solutions
-        .iter()
-        .map(|(id, n, rgb, _)| (*id, n.clone(), *rgb))
-        .collect();
-    draw_pills(&sols_simple, &col2);
+    draw_pills(&solutions, &col2);
 
     // Hover tooltip
     if let Some(hid) = hovered_id {
@@ -393,8 +386,8 @@ fn show_flow(app: &App, ui: &mut egui::Ui) {
             .or_else(|| {
                 solutions
                     .iter()
-                    .find(|(id, _, _, _)| *id == hid)
-                    .map(|(_, n, _, _)| n.as_str())
+                    .find(|(id, _, _)| *id == hid)
+                    .map(|(_, n, _)| n.as_str())
             });
         if let Some(name) = full_name {
             tooltip = Some(name.to_owned());
@@ -408,9 +401,9 @@ fn show_flow(app: &App, ui: &mut egui::Ui) {
     ui.add_space(6.0);
     ui.horizontal_wrapped(|ui| {
         for ([r, g, b], label) in [
-            ([140_u8, 90, 210], "Job"),
-            ([200, 80, 80], "Pain / Pain Relief"),
-            ([60, 175, 100], "Gain / Gain Creator"),
+            (JOB_RGB, "Job"),
+            (PAIN_RGB, "Pain / Pain Relief"),
+            (GAIN_RGB, "Gain / Gain Creator"),
         ] {
             let (dot_rect, _) =
                 ui.allocate_exact_size(egui::vec2(10.0, 10.0), egui::Sense::hover());
@@ -619,7 +612,7 @@ fn show_heatmap(
     id_salt: &str,
     needs: &[(Uuid, String, f32)],
     solutions: &[(Uuid, String)],
-    annotations: &[crate::app::pages::product::ValueAnnotation],
+    annotations: &[ValueAnnotation],
 ) {
     let n_sol = solutions.len();
     egui::ScrollArea::horizontal()
@@ -755,7 +748,7 @@ fn show_web(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
             inner.push((
                 pid,
                 truncate(display_name(&p.name, "Pain"), 16),
-                [200, 80, 80],
+                PAIN_RGB,
                 true,
             ));
         }
@@ -768,7 +761,7 @@ fn show_web(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
             inner.push((
                 gid,
                 truncate(display_name(&g.name, "Gain"), 16),
-                [60, 175, 100],
+                GAIN_RGB,
                 false,
             ));
         }
@@ -815,7 +808,7 @@ fn show_web(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
             outer.push((
                 pr_id,
                 truncate(display_name(&pr.name, "Pain Relief"), 16),
-                [185, 100, 100],
+                PAIN_RELIEF_RGB,
                 vec![(ann.pain_or_gain_id, ann.strength, ann.value_type)],
             ));
         }
@@ -841,7 +834,7 @@ fn show_web(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
             outer.push((
                 gc_id,
                 truncate(display_name(&gc.name, "Gain Creator"), 16),
-                [60, 155, 100],
+                GAIN_CREATOR_RGB,
                 vec![(ann.pain_or_gain_id, ann.strength, ann.value_type)],
             ));
         }
@@ -983,7 +976,8 @@ fn show_web(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
         .find(|j| j.id == job_id)
         .map(|j| truncate(display_name(&j.name, "Job"), 12))
         .unwrap_or_else(|| "Job".to_owned());
-    painter.circle_filled(center, 18.0, egui::Color32::from_rgb(140, 90, 210));
+    let [r, g, b] = JOB_RGB;
+    painter.circle_filled(center, 18.0, egui::Color32::from_rgb(r, g, b));
     painter.text(
         center,
         egui::Align2::CENTER_CENTER,
@@ -1003,9 +997,9 @@ fn show_web(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
     ui.add_space(6.0);
     ui.horizontal_wrapped(|ui| {
         for ([r, g, b], label) in [
-            ([140_u8, 90, 210], "Job (centre)"),
-            ([200, 80, 80], "Pain / Pain Relief"),
-            ([60, 175, 100], "Gain / Gain Creator"),
+            (JOB_RGB, "Job (centre)"),
+            (PAIN_RGB, "Pain / Pain Relief"),
+            (GAIN_RGB, "Gain / Gain Creator"),
         ] {
             let (dot_rect, _) =
                 ui.allocate_exact_size(egui::vec2(10.0, 10.0), egui::Sense::hover());
@@ -1028,6 +1022,33 @@ fn show_web(app: &App, ctx: &egui::Context, ui: &mut egui::Ui) {
 // paired with their best solution and strength. Jobs are sorted by coverage
 // gap — least covered first — so the biggest problems surface immediately.
 
+/// Finds the highest-strength annotation targeting `need_id` and returns
+/// `(solution_name, strength, value_type)`.
+///
+/// `solutions` is a pre-built `(id, display_name)` slice — collect it once per
+/// job rather than re-scanning the entity list for every need.
+fn best_coverage(
+    need_id: Uuid,
+    annotations: &[ValueAnnotation],
+    solutions: &[(Uuid, String)],
+) -> (Option<String>, Option<f32>, Option<ValueType>) {
+    let best = annotations
+        .iter()
+        .filter(|ann| ann.pain_or_gain_id == need_id)
+        .max_by(|a, b| {
+            a.strength
+                .partial_cmp(&b.strength)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+    best.map_or((None, None, None), |ann| {
+        let name = solutions
+            .iter()
+            .find(|(id, _)| *id == ann.reliever_or_creator_id)
+            .map(|(_, n)| n.clone());
+        (name, Some(ann.strength), Some(ann.value_type))
+    })
+}
+
 #[expect(clippy::too_many_lines)]
 fn show_stories(app: &App, ui: &mut egui::Ui) {
     let cs = &app.customer_segment_page;
@@ -1038,7 +1059,20 @@ fn show_stories(app: &App, ui: &mut egui::Ui) {
         return;
     }
 
-    // Build a card per job
+    // Pre-build solution name lists once — reused for every pain/gain lookup.
+    let pain_relief_names: Vec<(Uuid, String)> = vp
+        .pain_relief_state
+        .pain_reliefs
+        .iter()
+        .map(|pr| (pr.id, truncate(display_name(&pr.name, "Pain relief"), 24)))
+        .collect();
+    let gain_creator_names: Vec<(Uuid, String)> = vp
+        .gain_creator_state
+        .gain_creators
+        .iter()
+        .map(|gc| (gc.id, truncate(display_name(&gc.name, "Gain creator"), 24)))
+        .collect();
+
     struct NeedRow {
         name: String,
         importance: f32,
@@ -1066,24 +1100,8 @@ fn show_stories(app: &App, ui: &mut egui::Ui) {
                 let Some(pain) = cs.pains_state.pains.iter().find(|p| p.id == pid) else {
                     continue;
                 };
-                let best = vp
-                    .pain_relief_annotations
-                    .iter()
-                    .filter(|ann| ann.pain_or_gain_id == pid)
-                    .max_by(|a, b| {
-                        a.strength
-                            .partial_cmp(&b.strength)
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    });
-                let (sol_name, strength, value_type) = best.map_or((None, None, None), |ann| {
-                    let name = vp
-                        .pain_relief_state
-                        .pain_reliefs
-                        .iter()
-                        .find(|pr| pr.id == ann.reliever_or_creator_id)
-                        .map(|pr| truncate(display_name(&pr.name, "Pain relief"), 24));
-                    (name, Some(ann.strength), Some(ann.value_type))
-                });
+                let (sol_name, strength, value_type) =
+                    best_coverage(pid, &vp.pain_relief_annotations, &pain_relief_names);
                 needs.push(NeedRow {
                     name: truncate(display_name(&pain.name, "Pain"), 28),
                     importance: pain.importance,
@@ -1101,24 +1119,8 @@ fn show_stories(app: &App, ui: &mut egui::Ui) {
                 let Some(gain) = cs.gains_state.gains.iter().find(|g| g.id == gid) else {
                     continue;
                 };
-                let best = vp
-                    .gain_creator_annotations
-                    .iter()
-                    .filter(|ann| ann.pain_or_gain_id == gid)
-                    .max_by(|a, b| {
-                        a.strength
-                            .partial_cmp(&b.strength)
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    });
-                let (sol_name, strength, value_type) = best.map_or((None, None, None), |ann| {
-                    let name = vp
-                        .gain_creator_state
-                        .gain_creators
-                        .iter()
-                        .find(|gc| gc.id == ann.reliever_or_creator_id)
-                        .map(|gc| truncate(display_name(&gc.name, "Gain creator"), 24));
-                    (name, Some(ann.strength), Some(ann.value_type))
-                });
+                let (sol_name, strength, value_type) =
+                    best_coverage(gid, &vp.gain_creator_annotations, &gain_creator_names);
                 needs.push(NeedRow {
                     name: truncate(display_name(&gain.name, "Gain"), 28),
                     importance: gain.importance,
@@ -1129,7 +1131,7 @@ fn show_stories(app: &App, ui: &mut egui::Ui) {
                 });
             }
 
-            // Sort needs: pains first, then by importance desc
+            // Sort needs: pains before gains, then by importance descending.
             needs.sort_by(|a, b| {
                 b.is_pain.cmp(&a.is_pain).then_with(|| {
                     b.importance
@@ -1198,11 +1200,7 @@ fn show_stories(app: &App, ui: &mut egui::Ui) {
                 ui.add_space(4.0);
 
                 for row in &card.needs {
-                    let need_rgb = if row.is_pain {
-                        [200_u8, 80, 80]
-                    } else {
-                        [60, 175, 100]
-                    };
+                    let need_rgb = if row.is_pain { PAIN_RGB } else { GAIN_RGB };
                     let is_ts_unmet = row.value_type == Some(ValueType::TableStake)
                         && row.strength.is_none_or(|s| s < TABLE_STAKE_MIN_STRENGTH);
 

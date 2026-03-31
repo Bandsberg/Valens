@@ -107,6 +107,32 @@ fn linked_ids_where_source_in(links: &[(Uuid, Uuid)], source_ids: &[Uuid]) -> Ve
 
 // ── Analytics functions ───────────────────────────────────────────────────────
 
+/// Returns all unique pain and gain IDs belonging to a segment.
+///
+/// Traverses `segment → jobs → pains/gains` in two hops. Deduplicates so that
+/// a pain or gain shared by multiple jobs is counted only once.
+fn needs_of_segment(segment_id: Uuid, app: &App) -> (Vec<Uuid>, Vec<Uuid>) {
+    let cs = &app.customer_segment_page;
+    let jobs: Vec<Uuid> = cs
+        .segment_job_links
+        .iter()
+        .filter_map(|&(jid, sid)| (sid == segment_id).then_some(jid))
+        .collect();
+    let pain_ids = sort_dedup(
+        cs.job_pain_links
+            .iter()
+            .filter_map(|&(pid, jid)| jobs.contains(&jid).then_some(pid))
+            .collect(),
+    );
+    let gain_ids = sort_dedup(
+        cs.job_gain_links
+            .iter()
+            .filter_map(|&(gid, jid)| jobs.contains(&jid).then_some(gid))
+            .collect(),
+    );
+    (pain_ids, gain_ids)
+}
+
 /// Returns the features reachable from `product_id` via `product_feature_links`.
 fn features_of_product(product_id: Uuid, app: &App) -> Vec<Uuid> {
     app.valueprop_page
@@ -182,32 +208,9 @@ pub fn best_strength_for_need(
 /// existing binary-BFS fallback behaviour in `overview.rs`).
 pub fn weighted_fit_score(product_id: Uuid, segment_id: Uuid, app: &App) -> f32 {
     let cs = &app.customer_segment_page;
+    let (all_pain_ids, all_gain_ids) = needs_of_segment(segment_id, app);
 
-    // Jobs belonging to this segment.
-    let jobs: Vec<Uuid> = cs
-        .segment_job_links
-        .iter()
-        .filter_map(|&(jid, sid)| (sid == segment_id).then_some(jid))
-        .collect();
-
-    // Pains and gains belonging to those jobs.
-    let pain_ids: Vec<Uuid> = cs
-        .job_pain_links
-        .iter()
-        .filter_map(|&(pid, jid)| jobs.contains(&jid).then_some(pid))
-        .collect();
-    let gain_ids: Vec<Uuid> = cs
-        .job_gain_links
-        .iter()
-        .filter_map(|&(gid, jid)| jobs.contains(&jid).then_some(gid))
-        .collect();
-
-    // Deduplicate (a pain/gain may be shared by multiple jobs).
-    let all_pain_ids = sort_dedup(pain_ids);
-    let all_gain_ids = sort_dedup(gain_ids);
-
-    let total_needs = all_pain_ids.len() + all_gain_ids.len();
-    if total_needs == 0 {
+    if all_pain_ids.is_empty() && all_gain_ids.is_empty() {
         return f32::NAN;
     }
 
@@ -252,25 +255,7 @@ pub fn weighted_fit_score(product_id: Uuid, segment_id: Uuid, app: &App) -> f32 
 /// relative to a single product.
 pub fn segment_need_coverages(product_id: Uuid, segment_id: Uuid, app: &App) -> Vec<NeedCoverage> {
     let cs = &app.customer_segment_page;
-
-    let jobs: Vec<Uuid> = cs
-        .segment_job_links
-        .iter()
-        .filter_map(|&(jid, sid)| (sid == segment_id).then_some(jid))
-        .collect();
-
-    let pain_ids: Vec<Uuid> = sort_dedup(
-        cs.job_pain_links
-            .iter()
-            .filter_map(|&(pid, jid)| jobs.contains(&jid).then_some(pid))
-            .collect(),
-    );
-    let gain_ids: Vec<Uuid> = sort_dedup(
-        cs.job_gain_links
-            .iter()
-            .filter_map(|&(gid, jid)| jobs.contains(&jid).then_some(gid))
-            .collect(),
-    );
+    let (pain_ids, gain_ids) = needs_of_segment(segment_id, app);
 
     let mut coverages = Vec::with_capacity(pain_ids.len() + gain_ids.len());
 
@@ -389,24 +374,7 @@ pub fn table_stake_completeness(
     // When a segment filter is provided, restrict to needs belonging to that segment.
     let (relevant_pain_ids, relevant_gain_ids): (Option<Vec<Uuid>>, Option<Vec<Uuid>>) =
         if let Some(sid) = segment_id {
-            let cs = &app.customer_segment_page;
-            let jobs: Vec<Uuid> = cs
-                .segment_job_links
-                .iter()
-                .filter_map(|&(jid, gsid)| (gsid == sid).then_some(jid))
-                .collect();
-            let pids = sort_dedup(
-                cs.job_pain_links
-                    .iter()
-                    .filter_map(|&(pid, jid)| jobs.contains(&jid).then_some(pid))
-                    .collect(),
-            );
-            let gids = sort_dedup(
-                cs.job_gain_links
-                    .iter()
-                    .filter_map(|&(gid, jid)| jobs.contains(&jid).then_some(gid))
-                    .collect(),
-            );
+            let (pids, gids) = needs_of_segment(sid, app);
             (Some(pids), Some(gids))
         } else {
             (None, None)
