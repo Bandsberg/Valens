@@ -247,13 +247,7 @@ pub fn show_detail_panel(app: &mut App, ctx: &egui::Context) {
             .retain(|l| l != &pair);
     }
     if let Some(ann) = gain_ann_to_add {
-        let exists =
-            app.valueprop_page.gain_creator_annotations.iter().any(|a| {
-                a.pain_or_gain_id == ann.pain_or_gain_id && a.reliever_or_creator_id == id
-            });
-        if !exists {
-            app.valueprop_page.gain_creator_annotations.push(ann);
-        }
+        super::super::push_annotation_if_new(&mut app.valueprop_page.gain_creator_annotations, ann);
     }
     if let Some(gid) = gain_ann_to_remove {
         app.valueprop_page

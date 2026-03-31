@@ -237,7 +237,14 @@ fn filter_heading(
     ui.separator();
 }
 
-#[expect(clippy::too_many_arguments, clippy::too_many_lines)]
+#[expect(clippy::too_many_arguments)]
+/// Dispatch to the appropriate column renderer.
+///
+/// Column layout:  0=Products  1=GainCreators+PainReliefs  2=Gains+Pains  3=Jobs  4=Segments
+///
+/// Columns 0 and 4 (the chain's root endpoints) render a show/hide filter
+/// heading. The middle columns (1–3) dim entities that are unreachable from
+/// the current filter selection using the BFS/fit scores in `scores`.
 fn render_column(
     col_idx: usize,
     ui: &mut egui::Ui,
@@ -249,146 +256,172 @@ fn render_column(
     visible_middle: &Option<HashSet<Uuid>>,
 ) {
     let get_score = |id: Uuid| scores.get(&id).copied().unwrap_or(0.0);
-    // True when no column filter is active, OR the entity is reachable from visible products/segments.
+    // True when no filter is active, OR the entity is reachable from visible roots.
     let is_visible = |id: Uuid| visible_middle.as_ref().is_none_or(|v| v.contains(&id));
 
-    // Column layout:  0=Products  1=GainCreators+PainReliefs  2=Gains+Pains  3=Jobs  4=Segments
-    //
-    // Columns 0 and 4 (the "root" endpoints of the chain) get a show/hide
-    // filter heading so the user can exclude individual products or segments
-    // and dim the intermediate columns accordingly. The middle columns (1–3)
-    // use `is_visible` instead — their rows are dimmed by `get_score` when
-    // unreachable from the current filter selection.
     match col_idx {
-        0 => {
-            // Products & Services — filterable root
-            let all_products = &app.valueprop_page.products_state.products;
-            let prod_items: Vec<(Uuid, String)> = all_products
-                .iter()
-                .map(|p| (p.id, display_name(&p.name, "Unnamed product").to_owned()))
-                .collect();
-            filter_heading(
-                ui,
-                "Products & Services",
-                "ov_prod_filter",
-                &prod_items,
-                hidden_products,
-            );
-            for (id, name) in &prod_items {
-                if !hidden_products.contains(id) {
-                    label_with_hover_id(ui, name, *id, color_job(), get_score(*id), hovered_key);
-                }
-            }
-        }
-        1 => {
-            // Value-proposition solution layer: Gain Creators then Pain Reliefs
-            ui.label(egui::RichText::new("Gain Creators").strong());
-            ui.separator();
-            for item in &app.valueprop_page.gain_creator_state.gain_creators {
-                if is_visible(item.id) {
-                    label_with_hover_id(
-                        ui,
-                        display_name(&item.name, "Unnamed gain creator"),
-                        item.id,
-                        color_gain(),
-                        get_score(item.id),
-                        hovered_key,
-                    );
-                }
-            }
-            ui.add_space(12.0);
-            ui.label(egui::RichText::new("Pain Reliefs").strong());
-            ui.separator();
-            for item in &app.valueprop_page.pain_relief_state.pain_reliefs {
-                if is_visible(item.id) {
-                    label_with_hover_id(
-                        ui,
-                        display_name(&item.name, "Unnamed pain relief"),
-                        item.id,
-                        color_pain(),
-                        get_score(item.id),
-                        hovered_key,
-                    );
-                }
-            }
-        }
-        2 => {
-            // Customer needs layer: Gains then Pains
-            ui.label(egui::RichText::new("Gains").strong());
-            ui.separator();
-            for item in &app.customer_segment_page.gains_state.gains {
-                if is_visible(item.id) {
-                    label_with_hover_id(
-                        ui,
-                        display_name(&item.name, "Unnamed gain"),
-                        item.id,
-                        color_gain(),
-                        get_score(item.id),
-                        hovered_key,
-                    );
-                }
-            }
-            ui.add_space(12.0);
-            ui.label(egui::RichText::new("Pains").strong());
-            ui.separator();
-            for item in &app.customer_segment_page.pains_state.pains {
-                if is_visible(item.id) {
-                    label_with_hover_id(
-                        ui,
-                        display_name(&item.name, "Unnamed pain"),
-                        item.id,
-                        color_pain(),
-                        get_score(item.id),
-                        hovered_key,
-                    );
-                }
-            }
-        }
-        3 => {
-            // Jobs-to-be-done layer
-            ui.label(egui::RichText::new("Jobs").strong());
-            ui.separator();
-            for item in &app.customer_segment_page.jobs_state.jobs {
-                if is_visible(item.id) {
-                    label_with_hover_id(
-                        ui,
-                        display_name(&item.name, "Unnamed job"),
-                        item.id,
-                        color_job(),
-                        get_score(item.id),
-                        hovered_key,
-                    );
-                }
-            }
-        }
-        4 => {
-            // Customer Segments — filterable root (mirrors column 0)
-            let all_segments = &app.customer_segment_page.segments_state.segments;
-            let seg_items: Vec<(Uuid, String)> = all_segments
-                .iter()
-                .map(|s| (s.id, display_name(&s.name, "Unnamed segment").to_owned()))
-                .collect();
-            filter_heading(
-                ui,
-                "Customer Segments",
-                "ov_seg_filter",
-                &seg_items,
-                hidden_segments,
-            );
-            for (id, name) in &seg_items {
-                if !hidden_segments.contains(id) {
-                    label_with_hover_id(
-                        ui,
-                        name,
-                        *id,
-                        color_segment(),
-                        get_score(*id),
-                        hovered_key,
-                    );
-                }
-            }
-        }
+        0 => render_products_column(ui, app, hovered_key, get_score, hidden_products),
+        1 => render_solutions_column(ui, app, hovered_key, get_score, is_visible),
+        2 => render_needs_column(ui, app, hovered_key, get_score, is_visible),
+        3 => render_jobs_column(ui, app, hovered_key, get_score, is_visible),
+        4 => render_segments_column(ui, app, hovered_key, get_score, hidden_segments),
         _ => {}
+    }
+}
+
+/// Column 0 — Products & Services (filterable root).
+fn render_products_column(
+    ui: &mut egui::Ui,
+    app: &App,
+    hovered_key: egui::Id,
+    get_score: impl Fn(Uuid) -> f32,
+    hidden_products: &mut HashSet<Uuid>,
+) {
+    let all_products = &app.valueprop_page.products_state.products;
+    let prod_items: Vec<(Uuid, String)> = all_products
+        .iter()
+        .map(|p| (p.id, display_name(&p.name, "Unnamed product").to_owned()))
+        .collect();
+    filter_heading(
+        ui,
+        "Products & Services",
+        "ov_prod_filter",
+        &prod_items,
+        hidden_products,
+    );
+    for (id, name) in &prod_items {
+        if !hidden_products.contains(id) {
+            label_with_hover_id(ui, name, *id, color_job(), get_score(*id), hovered_key);
+        }
+    }
+}
+
+/// Column 1 — Value-proposition solution layer: Gain Creators then Pain Reliefs.
+fn render_solutions_column(
+    ui: &mut egui::Ui,
+    app: &App,
+    hovered_key: egui::Id,
+    get_score: impl Fn(Uuid) -> f32,
+    is_visible: impl Fn(Uuid) -> bool,
+) {
+    ui.label(egui::RichText::new("Gain Creators").strong());
+    ui.separator();
+    for item in &app.valueprop_page.gain_creator_state.gain_creators {
+        if is_visible(item.id) {
+            label_with_hover_id(
+                ui,
+                display_name(&item.name, "Unnamed gain creator"),
+                item.id,
+                color_gain(),
+                get_score(item.id),
+                hovered_key,
+            );
+        }
+    }
+    ui.add_space(12.0);
+    ui.label(egui::RichText::new("Pain Reliefs").strong());
+    ui.separator();
+    for item in &app.valueprop_page.pain_relief_state.pain_reliefs {
+        if is_visible(item.id) {
+            label_with_hover_id(
+                ui,
+                display_name(&item.name, "Unnamed pain relief"),
+                item.id,
+                color_pain(),
+                get_score(item.id),
+                hovered_key,
+            );
+        }
+    }
+}
+
+/// Column 2 — Customer needs layer: Gains then Pains.
+fn render_needs_column(
+    ui: &mut egui::Ui,
+    app: &App,
+    hovered_key: egui::Id,
+    get_score: impl Fn(Uuid) -> f32,
+    is_visible: impl Fn(Uuid) -> bool,
+) {
+    ui.label(egui::RichText::new("Gains").strong());
+    ui.separator();
+    for item in &app.customer_segment_page.gains_state.gains {
+        if is_visible(item.id) {
+            label_with_hover_id(
+                ui,
+                display_name(&item.name, "Unnamed gain"),
+                item.id,
+                color_gain(),
+                get_score(item.id),
+                hovered_key,
+            );
+        }
+    }
+    ui.add_space(12.0);
+    ui.label(egui::RichText::new("Pains").strong());
+    ui.separator();
+    for item in &app.customer_segment_page.pains_state.pains {
+        if is_visible(item.id) {
+            label_with_hover_id(
+                ui,
+                display_name(&item.name, "Unnamed pain"),
+                item.id,
+                color_pain(),
+                get_score(item.id),
+                hovered_key,
+            );
+        }
+    }
+}
+
+/// Column 3 — Jobs-to-be-done layer.
+fn render_jobs_column(
+    ui: &mut egui::Ui,
+    app: &App,
+    hovered_key: egui::Id,
+    get_score: impl Fn(Uuid) -> f32,
+    is_visible: impl Fn(Uuid) -> bool,
+) {
+    ui.label(egui::RichText::new("Jobs").strong());
+    ui.separator();
+    for item in &app.customer_segment_page.jobs_state.jobs {
+        if is_visible(item.id) {
+            label_with_hover_id(
+                ui,
+                display_name(&item.name, "Unnamed job"),
+                item.id,
+                color_job(),
+                get_score(item.id),
+                hovered_key,
+            );
+        }
+    }
+}
+
+/// Column 4 — Customer Segments (filterable root, mirrors column 0).
+fn render_segments_column(
+    ui: &mut egui::Ui,
+    app: &App,
+    hovered_key: egui::Id,
+    get_score: impl Fn(Uuid) -> f32,
+    hidden_segments: &mut HashSet<Uuid>,
+) {
+    let all_segments = &app.customer_segment_page.segments_state.segments;
+    let seg_items: Vec<(Uuid, String)> = all_segments
+        .iter()
+        .map(|s| (s.id, display_name(&s.name, "Unnamed segment").to_owned()))
+        .collect();
+    filter_heading(
+        ui,
+        "Customer Segments",
+        "ov_seg_filter",
+        &seg_items,
+        hidden_segments,
+    );
+    for (id, name) in &seg_items {
+        if !hidden_segments.contains(id) {
+            label_with_hover_id(ui, name, *id, color_segment(), get_score(*id), hovered_key);
+        }
     }
 }
 

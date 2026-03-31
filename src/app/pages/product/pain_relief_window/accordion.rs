@@ -2,14 +2,10 @@ use eframe::egui;
 use uuid::Uuid;
 
 use super::super::super::Pain;
-use super::super::super::accordion::{self, ROW_H};
+use super::super::super::accordion::{self, MULTILINE_H, ROW_H};
 use super::super::features_window::Feature;
 use super::super::{ValueAnnotation, ValueType};
 use super::model::PainReliefState;
-
-/// Minimum pixel height for multiline text-edit fields in the expanded row.
-/// Chosen to display roughly three lines at the default font size.
-const MULTILINE_H: f32 = 60.0;
 
 // ── Accordion table ───────────────────────────────────────────────────────────
 
@@ -194,13 +190,7 @@ pub fn show_accordion(
         feature_links.retain(|l| l != &pair);
     }
     if let Some(ann) = pain_ann_to_add {
-        let already_linked = pain_annotations.iter().any(|a| {
-            a.pain_or_gain_id == ann.pain_or_gain_id
-                && a.reliever_or_creator_id == ann.reliever_or_creator_id
-        });
-        if !already_linked {
-            pain_annotations.push(ann);
-        }
+        super::super::push_annotation_if_new(pain_annotations, ann);
     }
     if let Some((pid, rid)) = pain_ann_to_remove {
         pain_annotations.retain(|a| !(a.pain_or_gain_id == pid && a.reliever_or_creator_id == rid));
