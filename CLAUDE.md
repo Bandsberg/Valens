@@ -119,3 +119,49 @@ the current HEAD without touching git. Useful for testing a build mid-developmen
 
 ### Code Quality
 The project enforces strict Clippy lints (see `Cargo.toml` `[lints.clippy]`) and denies `unsafe_code`. CI runs on macOS (arm64 + x86_64), Linux (musl + ARM), and Windows. Spell checking via `.typos.toml`.
+
+## Worktree & Dev Server Management
+
+This project uses egui/eframe compiled to WASM via Trunk for web preview.
+
+### Rules Claude must follow in every session
+
+1. **Never run `trunk serve` without a port** — port 8080 is reserved for the
+   main branch. Worktrees must use 8081+.
+
+2. **On session start in a worktree**, check if a `Trunk.toml` exists here.
+   If not, create one:
+   - Find a free port: scan 8081–8099 and pick the first not in use
+     (`lsof -i TCP:<port>` or `ss -ltn | grep <port>`)
+   - Write `Trunk.toml`:
+```toml
+     [serve]
+     port = <chosen_port>
+     open = true
+```
+   - Copy `.env.local` from the repo root if it exists and isn't already here
+   - Tell the user: "Dev server will run on port <port>"
+
+3. **Never commit `Trunk.toml`** — it is gitignored and local to each worktree.
+
+4. **Before creating a worktree**, confirm the name with the user, then:
+   - Run `git worktree add .claude/worktrees/<name> -b worktree-<name>`
+   - Follow rule 2 inside the new worktree
+   - Remind the user to open a new terminal, cd into the worktree, and run `claude`
+
+5. **When merging/closing a worktree**:
+   - Stop the trunk serve process if running
+   - Commit or stash any changes
+   - Run `git worktree remove .claude/worktrees/<name>`
+   - Run `git branch -d worktree-<name>`
+   - Run `git worktree prune`
+
+6. **If trunk serve fails to start**, check for port conflicts first:
+   `lsof -i TCP:808x` — then update `Trunk.toml` to a free port and retry.
+
+### Project stack
+- Language: Rust
+- UI: egui / eframe
+- Web target: wasm32-unknown-unknown
+- Bundler: Trunk
+- Default main branch port: 8080
